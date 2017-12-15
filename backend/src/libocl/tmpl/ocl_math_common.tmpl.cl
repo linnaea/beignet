@@ -49,6 +49,13 @@ CONST float __gen_ocl_rnde(float x) __asm("llvm.rint" ".f32");
 CONST float __gen_ocl_rndu(float x) __asm("llvm.ceil" ".f32");
 CONST float __gen_ocl_rndd(float x) __asm("llvm.floor" ".f32");
 
+/* native half functions */
+OVERLOADABLE half native_sqrt(half x) { return __gen_ocl_sqrt(x); }
+OVERLOADABLE half native_exp(half x) { return __gen_ocl_exp((half)M_LOG2E_F*x); }
+OVERLOADABLE half native_recip(half x) { return __gen_ocl_rcp(x); }
+OVERLOADABLE half native_log(half x) {
+  return native_log2(x) * (half)0.6931472002f;
+}
 
 /* native functions */
 OVERLOADABLE float native_cos(float x) { return __gen_ocl_cos(x); }

@@ -296,6 +296,8 @@ DEF(ulong, long)
 DEF(ulong, ulong)
 DEF(float, int)
 DEF(float, uint)
+DEF(half, short)
+DEF(half, ushort)
 DEF(double, long)
 DEF(double, ulong)
 #undef DEF
