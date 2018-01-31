@@ -601,10 +601,10 @@ skl_gt1_break:
       intel_skl_gt1_device.device_id = device_id;
       intel_skl_gt1_device.platform = cl_get_platform_default();
       ret = &intel_skl_gt1_device;
+      cl_intel_platform_get_default_extension(ret);
 #ifdef ENABLE_FP64
       cl_intel_platform_enable_extension(ret, cl_khr_fp64_ext_id);
 #endif
-      cl_intel_platform_get_default_extension(ret);
       cl_intel_platform_enable_extension(ret, cl_khr_fp16_ext_id);
       break;
 
@@ -626,10 +626,10 @@ skl_gt2_break:
       intel_skl_gt2_device.device_id = device_id;
       intel_skl_gt2_device.platform = cl_get_platform_default();
       ret = &intel_skl_gt2_device;
+      cl_intel_platform_get_default_extension(ret);
 #ifdef ENABLE_FP64
       cl_intel_platform_enable_extension(ret, cl_khr_fp64_ext_id);
 #endif
-      cl_intel_platform_get_default_extension(ret);
       cl_intel_platform_enable_extension(ret, cl_khr_fp16_ext_id);
       break;
 
@@ -668,10 +668,10 @@ skl_gt4_break:
       intel_skl_gt4_device.device_id = device_id;
       intel_skl_gt4_device.platform = cl_get_platform_default();
       ret = &intel_skl_gt4_device;
+      cl_intel_platform_get_default_extension(ret);
 #ifdef ENABLE_FP64
       cl_intel_platform_enable_extension(ret, cl_khr_fp64_ext_id);
 #endif
-      cl_intel_platform_get_default_extension(ret);
       cl_intel_platform_enable_extension(ret, cl_khr_fp16_ext_id);
       break;
 
@@ -713,10 +713,10 @@ kbl_gt1_break:
       intel_kbl_gt1_device.device_id = device_id;
       intel_kbl_gt1_device.platform = cl_get_platform_default();
       ret = &intel_kbl_gt1_device;
+      cl_intel_platform_get_default_extension(ret);
 #ifdef ENABLE_FP64
       cl_intel_platform_enable_extension(ret, cl_khr_fp64_ext_id);
 #endif
-      cl_intel_platform_get_default_extension(ret);
       cl_intel_platform_enable_extension(ret, cl_khr_fp16_ext_id);
       break;
 
@@ -732,10 +732,10 @@ kbl_gt15_break:
       intel_kbl_gt15_device.device_id = device_id;
       intel_kbl_gt15_device.platform = cl_get_platform_default();
       ret = &intel_kbl_gt15_device;
+      cl_intel_platform_get_default_extension(ret);
 #ifdef ENABLE_FP64
       cl_intel_platform_enable_extension(ret, cl_khr_fp64_ext_id);
 #endif
-      cl_intel_platform_get_default_extension(ret);
       cl_intel_platform_enable_extension(ret, cl_khr_fp16_ext_id);
       break;
 
@@ -756,10 +756,10 @@ kbl_gt2_break:
       intel_kbl_gt2_device.device_id = device_id;
       intel_kbl_gt2_device.platform = cl_get_platform_default();
       ret = &intel_kbl_gt2_device;
+      cl_intel_platform_get_default_extension(ret);
 #ifdef ENABLE_FP64
       cl_intel_platform_enable_extension(ret, cl_khr_fp64_ext_id);
 #endif
-      cl_intel_platform_get_default_extension(ret);
       cl_intel_platform_enable_extension(ret, cl_khr_fp16_ext_id);
       break;
 
@@ -771,10 +771,10 @@ kbl_gt3_break:
       intel_kbl_gt3_device.device_id = device_id;
       intel_kbl_gt3_device.platform = cl_get_platform_default();
       ret = &intel_kbl_gt3_device;
+      cl_intel_platform_get_default_extension(ret);
 #ifdef ENABLE_FP64
       cl_intel_platform_enable_extension(ret, cl_khr_fp64_ext_id);
 #endif
-      cl_intel_platform_get_default_extension(ret);
       cl_intel_platform_enable_extension(ret, cl_khr_fp16_ext_id);
       break;
 
@@ -784,10 +784,10 @@ kbl_gt4_break:
       intel_kbl_gt4_device.device_id = device_id;
       intel_kbl_gt4_device.platform = cl_get_platform_default();
       ret = &intel_kbl_gt4_device;
+      cl_intel_platform_get_default_extension(ret);
 #ifdef ENABLE_FP64
       cl_intel_platform_enable_extension(ret, cl_khr_fp64_ext_id);
 #endif
-      cl_intel_platform_get_default_extension(ret);
       cl_intel_platform_enable_extension(ret, cl_khr_fp16_ext_id);
       break;
 
