@@ -821,6 +821,7 @@ namespace gbe {
                                      size_t stringSize,
                                      char *err,
                                      size_t *errSize,
+                                     uint32_t deviceID,
                                      uint32_t &oclVersion)
   {
     uint32_t maxoclVersion = oclVersion;
@@ -990,6 +991,22 @@ EXTEND_QUOTE:
       free(c_str);
     }
 
+    if(IS_GEN7(deviceID)) {
+      clOpt.push_back("-D__INTEL_GEN__=70");
+    } else if(IS_GEN75(deviceID)) {
+      clOpt.push_back("-D__INTEL_GEN__=75");
+    } else if(IS_GEN8(deviceID)) {
+      clOpt.push_back("-D__INTEL_GEN__=80");
+    } else if(IS_GEN9(deviceID)) {
+      clOpt.push_back("-D__INTEL_GEN__=90");
+    } else {
+      clOpt.push_back("-D__INTEL_GEN__=0");
+    }
+
+#ifdef ENABLE_FP64
+    clOpt.push_back("-D__INTEL_GEN_FP64__=1");
+#endif
+
     if (useDefaultCLCVersion) {
       clOpt.push_back("-D__OPENCL_C_VERSION__=120");
       clOpt.push_back("-cl-std=CL1.2");
@@ -1048,7 +1065,7 @@ EXTEND_QUOTE:
     if (!processSourceAndOption(source, options, NULL, clOpt,
                                 dumpLLVMFileName, dumpASMFileName, dumpSPIRBinaryName,
                                 optLevel,
-                                stringSize, err, errSize, oclVersion))
+                                stringSize, err, errSize, deviceID, oclVersion))
       return NULL;
 
     gbe_program p;
@@ -1151,7 +1168,7 @@ EXTEND_QUOTE:
     uint32_t oclVersion = MAX_OCLVERSION(deviceID);
     if (!processSourceAndOption(source, options, temp_header_path, clOpt,
                                 dumpLLVMFileName, dumpASMFileName, dumpSPIRBinaryName,
-                                optLevel, stringSize, err, errSize, oclVersion))
+                                optLevel, stringSize, err, errSize, deviceID, oclVersion))
       return NULL;
 
     gbe_program p;

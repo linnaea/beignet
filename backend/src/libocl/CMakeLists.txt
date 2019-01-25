@@ -54,7 +54,7 @@ FOREACH(M ${OCL_COPY_HEADERS})
     COPY_THE_HEADER(${M})
 ENDFOREACH(M)
 
-SET (OCL_COPY_MODULES ocl_workitem ocl_async ocl_sync ocl_memcpy
+SET (OCL_COPY_MODULES ocl_workitem ocl_async ocl_sync ocl_memcpy ocl_vload
                       ocl_memset ocl_misc ocl_geometric ocl_image ocl_work_group)
 
 FOREACH(M ${OCL_COPY_MODULES})
@@ -62,13 +62,13 @@ FOREACH(M ${OCL_COPY_MODULES})
     COPY_THE_SOURCE(OCL_SOURCE_FILES ${M})
 ENDFOREACH(M)
 
-SET (OCL_COPY_MODULES_12 ocl_vload ocl_atom)
+SET (OCL_COPY_MODULES_12 ocl_atom)
 FOREACH(M ${OCL_COPY_MODULES_12})
     COPY_THE_HEADER(${M})
     COPY_THE_SOURCE(OCL_SOURCE_FILES_12 ${M})
 ENDFOREACH(M)
 
-SET (OCL_COPY_MODULES_20 ocl_vload_20 ocl_atom_20 ocl_pipe ocl_enqueue)
+SET (OCL_COPY_MODULES_20 ocl_atom_20 ocl_pipe ocl_enqueue)
 FOREACH(M ${OCL_COPY_MODULES_20})
     COPY_THE_HEADER(${M})
     COPY_THE_SOURCE(OCL_SOURCE_FILES_20 ${M})

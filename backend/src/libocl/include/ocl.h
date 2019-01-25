@@ -18,6 +18,10 @@
 #ifndef __OCL_H__
 #define __OCL_H__
 
+#ifndef __INTEL_GEN__
+#define __INTEL_GEN__ 0
+#endif
+
 /* LLVM 3.9 has these pre defined undef them first */
 #ifdef cl_khr_3d_image_writes
 #undef cl_khr_3d_image_writes
@@ -79,6 +83,13 @@
 #undef cl_khr_spir
 #endif
 
+#ifdef cl_intel_subgroups
+#undef cl_intel_subgroups
+#endif
+#ifdef cl_intel_subgroups_short
+#undef cl_intel_subgroups_short
+#endif
+
 #include "ocl_defines.h"
 #include "ocl_types.h"
 #include "ocl_as.h"
@@ -95,14 +106,13 @@
 #include "ocl_printf.h"
 #include "ocl_relational.h"
 #include "ocl_sync.h"
+#include "ocl_vload.h"
 #if (__OPENCL_C_VERSION__ >= 200)
-#include "ocl_vload_20.h"
 #include "ocl_atom_20.h"
 #include "ocl_pipe.h"
 #include "ocl_math_20.h"
 #include "ocl_enqueue.h"
 #else
-#include "ocl_vload.h"
 #include "ocl_atom.h"
 #include "ocl_math.h"
 #endif
@@ -119,7 +129,6 @@
 #define cl_khr_icd
 #define cl_khr_gl_sharing
 #define cl_khr_spir
-#define cl_khr_fp16
 #define cl_khr_3d_image_writes
 #define cl_intel_subgroups
 #define cl_intel_subgroups_short
@@ -130,4 +139,16 @@
 
 #pragma OPENCL EXTENSION cl_khr_fp64 : disable
 #pragma OPENCL EXTENSION cl_khr_fp16 : disable
+#if __INTEL_GEN__ >= 80
+#  define cl_khr_fp64
+#  define cl_khr_fp16
+#  pragma OPENCL EXTENSION cl_khr_fp64 : enable
+#  pragma OPENCL EXTENSION cl_khr_fp16 : enable
+#endif
+
+#ifndef __INTEL_GEN_FP64__
+#  pragma OPENCL EXTENSION cl_khr_fp64 : disable
+#  undef cl_khr_fp64
+#endif
+
 #endif

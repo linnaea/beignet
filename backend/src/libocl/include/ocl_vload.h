@@ -20,6 +20,14 @@
 
 #include "ocl_types.h"
 
+#if __OPENCL_C_VERSION__ >= 200
+#define __OCL_VLOAD_SPACE0(m)    m(__generic)
+#define __OCL_VLOAD_SPACE1(m, a) m(a, __generic)
+#else
+#define __OCL_VLOAD_SPACE0(m)    m(__global)    m(__local)    m(__private)
+#define __OCL_VLOAD_SPACE1(m, a) m(a, __global) m(a, __local) m(a, __private)
+#endif
+
 /////////////////////////////////////////////////////////////////////////////
 // Vector loads and stores
 /////////////////////////////////////////////////////////////////////////////
@@ -56,10 +64,8 @@ OVERLOADABLE TYPE##3 vload3(size_t offset, const SPACE TYPE *p);
   DECL_UNTYPED_RD_SPACE_N(TYPE, 16, SPACE)
 
 #define DECL_UNTYPED_RW_ALL(TYPE) \
-  DECL_UNTYPED_RW_ALL_SPACE(TYPE, __global) \
-  DECL_UNTYPED_RW_ALL_SPACE(TYPE, __local) \
-  DECL_UNTYPED_RD_ALL_SPACE(TYPE, __constant) \
-  DECL_UNTYPED_RW_ALL_SPACE(TYPE, __private)
+  __OCL_VLOAD_SPACE1(DECL_UNTYPED_RW_ALL_SPACE, TYPE) \
+  DECL_UNTYPED_RD_ALL_SPACE(TYPE, __constant)
 
 #define DECL_BYTE_RD_SPACE(TYPE, SPACE) \
 OVERLOADABLE TYPE##2 vload2(size_t offset, const SPACE TYPE *p);  \
@@ -76,13 +82,9 @@ OVERLOADABLE void vstore8(TYPE##8 v, size_t offset, SPACE TYPE *p); \
 OVERLOADABLE void vstore16(TYPE##16 v, size_t offset, SPACE TYPE *p);
 
 #define DECL_BYTE_RW_ALL(TYPE) \
-  DECL_BYTE_RD_SPACE(TYPE, __global) \
-  DECL_BYTE_RD_SPACE(TYPE, __local) \
-  DECL_BYTE_RD_SPACE(TYPE, __private) \
-  DECL_BYTE_RD_SPACE(TYPE, __constant) \
-  DECL_BYTE_WR_SPACE(TYPE, __global) \
-  DECL_BYTE_WR_SPACE(TYPE, __local) \
-  DECL_BYTE_WR_SPACE(TYPE, __private)
+  __OCL_VLOAD_SPACE1(DECL_BYTE_RD_SPACE, TYPE) \
+  __OCL_VLOAD_SPACE1(DECL_BYTE_WR_SPACE, TYPE) \
+  DECL_BYTE_RD_SPACE(TYPE, __constant)
 
 DECL_BYTE_RW_ALL(char)
 DECL_BYTE_RW_ALL(uchar)
@@ -122,19 +124,23 @@ OVERLOADABLE float8 vloada_half8(size_t offset, const SPACE half *p);  \
 OVERLOADABLE float16 vload_half16(size_t offset, const SPACE half *p); \
 OVERLOADABLE float16 vloada_half16(size_t offset, const SPACE half *p); \
 
+#define DECL_HALF_ST_SPACE_ROUND_TYPE(SPACE, ROUND, FUNC, TYPE) \
+OVERLOADABLE void vstore_half##ROUND(TYPE data, size_t offset, SPACE half *p);  \
+OVERLOADABLE void vstorea_half##ROUND(TYPE data, size_t offset, SPACE half *p); \
+OVERLOADABLE void vstore_half2##ROUND(TYPE##2 data, size_t offset, SPACE half *p); \
+OVERLOADABLE void vstorea_half2##ROUND(TYPE##2 data, size_t offset, SPACE half *p); \
+OVERLOADABLE void vstore_half3##ROUND(TYPE##3 data, size_t offset, SPACE half *p);  \
+OVERLOADABLE void vstorea_half3##ROUND(TYPE##3 data, size_t offset, SPACE half *p); \
+OVERLOADABLE void vstore_half4##ROUND(TYPE##4 data, size_t offset, SPACE half *p); \
+OVERLOADABLE void vstorea_half4##ROUND(TYPE##4 data, size_t offset, SPACE half *p); \
+OVERLOADABLE void vstore_half8##ROUND(TYPE##8 data, size_t offset, SPACE half *p); \
+OVERLOADABLE void vstorea_half8##ROUND(TYPE##8 data, size_t offset, SPACE half *p); \
+OVERLOADABLE void vstore_half16##ROUND(TYPE##16 data, size_t offset, SPACE half *p); \
+OVERLOADABLE void vstorea_half16##ROUND(TYPE##16 data, size_t offset, SPACE half *p);
+
 #define DECL_HALF_ST_SPACE_ROUND(SPACE, ROUND, FUNC) \
-OVERLOADABLE void vstore_half##ROUND(float data, size_t offset, SPACE half *p);  \
-OVERLOADABLE void vstorea_half##ROUND(float data, size_t offset, SPACE half *p); \
-OVERLOADABLE void vstore_half2##ROUND(float2 data, size_t offset, SPACE half *p); \
-OVERLOADABLE void vstorea_half2##ROUND(float2 data, size_t offset, SPACE half *p); \
-OVERLOADABLE void vstore_half3##ROUND(float3 data, size_t offset, SPACE half *p);  \
-OVERLOADABLE void vstorea_half3##ROUND(float3 data, size_t offset, SPACE half *p); \
-OVERLOADABLE void vstore_half4##ROUND(float4 data, size_t offset, SPACE half *p); \
-OVERLOADABLE void vstorea_half4##ROUND(float4 data, size_t offset, SPACE half *p); \
-OVERLOADABLE void vstore_half8##ROUND(float8 data, size_t offset, SPACE half *p); \
-OVERLOADABLE void vstorea_half8##ROUND(float8 data, size_t offset, SPACE half *p); \
-OVERLOADABLE void vstore_half16##ROUND(float16 data, size_t offset, SPACE half *p); \
-OVERLOADABLE void vstorea_half16##ROUND(float16 data, size_t offset, SPACE half *p);
+  DECL_HALF_ST_SPACE_ROUND_TYPE(SPACE, ROUND, FUNC, float) \
+  DECL_HALF_ST_SPACE_ROUND_TYPE(SPACE, ROUND, FUNC, double)
 
 #define DECL_HALF_ST_SPACE(SPACE) \
   DECL_HALF_ST_SPACE_ROUND(SPACE,  , dummy) \
@@ -143,18 +149,14 @@ OVERLOADABLE void vstorea_half16##ROUND(float16 data, size_t offset, SPACE half 
   DECL_HALF_ST_SPACE_ROUND(SPACE, _rtp, dummy) \
   DECL_HALF_ST_SPACE_ROUND(SPACE, _rtn, dummy) \
 
-DECL_HALF_LD_SPACE(__global)
-DECL_HALF_LD_SPACE(__local)
+__OCL_VLOAD_SPACE0(DECL_HALF_LD_SPACE)
+__OCL_VLOAD_SPACE0(DECL_HALF_ST_SPACE)
 DECL_HALF_LD_SPACE(__constant)
-DECL_HALF_LD_SPACE(__private)
-
-DECL_HALF_ST_SPACE(__global)
-DECL_HALF_ST_SPACE(__local)
-DECL_HALF_ST_SPACE(__private)
 
 //#undef DECL_UNTYPED_RW_ALL_SPACE
 #undef DECL_HALF_LD_SPACE
 #undef DECL_HALF_ST_SPACE
 #undef DECL_HALF_ST_SPACE_ROUND
+#undef DECL_HALF_ST_SPACE_ROUND_TYPE
 
 #endif  /* __OCL_VLOAD_H__ */
