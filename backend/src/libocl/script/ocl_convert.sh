@@ -796,6 +796,144 @@ OVERLOADABLE float  convert_float_rte(double x)
 	return ftemp;
 }
 
+OVERLOADABLE half convert_half_rtn(double x)
+{
+	short ret, tmp, sign, exp;
+	long ma, shift, lval;
+
+	lval = as_long(x);
+	exp = ((lval & DF_EXP_MASK) >> DF_EXP_OFFSET) - DF_EXP_BIAS;
+	sign = (lval & DF_SIGN_MASK) ? 1 : 0;
+	ma = (lval & DF_MAN_MASK);
+	ret = ((exp + 15) << 10) | (ma >> (52-10));
+
+	if((ma & ((1uL << (52-10)) - 1)) && sign) ret += 1;
+
+	ma |= DF_IMPLICITE_ONE;
+	tmp = ma >> (-exp + 52 - 10 - 14);
+	shift = (1uL << (-exp + 52 - 10 - 14)) - 1uL;
+	if((ma & shift) && sign) tmp += 1;
+	ret = (exp < -14) ? tmp : ret;
+
+	tmp = sign;
+	ret = (exp < -(14 + 10)) ? tmp : ret;
+
+	tmp = 0x7C00 - (sign ? 0 : 1);
+	ret = (exp > 15) ? tmp : ret;
+	ret = ((exp == 1023) && (ma == DF_MAN_MASK)) ? tmp : ret;
+
+	tmp = (lval & DF_MAN_MASK) ? 0x7FFF : 0x7C00;
+	ret = (exp == 1024) ? tmp : ret;
+
+	ret = ((lval & DF_ABS_MASK) == 0) ? 0 : ret;
+
+	ret |= (sign << 15);
+	return as_half(ret);
+}
+
+OVERLOADABLE half convert_half_rte(double x)
+{
+	short ret, tmp, sign, exp, rshift;
+	long ma, shift, roundBits, lastBit, lval;
+
+	lval = as_long(x);
+	exp = ((lval & DF_EXP_MASK) >> DF_EXP_OFFSET) - DF_EXP_BIAS;
+	sign = (lval & DF_SIGN_MASK) ? 1 : 0;
+	ma = (lval & DF_MAN_MASK);
+	ret = ((exp + 15) << 10) | (ma >> (52-10));
+
+	lastBit = ma & (1uL << (52-10));
+	roundBits = ma & ((1uL << (52-10)) - 1);
+	if(roundBits > (1uL << (52-10-1))) ret += 1;
+	else if((roundBits == (1uL << (52-10-1))) && lastBit) ret += 1;
+
+	ma |= DF_IMPLICITE_ONE;
+	rshift = -exp + 52 - 10 - 14;
+	tmp = ma >> rshift;
+	shift = (1uL << rshift) -1uL;
+	roundBits = ma & shift;
+	lastBit = tmp & 0x1;
+	if(roundBits > (1uL << (rshift - 1))) tmp += 1;
+	if(roundBits == (1uL << (rshift - 1)) && lastBit) tmp += 1;
+	ret = (exp < -14) ? tmp:ret;
+	ret = (exp < -(14 + 10 + 1)) ? 0:ret;
+	ret = (exp > 15) ? 0x7C00:ret;
+
+	tmp = (lval & DF_MAN_MASK) ? 0x7FFF:0x7C00;
+	ret = (exp == 1024) ? tmp:ret;
+
+	ret = ((exp == 1023) && (ma == DF_MAN_MASK)) ? 0x7C00:ret;
+
+	ret = ((lval & DF_ABS_MASK) == 0) ? 0:ret;
+
+	ret |= (sign << 15);
+	return as_half(ret);
+}
+
+OVERLOADABLE half  convert_half_rtz(double x)
+{
+	short ret, tmp, sign, exp;
+	long ma, lval;
+
+	lval = as_long(x);
+	exp = ((lval & DF_EXP_MASK) >> DF_EXP_OFFSET) - DF_EXP_BIAS;
+	sign = (lval & DF_SIGN_MASK) ? 1 : 0;
+	ma = (lval & DF_MAN_MASK);
+	ret = ((exp + 15) << 10) | (ma >> (52-10));
+
+	ma |= DF_IMPLICITE_ONE;
+	tmp = ma >> (-exp + 52 - 10 - 14);
+	ret = (exp < -14) ? tmp:ret;
+	ret = (exp < -(14 + 10)) ? 0:ret;
+
+	tmp = 0x7BFF;
+	ret = (exp > 15) ? tmp:ret;
+
+	tmp = (lval &DF_MAN_MASK) ? 0x7FFF:0x7C00;
+	ret = (exp == 1024) ? tmp:ret;
+
+	ret = ((lval & DF_ABS_MASK) == 0) ? 0:ret;
+
+	ret |= (sign << 15);
+	return as_half(ret);
+}
+
+OVERLOADABLE half  convert_half_rtp(double x)
+{
+	short ret, tmp, sign, exp;
+	ulong ma, shift, lval;
+
+	lval = as_long(x);
+	exp = ((lval & DF_EXP_MASK) >> DF_EXP_OFFSET) - DF_EXP_BIAS;
+	sign = (lval & DF_SIGN_MASK) ? 1 : 0;
+	ma = (lval & DF_MAN_MASK);
+	ret = ((exp + 15) << 10) | (ma >> (52-10));
+
+	if((ma & ((1uL << (52-10)) - 1)) && !sign) ret += 1;
+
+	ma |= DF_IMPLICITE_ONE;
+	tmp = ma >> (-exp + 52 - 10 - 14);
+	shift = (1uL << (-exp + 52 - 10 - 14)) -1uL;
+	if((ma & shift) && !sign) tmp += 1;
+	ret = (exp < -14) ? tmp:ret;
+
+	tmp = 0 ;
+	if(!sign) tmp |= 1;
+	ret = (exp < -(14 + 10)) ? tmp:ret;
+
+	tmp = 0x7BFF;
+	if(!sign) tmp = 0x7C00;
+	ret = (exp > 15) ? tmp:ret;
+
+	tmp = (lval & DF_MAN_MASK) ? 0x7FFF:0x7C00;
+	ret = (exp == 1024) ? tmp:ret;
+
+	ret = ((lval & DF_ABS_MASK) == 0) ? 0:ret;
+
+	ret |= (sign << 15);
+	return as_half(ret);
+}
+
 OVERLOADABLE long convert_long_rte(double x)
 {
 	long lval = as_long(x);

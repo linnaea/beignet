@@ -108,6 +108,7 @@ set (GBE_SRC
     llvm/llvm_gen_backend.hpp
     llvm/llvm_gen_ocl_function.hxx
     llvm/llvm_unroll.cpp
+    llvm/F64I64BitcastEmulation.cpp
     llvm/llvm_to_gen.hpp
     backend/gen/gen_mesa_disasm.c
     backend/gen_insn_selection.cpp

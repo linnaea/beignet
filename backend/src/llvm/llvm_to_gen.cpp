@@ -382,6 +382,7 @@ namespace gbe
       passes.add(createProfilingInserterPass(profiling, unit));     // insert the time stamp for profiling.
     }
     passes.add(createScalarizePass());             // Expand all vector ops
+    passes.add(createF64I64BitcastEmulationPass());
 
     if(OCL_OUTPUT_CFG)
 #if LLVM_VERSION_MAJOR * 10 + LLVM_VERSION_MINOR >= 40

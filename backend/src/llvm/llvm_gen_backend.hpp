@@ -126,6 +126,9 @@ namespace gbe
   /*! whether this is a kernel function */
   bool isKernelFunction(const llvm::Function &f);
 
+  /*! Emulate F64 <-> I64 bitcast */
+  llvm::FunctionPass *createF64I64BitcastEmulationPass();
+
   /*! Create a Gen-IR unit */
   llvm::FunctionPass *createGenPass(ir::Unit &unit);
 
