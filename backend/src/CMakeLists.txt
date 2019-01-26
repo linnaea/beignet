@@ -201,6 +201,7 @@ ADD_CUSTOM_TARGET(gbecompiler.tgz ALL
 
 else ()
 ADD_EXECUTABLE(gbe_bin_generater gbe_bin_generater.cpp)
+set_target_properties(gbe_bin_generater PROPERTIES LINK_FLAGS "-Wl,-rpath,$ORIGIN")
 TARGET_LINK_LIBRARIES(gbe_bin_generater gbe)
 endif ()
 
