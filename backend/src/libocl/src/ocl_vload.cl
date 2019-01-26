@@ -139,6 +139,10 @@ DECL_UNTYPED_RW_ALL(double)
 
 PURE CONST float __gen_ocl_f16to32(short h);
 PURE CONST short __gen_ocl_f32to16(float f);
+PURE CONST static short f64to16_i16_rte(double d) { return as_short(convert_half_rte(d)); }
+PURE CONST static short f64to16_i16_rtp(double d) { return as_short(convert_half_rtp(d)); }
+PURE CONST static short f64to16_i16_rtn(double d) { return as_short(convert_half_rtn(d)); }
+PURE CONST static short f64to16_i16_rtz(double d) { return as_short(convert_half_rtz(d)); }
 
 OVERLOADABLE short f32to16_rtp(float f) {
   short s = __gen_ocl_f32to16(f);
@@ -272,11 +276,11 @@ OVERLOADABLE void vstorea_half16##ROUND(TYPE##16 data, size_t offset, SPACE half
   DECL_HALF_ST_SPACE_ROUND_TYPE(SPACE, ROUND, FUNC_D, double)
 
 #define DECL_HALF_ST_SPACE(SPACE) \
-  DECL_HALF_ST_SPACE_ROUND(SPACE,  , __gen_ocl_f32to16, convert_half_rte) \
-  DECL_HALF_ST_SPACE_ROUND(SPACE, _rte, __gen_ocl_f32to16, convert_half_rte) \
-  DECL_HALF_ST_SPACE_ROUND(SPACE, _rtz, f32to16_rtz, convert_half_rtz) \
-  DECL_HALF_ST_SPACE_ROUND(SPACE, _rtp, f32to16_rtp, convert_half_rtp) \
-  DECL_HALF_ST_SPACE_ROUND(SPACE, _rtn, f32to16_rtn, convert_half_rtn)
+  DECL_HALF_ST_SPACE_ROUND(SPACE,  , __gen_ocl_f32to16, f64to16_i16_rte) \
+  DECL_HALF_ST_SPACE_ROUND(SPACE, _rte, __gen_ocl_f32to16, f64to16_i16_rte) \
+  DECL_HALF_ST_SPACE_ROUND(SPACE, _rtz, f32to16_rtz, f64to16_i16_rtz) \
+  DECL_HALF_ST_SPACE_ROUND(SPACE, _rtp, f32to16_rtp, f64to16_i16_rtp) \
+  DECL_HALF_ST_SPACE_ROUND(SPACE, _rtn, f32to16_rtn, f64to16_i16_rtn)
 
 __OCL_VLOAD_SPACE0(DECL_HALF_LD_SPACE)
 __OCL_VLOAD_SPACE0(DECL_HALF_ST_SPACE)
