@@ -163,7 +163,11 @@ namespace gbe
       // __gen_ocl_store_timestamp(int nth, int type);
       Value *Args[2] = {ConstantInt::get(intTy, pointNum++), ConstantInt::get(intTy, profilingType)};
 #if LLVM_VERSION_MAJOR * 10 + LLVM_VERSION_MINOR >= 50
+#  if LLVM_VERSION_MAJOR >= 9
+      builder->CreateCall((module->getOrInsertFunction(
+#  else
       builder->CreateCall(cast<llvm::Function>(module->getOrInsertFunction(
+#  endif
               "__gen_ocl_calc_timestamp", Type::getVoidTy(module->getContext()),
               IntegerType::getInt32Ty(module->getContext()),
               IntegerType::getInt32Ty(module->getContext()))),
@@ -185,7 +189,11 @@ namespace gbe
     Value *Args2[2] = {profilingBuf, ConstantInt::get(intTy, profilingType)};
 
 #if LLVM_VERSION_MAJOR * 10 + LLVM_VERSION_MINOR >= 50
+#  if LLVM_VERSION_MAJOR >= 9
+    builder->CreateCall((module->getOrInsertFunction(
+#  else
     builder->CreateCall(cast<llvm::Function>(module->getOrInsertFunction(
+#  endif
             "__gen_ocl_store_profiling", Type::getVoidTy(module->getContext()),
             ptrTy,
             IntegerType::getInt32Ty(module->getContext()))),

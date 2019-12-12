@@ -81,11 +81,13 @@ namespace gbe {
 
 #if LLVM_VERSION_MAJOR * 10 + LLVM_VERSION_MINOR >= 40
           Module *M = I->getParent()->getParent()->getParent();
-#if LLVM_VERSION_MAJOR * 10 + LLVM_VERSION_MINOR >= 50
+#  if LLVM_VERSION_MAJOR >= 9
+          FunctionCallee samplerCvt = M->getOrInsertFunction("__gen_ocl_sampler_to_int", i32Ty, I->getOperand(0)->getType());
+#  elif LLVM_VERSION_MAJOR * 10 + LLVM_VERSION_MINOR >= 50
           Value* samplerCvt = M->getOrInsertFunction("__gen_ocl_sampler_to_int", i32Ty, I->getOperand(0)->getType());
-#else
+#  else
           Value* samplerCvt = M->getOrInsertFunction("__gen_ocl_sampler_to_int", i32Ty, I->getOperand(0)->getType(), nullptr);
-#endif
+#  endif
           Value *samplerVal = Builder.CreateCall(samplerCvt, {I->getOperand(0)});
 #else
           Value *samplerVal = I->getOperand(0);
@@ -105,7 +107,7 @@ namespace gbe {
         //  return ((sampler & CLK_NORMALIZED_COORDS_TRUE) == 0);
         bool needFix = true;
         Value *needFixVal;
- #if LLVM_VERSION_MAJOR * 10 + LLVM_VERSION_MINOR >= 40
+#if LLVM_VERSION_MAJOR * 10 + LLVM_VERSION_MINOR >= 40
         CallInst *init = dyn_cast<CallInst>(I->getOperand(0));
         if (init && init->getCalledValue()->getName().compare("__translate_sampler_initializer"))
         {
@@ -123,11 +125,13 @@ namespace gbe {
           Builder.SetInsertPoint(I);
 #if LLVM_VERSION_MAJOR * 10 + LLVM_VERSION_MINOR >= 40
           Module *M = I->getParent()->getParent()->getParent();
-#if LLVM_VERSION_MAJOR * 10 + LLVM_VERSION_MINOR >= 50
+#  if LLVM_VERSION_MAJOR >= 9
+          FunctionCallee samplerCvt = M->getOrInsertFunction("__gen_ocl_sampler_to_int", i32Ty, I->getOperand(0)->getType());
+#  elif LLVM_VERSION_MAJOR * 10 + LLVM_VERSION_MINOR >= 50
           Value* samplerCvt = M->getOrInsertFunction("__gen_ocl_sampler_to_int", i32Ty, I->getOperand(0)->getType());
-#else
+#  else
           Value* samplerCvt = M->getOrInsertFunction("__gen_ocl_sampler_to_int", i32Ty, I->getOperand(0)->getType(), nullptr);
-#endif
+#  endif
           Value *samplerVal = Builder.CreateCall(samplerCvt, {I->getOperand(0)});
 #else
           Value *samplerVal = I->getOperand(0);

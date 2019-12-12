@@ -398,7 +398,11 @@ namespace gbe {
               std::vector<Type *> ParamTys;
               for (Value** iter = args.begin(); iter != args.end(); ++iter)
                 ParamTys.push_back((*iter)->getType());
+#if LLVM_VERSION_MAJOR >= 9
+              CallInst* newCI = builder.CreateCall((mod->getOrInsertFunction(
+#else
               CallInst* newCI = builder.CreateCall(cast<llvm::Function>(mod->getOrInsertFunction(
+#endif
                               "__gen_enqueue_kernel_slm", FunctionType::get(intTy, ParamTys, false))), args);
               CI->replaceAllUsesWith(newCI);
               deadInsnSet.insert(CI);

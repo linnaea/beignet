@@ -77,7 +77,11 @@ namespace gbe {
         std::vector<Type *> ParamTys;
         for (Value** I = ArgBegin; I != ArgEnd; ++I)
           ParamTys.push_back((*I)->getType());
+#if LLVM_VERSION_MAJOR >= 9
+        FunctionCallee FCache = M->getOrInsertFunction(NewFn,
+#else
         Constant* FCache = M->getOrInsertFunction(NewFn,
+#endif
                                         FunctionType::get(RetTy, ParamTys, false));
 
         IRBuilder<> Builder(CI->getParent(), BasicBlock::iterator(CI));
