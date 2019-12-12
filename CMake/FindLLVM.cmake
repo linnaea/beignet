@@ -113,6 +113,15 @@ macro(add_one_lib name)
 endmacro()
 
 #Assume clang lib path same as llvm lib path
+if (LLVM_VERSION_NODOT VERSION_GREATER 80)
+  add_one_lib("clang-cpp")
+endif()
+
+FIND_LIBRARY(CLANGBASIC_LIB NAMES "clangBasic" PATHS ${LLVM_LIBRARY_DIR} NO_DEFAULT_PATH)
+if (NOT CLANGBASIC_LIB)
+  add_one_lib("clang")
+else()
+
 add_one_lib("clangCodeGen")
 add_one_lib("clangFrontend")
 add_one_lib("clangSerialization")
@@ -128,3 +137,5 @@ add_one_lib("clangParse")
 add_one_lib("clangSema")
 add_one_lib("clangLex")
 add_one_lib("clangBasic")
+
+endif()
