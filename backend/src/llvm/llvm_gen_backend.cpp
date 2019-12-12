@@ -1091,6 +1091,7 @@ namespace gbe
           Builder.SetInsertPoint(phi);
 
           PHINode *basePhi = Builder.CreatePHI(ptr->getType(), phi->getNumIncomingValues());
+          pointerBaseMap.insert(std::make_pair(ptr, basePhi));
           unsigned srcNum = pointers.size();
           for (unsigned x = 0; x < srcNum; x++) {
             Value *base = NULL;
@@ -1119,7 +1120,6 @@ namespace gbe
 #endif
             basePhi->addIncoming(base, phi->getIncomingBlock(x));
           }
-          pointerBaseMap.insert(std::make_pair(ptr, basePhi));
           return basePhi;
       } else {
         //ptr->dump();
@@ -1189,6 +1189,8 @@ namespace gbe
           PHINode *btiPhi = Builder.CreatePHI(
                                     IntegerType::get(Val->getContext(), 32),
                                     phi->getNumIncomingValues());
+          BtiValueMap.insert(std::make_pair(Val, btiPhi));
+
           SmallVector<Value *, 4> &pointers = (*iter).second;
           unsigned srcNum = pointers.size();
           for (unsigned x = 0; x < srcNum; x++) {
@@ -1200,7 +1202,6 @@ namespace gbe
             }
             btiPhi->addIncoming(bti, phi->getIncomingBlock(x));
           }
-          BtiValueMap.insert(std::make_pair(Val, btiPhi));
           return btiPhi;
         } else {
           //Val->dump();
