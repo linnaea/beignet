@@ -301,6 +301,7 @@ namespace gbe {
           unsigned vecSize = (size >= 16) ? 16 :
                              (size >= 8 ? 8 :
                              (size >= 4 ? 4 : size));
+          if(vecSize == 3) vecSize = 2;
           SmallVector<Instruction*, 16> mergedVec(merged.begin() + pos, merged.begin() + pos + vecSize);
           if(isLoad)
             mergeLoad(BB, mergedVec);
