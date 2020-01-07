@@ -130,7 +130,7 @@ namespace gbe
 #endif
     MPM.add(createIntrinsicLoweringPass());
     MPM.add(createBarrierNodupPass(false));   // remove noduplicate fnAttr before inlining.
-    MPM.add(createFunctionInliningPass(20000));
+    MPM.add(createFunctionInliningPass(512));
     MPM.add(createBarrierNodupPass(true));    // restore noduplicate fnAttr after inlining.
     MPM.add(createStripAttributesPass(false));     // Strip unsupported attributes and calling conventions.
     MPM.add(createSamplerFixPass());
@@ -173,7 +173,7 @@ namespace gbe
     MPM.add(createIndVarSimplifyPass());        // Canonicalize indvars
     MPM.add(createLoopIdiomPass());             // Recognize idioms like memset.
     MPM.add(createLoopDeletionPass());          // Delete dead loops
-    MPM.add(createLoopUnrollPass(640)); //1024, 32, 1024, 512)); //Unroll loops
+    MPM.add(createLoopUnrollPass());            //Unroll loops
     if(optLevel > 0) {
 #if LLVM_VERSION_MAJOR * 10 + LLVM_VERSION_MINOR >= 38
       MPM.add(createSROAPass());
@@ -188,9 +188,9 @@ namespace gbe
     // As we observe this under strict math. So we disable CustomLoopUnroll if strict math is enabled.
     if (!strictMath) {
 #if !defined(__ANDROID__)
-      MPM.add(createCustomLoopUnrollPass()); //1024, 32, 1024, 512)); //Unroll loops
+      MPM.add(createCustomLoopUnrollPass());      //Unroll loops
 #endif
-      MPM.add(createLoopUnrollPass()); //1024, 32, 1024, 512)); //Unroll loops
+      MPM.add(createLoopUnrollPass());            //Unroll loops
       if(optLevel > 0) {
 #if LLVM_VERSION_MAJOR * 10 + LLVM_VERSION_MINOR >= 38
         MPM.add(createSROAPass());
@@ -355,7 +355,7 @@ namespace gbe
     // Print the code before further optimizations
     passes.add(createIntrinsicLoweringPass());
     passes.add(createStripAttributesPass(true));     // Strip unsupported attributes and calling conventions.
-    passes.add(createFunctionInliningPass(20000));
+    passes.add(createFunctionInliningPass(512));
 #if LLVM_VERSION_MAJOR * 10 + LLVM_VERSION_MINOR >= 37
     passes.add(createSROAPass());
 #else
