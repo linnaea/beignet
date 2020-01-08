@@ -23,8 +23,7 @@
  *******************************************************************************/
 #include <fcntl.h>
 #include <sys/mman.h>
-#include <string.h>
-#include <assert.h>
+#include <cassert>
 #include <unistd.h>
 #include <iostream>
 #include <sstream>
@@ -33,8 +32,8 @@
 #include <deque>
 #include <vector>
 #include <algorithm>
-#include <stdlib.h>
-#include <stdio.h>
+#include <cstdlib>
+#include <cstdio>
 
 #include "backend/program.h"
 #include "backend/program.hpp"
@@ -63,15 +62,15 @@ protected:
     gbe::Program* gbe_prog;
 
 public:
-    program_build_instance (void) : fd(-1), file_len(0), code(NULL), gbe_prog(NULL) { }
-    explicit program_build_instance (const char* file_path, const char* option = NULL)
+    program_build_instance () : fd(-1), file_len(0), code(nullptr), gbe_prog(nullptr) { }
+    explicit program_build_instance (const char* file_path, const char* option = nullptr)
         : prog_path(file_path), build_opt(option), fd(-1), file_len(0),
-          code(NULL), gbe_prog(NULL) { }
+          code(nullptr), gbe_prog(nullptr) { }
 
     ~program_build_instance () {
         if (code) {
             munmap((void *)(code), file_len);
-            code = NULL;
+            code = nullptr;
         }
 
         if (fd >= 0)
@@ -108,25 +107,25 @@ public:
         return *this;
     }
 
-    const char* file_map_open (void) throw (int);
+    const char* file_map_open ();
 
-    const char* get_code (void) {
+    const char* get_code () {
         return code;
     }
 
-    const string& get_program_path (void) {
+    const string& get_program_path () {
         return prog_path;
     }
 
-    int get_size (void) {
+    int get_size () {
         return file_len;
     }
 
-    void print_file (void) {
+    void print_file () {
         cout << code << endl;
     }
 
-    void dump (void) {
+    void dump () {
         cout << "program path: " << prog_path << endl;
         cout << "Build option: " << build_opt << endl;
         print_file();
@@ -137,15 +136,15 @@ public:
     }
 
     static int set_bin_path (const char* path) {
-        if (bin_path.size())
+        if (!bin_path.empty())
             return 0;
 
         bin_path = path;
         return 1;
     }
 
-    void build_program(void) throw(int);
-    void serialize_program(void) throw(int);
+    void build_program();
+    void serialize_program();
 };
 
 string program_build_instance::bin_path;
@@ -153,7 +152,7 @@ bool program_build_instance::str_fmt_out = false;
 #define OUTS_UPDATE_SZ(elt) SERIALIZE_OUT(elt, oss, header_sz)
 #define OUTF_UPDATE_SZ(elt) SERIALIZE_OUT(elt, ofs, header_sz)
 
-void program_build_instance::serialize_program(void) throw(int)
+void program_build_instance::serialize_program()
 {
     ofstream ofs;
     ostringstream oss;
@@ -209,8 +208,8 @@ void program_build_instance::serialize_program(void) throw(int)
       }
 
       string array_name = "Unknown_name_array";
-      unsigned long last_slash = bin_path.rfind("/");
-      unsigned long last_dot = bin_path.rfind(".");
+      unsigned long last_slash = bin_path.rfind('/');
+      unsigned long last_dot = bin_path.rfind('.');
 
       if (last_slash != string::npos &&  last_dot != string::npos)
         array_name = bin_path.substr(last_slash + 1, last_dot - 1 - last_slash);
@@ -271,13 +270,13 @@ void program_build_instance::serialize_program(void) throw(int)
 }
 
 
-void program_build_instance::build_program(void) throw(int)
+void program_build_instance::build_program()
 {
-    gbe_program  opaque = NULL;
+    gbe_program  opaque = nullptr;
     if(gen_pci_id){
-      opaque = gbe_program_new_from_source(gen_pci_id, code, 0, build_opt.c_str(), NULL, NULL);
+      opaque = gbe_program_new_from_source(gen_pci_id, code, 0, build_opt.c_str(), nullptr, nullptr);
     }else{
-      opaque = gbe_program_compile_from_source(0, code, NULL, 0, build_opt.c_str(), NULL, NULL);
+      opaque = gbe_program_compile_from_source(0, code, nullptr, 0, build_opt.c_str(), nullptr, nullptr);
     }
     if (!opaque)
         throw FILE_BUILD_FAILED;
@@ -289,7 +288,7 @@ void program_build_instance::build_program(void) throw(int)
     }
 }
 
-const char* program_build_instance::file_map_open(void) throw(int)
+const char* program_build_instance::file_map_open()
 {
     void * address;
 
@@ -302,8 +301,8 @@ const char* program_build_instance::file_map_open(void) throw(int)
     /* Map it */
     file_len = lseek(fd, 0, SEEK_END);
     lseek(fd, 0, SEEK_SET);
-    address = mmap(0, file_len, PROT_READ, MAP_SHARED, fd, 0);
-    if (address == NULL) {
+    address = mmap(nullptr, file_len, PROT_READ, MAP_SHARED, fd, 0);
+    if (address == nullptr) {
         throw FILE_MAP_ERR;
     }
 
@@ -332,7 +331,7 @@ int main (int argc, const char **argv)
 
     /* because getopt will re-sort the argv, so we save here. */
     for (i=0; i< argc; i++) {
-        argv_saved.push_back(string(argv[i]));
+        argv_saved.emplace_back(argv[i]);
     }
 
     while ( (oc = getopt(argc, (char * const *)argv, "t:o:p:s")) != -1 ) {
@@ -373,7 +372,7 @@ int main (int argc, const char **argv)
         {
             char *s = optarg;
             if (optarg[0] == '0' && (optarg[1] == 'x' || optarg[1] == 'X'))
-            s += 2;
+                s += 2;
 
             if (s[0] < '0' || s[0] > '9') {
                 cout << "Invalid target option argument" << endl;
@@ -403,12 +402,12 @@ int main (int argc, const char **argv)
 
     for (i=1; i < argc; i++) {
         //cout << argv_saved[i] << endl;
-        if (argv_saved[i].size() && argv_saved[i][0] != '-') {
+        if (!argv_saved[i].empty() && argv_saved[i][0] != '-') {
             if (used_index[i])
                 continue;
 
             string file_name = argv_saved[i];
-            prog_vector::iterator result = find_if(prog_insts.begin(), prog_insts.end(),
+            auto result = find_if(prog_insts.begin(), prog_insts.end(),
             [&](program_build_instance & prog_inst)-> bool {
                 bool result = false;
                 if (prog_inst.get_program_path() == file_name)

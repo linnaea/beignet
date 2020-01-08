@@ -261,21 +261,21 @@ namespace gbe
       uint64_t u64;
     } value;
 
-    uint32_t nr:8;         //!< Just for some physical registers (acc, null)
-    uint32_t subnr:8;      //!< Idem
-    uint32_t physical:1;   //!< 1 if physical, 0 otherwise
-    uint32_t subphysical:1;//!< 1 if subnr is physical, 0 otherwise
-    uint32_t type:4;       //!< Gen type
-    uint32_t file:2;       //!< Register file
-    uint32_t negation:1;   //!< For source
-    uint32_t absolute:1;   //!< For source
-    uint32_t vstride:4;    //!< Vertical stride
-    uint32_t width:3;        //!< Width
-    uint32_t hstride:2;      //!< Horizontal stride
-    uint32_t quarter:1;      //!< To choose which part we want (Q1 / Q2)
-    uint32_t address_mode:1; //!< direct or indirect
-    uint32_t a0_subnr:4;     //!< In indirect mode, use a0.nr as the base.
-    int32_t addr_imm:10;     //!< In indirect mode, the imm as address offset from a0.
+    uint8_t nr;             //!< Just for some physical registers (acc, null)
+    uint8_t subnr;          //!< Idem
+    uint8_t physical:1;     //!< 1 if physical, 0 otherwise
+    uint8_t subphysical:1;  //!< 1 if subnr is physical, 0 otherwise
+    uint8_t type:4;         //!< Gen type
+    uint8_t file:2;         //!< Register file
+    uint8_t negation:1;     //!< For source
+    uint8_t absolute:1;     //!< For source
+    uint8_t vstride:4;      //!< Vertical stride
+    uint8_t width:3;        //!< Width
+    uint8_t hstride:2;      //!< Horizontal stride
+    uint8_t quarter:1;      //!< To choose which part we want (Q1 / Q2)
+    uint8_t address_mode:1; //!< direct or indirect
+    uint8_t a0_subnr:4;     //!< In indirect mode, use a0.nr as the base.
+    int16_t addr_imm:10;    //!< In indirect mode, the imm as address offset from a0.
 
     static INLINE GenRegister offset(GenRegister reg, int nr, int subnr = 0) {
       GenRegister r = reg;

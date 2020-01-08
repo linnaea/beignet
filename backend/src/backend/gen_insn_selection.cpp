@@ -167,9 +167,9 @@ namespace gbe
   ///////////////////////////////////////////////////////////////////////////
 
   SelectionInstruction::SelectionInstruction(SelectionOpcode op, uint32_t dst, uint32_t src) :
-    parent(NULL), opcode(op), dstNum(dst), srcNum(src)
+    parent(nullptr), opcode(op), dstNum(dst), srcNum(src)
   {
-    extra = { 0 };
+    extra = { {0} };
   }
 
   void SelectionInstruction::prepend(SelectionInstruction &other) {
@@ -182,7 +182,7 @@ namespace gbe
     other.parent = this->parent;
   }
 
-  bool SelectionInstruction::isRead(void) const {
+  bool SelectionInstruction::isRead() const {
     return this->opcode == SEL_OP_UNTYPED_READ ||
            this->opcode == SEL_OP_UNTYPED_READA64 ||
            this->opcode == SEL_OP_READ64       ||
@@ -198,7 +198,7 @@ namespace gbe
            this->opcode == SEL_OP_MBREAD;
   }
 
-  bool SelectionInstruction::modAcc(void) const {
+  bool SelectionInstruction::modAcc() const {
     return this->opcode == SEL_OP_I64SUB ||
            this->opcode == SEL_OP_I64ADD ||
            this->opcode == SEL_OP_MUL_HI ||
@@ -212,7 +212,7 @@ namespace gbe
            this->opcode == SEL_OP_MACH;
   }
 
-  bool SelectionInstruction::isWrite(void) const {
+  bool SelectionInstruction::isWrite() const {
     return this->opcode == SEL_OP_UNTYPED_WRITE ||
            this->opcode == SEL_OP_UNTYPED_WRITEA64 ||
            this->opcode == SEL_OP_WRITE64       ||
@@ -226,11 +226,11 @@ namespace gbe
            this->opcode == SEL_OP_MBWRITE;
   }
 
-  bool SelectionInstruction::isBranch(void) const {
+  bool SelectionInstruction::isBranch() const {
     return this->opcode == SEL_OP_JMPI;
   }
 
-  bool SelectionInstruction::isLabel(void) const {
+  bool SelectionInstruction::isLabel() const {
     return this->opcode == SEL_OP_LABEL;
   }
 
@@ -247,7 +247,7 @@ namespace gbe
     return true;
   }
 
-  bool SelectionInstruction::isNative(void) const {
+  bool SelectionInstruction::isNative() const {
     return this->opcode == SEL_OP_NOT         || /* ALU1 */
            this->opcode == SEL_OP_LZD         ||
            this->opcode == SEL_OP_RNDZ        ||
@@ -282,7 +282,7 @@ namespace gbe
   // SelectionVector
   ///////////////////////////////////////////////////////////////////////////
 
-  SelectionVector::SelectionVector(void) :
+  SelectionVector::SelectionVector() :
     insn(NULL), reg(NULL), regNum(0), isSrc(0)
   {}
 
@@ -357,7 +357,7 @@ namespace gbe
     SelectionPattern(uint32_t insnNum, uint32_t cost) :
       insnNum(insnNum), cost(cost) {}
     /*! This is an abstract class */
-    virtual ~SelectionPattern(void) {}
+    virtual ~SelectionPattern() {}
     /*! Emit Gen code in the selection. Return false if no match */
     virtual bool emit(Selection::Opaque &sel, SelectionDAG &dag) const = 0;
     /*! All the possible opcodes for this pattern (for fast sort) */
@@ -375,11 +375,11 @@ namespace gbe
   {
   public:
     /*! Will register all the patterns */
-    SelectionLibrary(void);
+    SelectionLibrary();
     /*! Release and destroy all the registered patterns */
-    ~SelectionLibrary(void);
+    ~SelectionLibrary();
     /*! Insert the given pattern for all associated opcodes */
-    template <typename PatternType> void insert(void);
+    template <typename PatternType> void insert();
     /*! One list of pattern per opcode */
     typedef vector<const SelectionPattern*> PatternList;
     /*! All lists of patterns properly sorted per opcode */
@@ -399,17 +399,17 @@ namespace gbe
     /*! simdWidth is the default width for the instructions */
     Opaque(GenContext &ctx);
     /*! Release everything */
-    virtual ~Opaque(void);
+    virtual ~Opaque();
     /*! Implements the instruction selection itself */
-    void select(void);
+    void select();
     /*! Start a backward generation (from the end of the block) */
-    void startBackwardGeneration(void);
+    void startBackwardGeneration();
     /*! End backward code generation and output the code in the block */
-    void endBackwardGeneration(void);
+    void endBackwardGeneration();
     /*! Implement public class */
-    uint32_t getLargestBlockSize(void) const;
+    uint32_t getLargestBlockSize() const;
     /*! Implement public class */
-    INLINE uint32_t getVectorNum(void) const { return this->vectorNum; }
+    INLINE uint32_t getVectorNum() const { return this->vectorNum; }
     /*! Implement public class */
     INLINE ir::Register replaceSrc(SelectionInstruction *insn, uint32_t regID, ir::Type type, bool needMov);
     /*! Implement public class */
@@ -465,7 +465,7 @@ namespace gbe
 
     GenRegister getLaneIDReg();
     /*! Implement public class */
-    INLINE uint32_t getRegNum(void) const { return file.regNum(); }
+    INLINE uint32_t getRegNum() const { return file.regNum(); }
     /*! Implements public interface */
     INLINE ir::RegisterData getRegisterData(ir::Register reg) const {
       return file.get(reg);
@@ -483,12 +483,12 @@ namespace gbe
     /*! Size of the stack (should be large enough) */
     enum { MAX_STATE_NUM = 16 };
     /*! Push the current instruction state */
-    INLINE void push(void) {
+    INLINE void push() {
       assert(stateNum < MAX_STATE_NUM);
       stack[stateNum++] = curr;
     }
     /*! Pop the latest pushed state */
-    INLINE void pop(void) {
+    INLINE void pop() {
       assert(stateNum > 0);
       curr = stack[--stateNum];
     }
@@ -496,7 +496,7 @@ namespace gbe
      *  temporary list of the current block
      */
     INLINE ir::Register reg(ir::RegisterFamily family, bool scalar = false) {
-      GBE_ASSERT(block != NULL);
+      GBE_ASSERT(block != nullptr);
       const ir::Register reg = file.append(family, scalar);
       block->append(reg);
       return reg;
@@ -506,7 +506,7 @@ namespace gbe
     /*! Append an instruction in the current block */
     SelectionInstruction *appendInsn(SelectionOpcode, uint32_t dstNum, uint32_t srcNum);
     /*! Append a new vector of registers in the current block */
-    SelectionVector *appendVector(void);
+    SelectionVector *appendVector();
     /*! Build a DAG for the basic block (return number of instructions) */
     uint32_t buildBasicBlockDAG(const ir::BasicBlock &bb);
     /*! Perform the selection on the basic block */
@@ -681,9 +681,9 @@ namespace gbe
     /* Constant buffer move instruction */
     void INDIRECT_MOVE(Reg dst, Reg tmp, Reg base, Reg regOffset, uint32_t immOffset);
     /*! EOT is used to finish GPGPU threads */
-    void EOT(void);
+    void EOT();
     /*! No-op */
-    void NOP(void);
+    void NOP();
     /*! Wait instruction (used for the barrier) */
     void WAIT(uint32_t n = 0);
     /*! Atomic instruction */
@@ -920,7 +920,7 @@ namespace gbe
     this->insnDAG.resize(maxInsnNum);
   }
 
-  Selection::Opaque::~Opaque(void) {
+  Selection::Opaque::~Opaque() {
     for (auto it = blockList.begin(); it != blockList.end();) {
       SelectionBlock &block = *it;
       ++it;
@@ -937,11 +937,11 @@ namespace gbe
     return new (ptr) SelectionInstruction(opcode, dstNum, srcNum);
   }
 
-  void Selection::Opaque::startBackwardGeneration(void) {
+  void Selection::Opaque::startBackwardGeneration() {
     this->bwdCodeGeneration = true;
   }
 
-  void Selection::Opaque::endBackwardGeneration(void) {
+  void Selection::Opaque::endBackwardGeneration() {
     for (auto it = bwdList.rbegin(); it != bwdList.rend();) {
       SelectionInstruction &insn = *it;
       auto toRemoveIt = it--;
@@ -952,7 +952,7 @@ namespace gbe
     this->bwdCodeGeneration = false;
   }
 
-  uint32_t Selection::Opaque::getLargestBlockSize(void) const {
+  uint32_t Selection::Opaque::getLargestBlockSize() const {
     size_t maxInsnNum = 0;
     for (const auto &bb : blockList)
       maxInsnNum = std::max(maxInsnNum, bb.insnList.size());
@@ -969,7 +969,7 @@ namespace gbe
                                                       uint32_t srcNum)
   {
     GBE_ASSERT(dstNum <= SelectionInstruction::MAX_DST_NUM && srcNum <= SelectionInstruction::MAX_SRC_NUM);
-    GBE_ASSERT(this->block != NULL);
+    GBE_ASSERT(this->block != nullptr);
     SelectionInstruction *insn = this->create(opcode, dstNum, srcNum);
     insn->setDBGInfo(DBGInfo);
     if (this->bwdCodeGeneration)
@@ -980,7 +980,7 @@ namespace gbe
     return insn;
   }
 
-  SelectionVector *Selection::Opaque::appendVector(void) {
+  SelectionVector *Selection::Opaque::appendVector() {
     GBE_ASSERT(this->block != NULL);
     SelectionVector *vector = this->newSelectionVector();
 
@@ -1183,7 +1183,7 @@ namespace gbe
     if (!GenRegister::isNull(insn->dst(regID)))
       simdWidth = this->isScalarReg(insn->dst(regID).reg()) ? 1 : insn->state.execWidth;
     else {
-      GBE_ASSERT(needMov == false);
+      GBE_ASSERT(!needMov);
       simdWidth = insn->state.execWidth;
     }
     ir::Register tmp;
@@ -1213,7 +1213,7 @@ namespace gbe
   }
 
 #define SEL_REG(SIMD16, SIMD8, SIMD1) \
-  if (ctx.sel->isScalarReg(reg) == true) \
+  if (ctx.sel->isScalarReg(reg)) \
     return GenRegister::retype(GenRegister::SIMD1(reg), genType); \
   else if (simdWidth == 8) \
     return GenRegister::retype(GenRegister::SIMD8(reg), genType); \
@@ -1438,8 +1438,8 @@ namespace gbe
     vector->isSrc = 1;
   }
 
-  void Selection::Opaque::EOT(void) { this->appendInsn(SEL_OP_EOT, 0, 0); }
-  void Selection::Opaque::NOP(void) { this->appendInsn(SEL_OP_NOP, 0, 0); }
+  void Selection::Opaque::EOT() { this->appendInsn(SEL_OP_EOT, 0, 0); }
+  void Selection::Opaque::NOP() { this->appendInsn(SEL_OP_NOP, 0, 0); }
   void Selection::Opaque::WAIT(uint32_t n)
   {
     SelectionInstruction *insn = this->appendInsn(SEL_OP_WAIT, 0, 0);
@@ -2456,9 +2456,9 @@ namespace gbe
 
   // Boiler plate to initialize the selection library at c++ pre-main
   static SelectionLibrary *selLib = NULL;
-  static void destroySelectionLibrary(void) { GBE_DELETE(selLib); }
+  static void destroySelectionLibrary() { GBE_DELETE(selLib); }
   static struct SelectionLibraryInitializer {
-    SelectionLibraryInitializer(void) {
+    SelectionLibraryInitializer() {
       selLib = GBE_NEW_NO_ARG(SelectionLibrary);
       atexit(destroySelectionLibrary);
     }
@@ -2512,7 +2512,7 @@ namespace gbe
     for (int32_t insnID = insnNum-1; insnID >= 0; --insnID) {
       SelectionDAG &dag = *insnDAG[insnID];
       const ir::Instruction& insn = dag.insn;
-      if ( (insn.getDstNum() && this->isScalarReg(insn.getDst(0)) == true) ||
+      if ( (insn.getDstNum() && this->isScalarReg(insn.getDst(0))) ||
          insn.isMemberOf<ir::CompareInstruction>() ||
          insn.isMemberOf<ir::SelectInstruction>() ||
          insn.getOpcode() == ir::OP_SIMD_ANY ||
@@ -2527,7 +2527,7 @@ namespace gbe
 
       // Unaligned load may introduce CMP instruction.
       if ( insn.isMemberOf<ir::LoadInstruction>()) {
-        const ir::LoadInstruction &ld = ir::cast<ir::LoadInstruction>(insn);
+        const auto &ld = ir::cast<ir::LoadInstruction>(insn);
         if (!ld.isAligned())
           return false;
       }
@@ -2547,8 +2547,8 @@ namespace gbe
     // should retrun false to keep the if/endif.
     if((insnDAG[insnNum-1]->insn.isMemberOf<ir::BranchInstruction>())){
       if (insnDAG[insnNum-1]->insn.getOpcode() == ir::OP_BRA) {
-        const ir::BranchInstruction &insn = ir::cast<ir::BranchInstruction>(insnDAG[insnNum-1]->insn);
-        if(insn.isPredicated() && insnDAG[insnNum-1]->child[0] == NULL){
+        const auto &insn = ir::cast<ir::BranchInstruction>(insnDAG[insnNum-1]->insn);
+        if(insn.isPredicated() && insnDAG[insnNum-1]->child[0] == nullptr){
           return false;
         }
       }
@@ -2642,7 +2642,7 @@ extern bool OCL_DEBUGINFO; // first defined by calling BVAR in program.cpp
   void Selection::Opaque::matchBasicBlock(const ir::BasicBlock &bb, uint32_t insnNum)
   {
     // Bottom up code generation
-    bool needEndif = this->block->hasBranch == false && !this->block->hasBarrier;
+    bool needEndif = !this->block->hasBranch && !this->block->hasBarrier;
     needEndif = needEndif && bb.needEndif;
     this->block->removeSimpleIfEndif = insnNum < 10 && isSimpleBlock(bb, insnNum);
     if (needEndif && !this->block->removeSimpleIfEndif) {
@@ -2694,7 +2694,7 @@ extern bool OCL_DEBUGINFO; // first defined by calling BVAR in program.cpp
         // large enough, we need to insert endif/if pair to eliminate
         // the too long if/endif block.
         if (this->ctx.getIFENDIFFix() &&
-            this->block->insnList.size() != 0 &&
+            !this->block->insnList.empty() &&
             this->block->insnList.size() % 1000 == 0 &&
             this->block->endifLabel.value() != 0) {
           this->curr.flag = 0;
@@ -2713,7 +2713,7 @@ extern bool OCL_DEBUGINFO; // first defined by calling BVAR in program.cpp
   }
 #undef SET_SEL_DBGINFO
 
-  void Selection::Opaque::select(void)
+  void Selection::Opaque::select()
   {
     using namespace ir;
     const Function &fn = ctx.getFunction();
@@ -2799,12 +2799,12 @@ extern bool OCL_DEBUGINFO; // first defined by calling BVAR in program.cpp
     this->blockList = NULL;
     this->opaque = GBE_NEW(Selection::Opaque, ctx);
     this->opaque->setSlowByteGather(true);
-    opt_features = 0;
+    opt_features = (SEL_IR_OPT_FEATURE)0;
   }
 
   Selection75::Selection75(GenContext &ctx) : Selection(ctx) {
     this->opaque->setSlowByteGather(false);
-    opt_features = 0;
+    opt_features = (SEL_IR_OPT_FEATURE)0;
   }
 
   Selection8::Selection8(GenContext &ctx) : Selection(ctx) {
@@ -2823,7 +2823,7 @@ extern bool OCL_DEBUGINFO; // first defined by calling BVAR in program.cpp
     this->opaque->setLongRegRestrict(true);
     this->opaque->setSlowByteGather(false);
     this->opaque->setHasHalfType(true);
-    opt_features = SIOF_LOGICAL_SRCMOD | SIOF_OP_MOV_LONG_REG_RESTRICT;
+    opt_features = (SEL_IR_OPT_FEATURE)(SIOF_LOGICAL_SRCMOD | SIOF_OP_MOV_LONG_REG_RESTRICT);
   }
 
   Selection9::Selection9(GenContext &ctx) : Selection(ctx) {
@@ -2845,7 +2845,7 @@ extern bool OCL_DEBUGINFO; // first defined by calling BVAR in program.cpp
     this->opaque->setLdMsgOrder(LD_MSG_ORDER_SKL);
     this->opaque->setSlowByteGather(false);
     this->opaque->setHasHalfType(true);
-    opt_features = SIOF_LOGICAL_SRCMOD | SIOF_OP_MOV_LONG_REG_RESTRICT;
+    opt_features = (SEL_IR_OPT_FEATURE)(SIOF_LOGICAL_SRCMOD | SIOF_OP_MOV_LONG_REG_RESTRICT);
   }
 
   SelectionKbl::SelectionKbl(GenContext &ctx) : Selection(ctx) {
@@ -2867,7 +2867,7 @@ extern bool OCL_DEBUGINFO; // first defined by calling BVAR in program.cpp
     this->opaque->setLdMsgOrder(LD_MSG_ORDER_SKL);
     this->opaque->setSlowByteGather(false);
     this->opaque->setHasHalfType(true);
-    opt_features = SIOF_LOGICAL_SRCMOD | SIOF_OP_MOV_LONG_REG_RESTRICT;
+    opt_features = (SEL_IR_OPT_FEATURE)(SIOF_LOGICAL_SRCMOD | SIOF_OP_MOV_LONG_REG_RESTRICT);
   }
 
   void Selection::Opaque::TYPED_WRITE(GenRegister *msgs, uint32_t msgNum,
@@ -2909,22 +2909,22 @@ extern bool OCL_DEBUGINFO; // first defined by calling BVAR in program.cpp
     }
   }
 
-  Selection::~Selection(void) { GBE_DELETE(this->opaque); }
+  Selection::~Selection() { GBE_DELETE(this->opaque); }
 
-  void Selection::select(void) {
+  void Selection::select() {
     this->opaque->select();
     this->blockList = &this->opaque->blockList;
   }
 
-  uint32_t Selection::getLargestBlockSize(void) const {
+  uint32_t Selection::getLargestBlockSize() const {
     return this->opaque->getLargestBlockSize();
   }
 
-  uint32_t Selection::getVectorNum(void) const {
+  uint32_t Selection::getVectorNum() const {
     return this->opaque->getVectorNum();
   }
 
-  uint32_t Selection::getRegNum(void) const {
+  uint32_t Selection::getRegNum() const {
     return this->opaque->getRegNum();
   }
 
@@ -3067,7 +3067,7 @@ extern bool OCL_DEBUGINFO; // first defined by calling BVAR in program.cpp
       SelectionPattern(insnNum, cost)
     {
       for (uint32_t op = 0; op < ir::OP_INVALID; ++op)
-        if (ir::isOpcodeFrom<U>(ir::Opcode(op)) == true)
+        if (ir::isOpcodeFrom<U>(ir::Opcode(op)))
           this->opcodes.push_back(ir::Opcode(op));
     }
     /*! Call the child method with the proper prototype */
@@ -3087,21 +3087,21 @@ extern bool OCL_DEBUGINFO; // first defined by calling BVAR in program.cpp
   struct FAMILY##Pattern : public OneToManyPattern<FAMILY##Pattern, ir::FAMILY>
 
 #define DECL_CTOR(FAMILY, INSN_NUM, COST) \
-  FAMILY##Pattern(void) : OneToManyPattern<FAMILY##Pattern, ir::FAMILY>(INSN_NUM, COST) {}
+  FAMILY##Pattern() : OneToManyPattern<FAMILY##Pattern, ir::FAMILY>(INSN_NUM, COST) {}
 
   /*! Nullary instruction patterns */
   class NullaryInstructionPattern : public SelectionPattern
   {
   public:
-    NullaryInstructionPattern(void) : SelectionPattern(1,1) {
+    NullaryInstructionPattern() : SelectionPattern(1,1) {
       for (uint32_t op = 0; op < ir::OP_INVALID; ++op)
-        if (ir::isOpcodeFrom<ir::NullaryInstruction>(ir::Opcode(op)) == true)
+        if (ir::isOpcodeFrom<ir::NullaryInstruction>(ir::Opcode(op)))
           this->opcodes.push_back(ir::Opcode(op));
     }
 
-    INLINE bool emit(Selection::Opaque &sel, SelectionDAG &dag) const {
+    bool emit(Selection::Opaque &sel, SelectionDAG &dag) const override {
       using namespace ir;
-      const ir::NullaryInstruction &insn = cast<NullaryInstruction>(dag.insn);
+      const auto &insn = cast<NullaryInstruction>(dag.insn);
       const Opcode opcode = insn.getOpcode();
       const Type type = insn.getType();
       GenRegister dst = sel.selReg(insn.getDst(0), type);
@@ -3153,7 +3153,7 @@ extern bool OCL_DEBUGINFO; // first defined by calling BVAR in program.cpp
       const GenRegister dst = sel.selReg(insn.getDst(0), getType(opcode, insnType, false));
       const GenRegister src = sel.selReg(insn.getSrc(0), getType(opcode, insnType, true));
       sel.push();
-        if (sel.isScalarReg(insn.getDst(0)) == true) {
+        if (sel.isScalarReg(insn.getDst(0))) {
           sel.curr.execWidth = 1;
           sel.curr.predicate = GEN_PREDICATE_NONE;
           sel.curr.noMask = 1;
@@ -3206,7 +3206,7 @@ extern bool OCL_DEBUGINFO; // first defined by calling BVAR in program.cpp
             }
           case ir::OP_SIMD_ANY:
             {
-              const GenRegister constZero = GenRegister::immuw(0);;
+              const GenRegister constZero = GenRegister::immuw(0);
               const GenRegister constOne = GenRegister::retype(sel.selReg(sel.reg(ir::FAMILY_DWORD)), GEN_TYPE_UD);
               const GenRegister flag01 = GenRegister::flag(0, 1);
 
@@ -3280,9 +3280,9 @@ extern bool OCL_DEBUGINFO; // first defined by calling BVAR in program.cpp
   class BinaryInstructionPattern : public SelectionPattern
   {
   public:
-    BinaryInstructionPattern(void) : SelectionPattern(1,1) {
+    BinaryInstructionPattern() : SelectionPattern(1,1) {
       for (uint32_t op = 0; op < ir::OP_INVALID; ++op)
-        if (ir::isOpcodeFrom<ir::BinaryInstruction>(ir::Opcode(op)) == true)
+        if (ir::isOpcodeFrom<ir::BinaryInstruction>(ir::Opcode(op)))
           this->opcodes.push_back(ir::Opcode(op));
     }
 
@@ -3407,10 +3407,10 @@ extern bool OCL_DEBUGINFO; // first defined by calling BVAR in program.cpp
       return true;
     }
 
-    INLINE bool emit(Selection::Opaque &sel, SelectionDAG &dag) const
+    bool emit(Selection::Opaque &sel, SelectionDAG &dag) const override
     {
       using namespace ir;
-      const ir::BinaryInstruction &insn = cast<BinaryInstruction>(dag.insn);
+      const auto &insn = cast<BinaryInstruction>(dag.insn);
       const Opcode opcode = insn.getOpcode();
       const Type type = insn.getType();
       GenRegister dst  = sel.selReg(insn.getDst(0), type);
@@ -3418,7 +3418,7 @@ extern bool OCL_DEBUGINFO; // first defined by calling BVAR in program.cpp
       sel.push();
 
       // Boolean values use scalars
-      if (sel.isScalarReg(insn.getDst(0)) == true) {
+      if (sel.isScalarReg(insn.getDst(0))) {
         sel.curr.execWidth = 1;
         sel.curr.predicate = GEN_PREDICATE_NONE;
         sel.curr.noMask = 1;
@@ -3688,7 +3688,7 @@ extern bool OCL_DEBUGINFO; // first defined by calling BVAR in program.cpp
   {
   public:
     /*! Register the pattern for all opcodes of the family */
-    MulAddInstructionPattern(void) : SelectionPattern(2, 1) {
+    MulAddInstructionPattern() : SelectionPattern(2, 1) {
        this->opcodes.push_back(ir::OP_ADD);
        this->opcodes.push_back(ir::OP_SUB);
     }
@@ -3759,7 +3759,7 @@ extern bool OCL_DEBUGINFO; // first defined by calling BVAR in program.cpp
   class SqrtDivInstructionPattern : public SelectionPattern {
   public:
     /*! Register the pattern for all opcodes of the family */
-    SqrtDivInstructionPattern(void) : SelectionPattern(1, 1) { this->opcodes.push_back(ir::OP_DIV); }
+    SqrtDivInstructionPattern() : SelectionPattern(1, 1) { this->opcodes.push_back(ir::OP_DIV); }
 
     /*! Implements base class */
     virtual bool emit(Selection::Opaque &sel, SelectionDAG &dag) const {
@@ -3825,16 +3825,16 @@ extern bool OCL_DEBUGINFO; // first defined by calling BVAR in program.cpp
   {
   public:
     /*! Register the pattern for all opcodes of the family */
-    SelectModifierInstructionPattern(void) : SelectionPattern(2, 1) {
+    SelectModifierInstructionPattern() : SelectionPattern(2, 1) {
       this->opcodes.push_back(ir::OP_SEL);
     }
 
     /*! Implements base class */
-    virtual bool emit(Selection::Opaque &sel, SelectionDAG &dag) const
+    bool emit(Selection::Opaque &sel, SelectionDAG &dag) const override
     {
       using namespace ir;
       SelectionDAG *cmp = dag.child[0];
-      const SelectInstruction &insn = cast<SelectInstruction>(dag.insn);
+      const auto &insn = cast<SelectInstruction>(dag.insn);
 
       if (insn.getType() == TYPE_S64 || insn.getType() == TYPE_U64) // not support
         return false;
@@ -3843,16 +3843,16 @@ extern bool OCL_DEBUGINFO; // first defined by calling BVAR in program.cpp
       if (cmp == NULL) return false;
 
       // We need to match a compare
-      if (cmp->insn.isMemberOf<CompareInstruction>() == false) return false;
+      if (!cmp->insn.isMemberOf<CompareInstruction>()) return false;
 
       // We look for something like that:
       // cmp.{le,ge...} flag src0 src1
       // sel dst flag src0 src1
       // So both sources must match
-      if (sourceMatch(cmp, 0, &dag, 1) == false) return false;
-      if (sourceMatch(cmp, 1, &dag, 2) == false) return false;
+      if (!sourceMatch(cmp, 0, &dag, 1)) return false;
+      if (!sourceMatch(cmp, 1, &dag, 2)) return false;
       // OK, we merge the instructions
-      const ir::CompareInstruction &cmpInsn = cast<CompareInstruction>(cmp->insn);
+      const auto &cmpInsn = cast<CompareInstruction>(cmp->insn);
       const ir::Opcode opcode = cmpInsn.getOpcode();
       if(opcode == OP_ORD) return false;
       GenRegister src0, src1;
@@ -3862,7 +3862,7 @@ extern bool OCL_DEBUGINFO; // first defined by calling BVAR in program.cpp
 
       const uint32_t genCmp = getGenCompare(opcode, inverse);
       sel.push();
-        if (sel.isScalarReg(insn.getDst(0)) == true) {
+        if (sel.isScalarReg(insn.getDst(0))) {
           sel.curr.execWidth = 1;
           sel.curr.predicate = GEN_PREDICATE_NONE;
           sel.curr.noMask = 1;
@@ -3885,15 +3885,15 @@ extern bool OCL_DEBUGINFO; // first defined by calling BVAR in program.cpp
   {
   public:
     /*! Register the pattern for all opcodes of the family */
-    Int32x32MulInstructionPattern(void) : SelectionPattern(1, 4) {
+    Int32x32MulInstructionPattern() : SelectionPattern(1, 4) {
        this->opcodes.push_back(ir::OP_MUL);
     }
 
     /*! Implements base class */
-    virtual bool emit(Selection::Opaque &sel, SelectionDAG &dag) const
+    bool emit(Selection::Opaque &sel, SelectionDAG &dag) const override
     {
       using namespace ir;
-      const ir::BinaryInstruction &insn = cast<ir::BinaryInstruction>(dag.insn);
+      const auto &insn = cast<ir::BinaryInstruction>(dag.insn);
       const Type type = insn.getType();
       if (type != TYPE_U32 && type != TYPE_S32)
         return false;
@@ -3904,14 +3904,14 @@ extern bool OCL_DEBUGINFO; // first defined by calling BVAR in program.cpp
 
       sel.push();
       if (sel.has32X32Mul()) {
-        if (sel.isScalarReg(insn.getDst(0)) == true) {
+        if (sel.isScalarReg(insn.getDst(0))) {
           sel.curr.execWidth = 1;
           sel.curr.predicate = GEN_PREDICATE_NONE;
           sel.curr.noMask = 1;
         }
         sel.MUL(dst, src0, src1);
       } else {
-        if (sel.isScalarReg(insn.getDst(0)) == true) {
+        if (sel.isScalarReg(insn.getDst(0))) {
           sel.curr.execWidth = 1;
           sel.curr.predicate = GEN_PREDICATE_NONE;
           sel.curr.noMask = 1;
@@ -3953,7 +3953,7 @@ extern bool OCL_DEBUGINFO; // first defined by calling BVAR in program.cpp
           if (predicate != GEN_PREDICATE_NONE || noMask != 1) {
             const ir::Register reg = sel.reg(FAMILY_DWORD);
             sel.MOV(GenRegister::f8grf(reg), GenRegister::acc());
-            sel.curr.noMask = noMask;;
+            sel.curr.noMask = noMask;
             sel.curr.predicate = predicate;
             sel.MOV(GenRegister::retype(GenRegister::next(dst), GEN_TYPE_F),
                     GenRegister::f8grf(reg));
@@ -3974,12 +3974,12 @@ extern bool OCL_DEBUGINFO; // first defined by calling BVAR in program.cpp
   {
   public:
     /*! Register the pattern for all opcodes of the family */
-    Int32x16MulInstructionPattern(void) : SelectionPattern(1, 1) {
+    Int32x16MulInstructionPattern() : SelectionPattern(1, 1) {
        this->opcodes.push_back(ir::OP_MUL);
     }
 
     bool is16BitSpecialReg(ir::Register reg) const {
-      if (reg == ir::ocl::lid0 ||
+      return reg == ir::ocl::lid0 ||
           reg == ir::ocl::lid1 ||
           reg == ir::ocl::lid2 ||
           reg == ir::ocl::lsize0 ||
@@ -3987,20 +3987,17 @@ extern bool OCL_DEBUGINFO; // first defined by calling BVAR in program.cpp
           reg == ir::ocl::lsize2 ||
           reg == ir::ocl::enqlsize0 ||
           reg == ir::ocl::enqlsize1 ||
-          reg == ir::ocl::enqlsize2)
-        return true;
-      else
-        return false;
+          reg == ir::ocl::enqlsize2;
     }
 
     /*! Try to emit a multiply where child childID is a 16 immediate */
     bool emitMulImmediate(Selection::Opaque  &sel, SelectionDAG &dag, uint32_t childID) const {
       using namespace ir;
-      const ir::BinaryInstruction &insn = cast<ir::BinaryInstruction>(dag.insn);
+      const auto &insn = cast<ir::BinaryInstruction>(dag.insn);
       const Register dst  = insn.getDst(0);
       const Register src1 = insn.getSrc(childID ^ 1);
       const SelectionDAG *src0DAG = dag.child[childID];
-      if (src0DAG != NULL) {
+      if (src0DAG != nullptr) {
         if (src0DAG->insn.getOpcode() == OP_LOADI) {
           const auto &loadimm = cast<LoadImmInstruction>(src0DAG->insn);
           const Immediate imm = loadimm.getImmediate();
@@ -4008,7 +4005,7 @@ extern bool OCL_DEBUGINFO; // first defined by calling BVAR in program.cpp
           GBE_ASSERT(type == TYPE_U32 || type == TYPE_S32);
           if (type == TYPE_U32 && imm.getIntegerValue() <= 0xffff) {
             sel.push();
-              if (sel.isScalarReg(insn.getDst(0)) == true) {
+              if (sel.isScalarReg(insn.getDst(0))) {
                 sel.curr.execWidth = 1;
                 sel.curr.predicate = GEN_PREDICATE_NONE;
                 sel.curr.noMask = 1;
@@ -4024,7 +4021,7 @@ extern bool OCL_DEBUGINFO; // first defined by calling BVAR in program.cpp
           }
           if (type == TYPE_S32 && (imm.getIntegerValue() >= -32768 && imm.getIntegerValue() <= 32767)) {
             sel.push();
-              if (sel.isScalarReg(insn.getDst(0)) == true) {
+              if (sel.isScalarReg(insn.getDst(0))) {
                 sel.curr.execWidth = 1;
                 sel.curr.predicate = GEN_PREDICATE_NONE;
                 sel.curr.noMask = 1;
@@ -4046,14 +4043,14 @@ extern bool OCL_DEBUGINFO; // first defined by calling BVAR in program.cpp
     /*! Try to emit a multiply with a 16 bit special register */
     bool emitMulSpecialReg(Selection::Opaque &sel, SelectionDAG &dag, uint32_t childID) const {
       using namespace ir;
-      const BinaryInstruction &insn = cast<ir::BinaryInstruction>(dag.insn);
+      const auto &insn = cast<ir::BinaryInstruction>(dag.insn);
       const Type type = insn.getType();
       const Register dst  = insn.getDst(0);
       const Register src0 = insn.getSrc(childID);
       const Register src1 = insn.getSrc(childID ^ 1);
       if (is16BitSpecialReg(src0)) {
         sel.push();
-          if (sel.isScalarReg(insn.getDst(0)) == true) {
+          if (sel.isScalarReg(insn.getDst(0))) {
             sel.curr.execWidth = 1;
             sel.curr.predicate = GEN_PREDICATE_NONE;
             sel.curr.noMask = 1;
@@ -4068,10 +4065,10 @@ extern bool OCL_DEBUGINFO; // first defined by calling BVAR in program.cpp
       return false;
     }
 
-    virtual bool emit(Selection::Opaque &sel, SelectionDAG &dag) const
+    bool emit(Selection::Opaque &sel, SelectionDAG &dag) const override
     {
       using namespace ir;
-      const BinaryInstruction &insn = cast<ir::BinaryInstruction>(dag.insn);
+      const auto &insn = cast<ir::BinaryInstruction>(dag.insn);
       const Type type = insn.getType();
       if (type == TYPE_U32 || type == TYPE_S32) {
         if (this->emitMulSpecialReg(sel, dag, 0))
@@ -4109,7 +4106,7 @@ extern bool OCL_DEBUGINFO; // first defined by calling BVAR in program.cpp
       const GenRegister dst = sel.selReg(insn.getDst(0), type);
 
       sel.push();
-      if (sel.isScalarReg(insn.getDst(0)) == true) {
+      if (sel.isScalarReg(insn.getDst(0))) {
         sel.curr.execWidth = 1;
         sel.curr.predicate = GEN_PREDICATE_NONE;
         sel.curr.noMask = 1;
@@ -4228,15 +4225,13 @@ extern bool OCL_DEBUGINFO; // first defined by calling BVAR in program.cpp
   {
   public:
     /*! Register the pattern for all opcodes of the family */
-    LoadInstructionPattern(void) : SelectionPattern(1, 1) {
+    LoadInstructionPattern() : SelectionPattern(1, 1) {
        this->opcodes.push_back(ir::OP_LOAD);
     }
     bool isReadConstantLegacy(const ir::LoadInstruction &load) const {
       ir::AddressMode AM = load.getAddressMode();
       ir::AddressSpace AS = load.getAddressSpace();
-      if (AM != ir::AM_Stateless && AS == ir::MEM_CONSTANT)
-        return true;
-      return false;
+      return AM != ir::AM_Stateless && AS == ir::MEM_CONSTANT;
     }
     void untypedReadStateless(Selection::Opaque &sel,
                               GenRegister addr,
@@ -4981,7 +4976,7 @@ extern bool OCL_DEBUGINFO; // first defined by calling BVAR in program.cpp
                  insn.getAddressSpace() == MEM_LOCAL ||
                  insn.getAddressSpace() == MEM_GENERIC ||
                  insn.getAddressSpace() == MEM_MIXED);
-      //GBE_ASSERT(sel.isScalarReg(insn.getValue(0)) == false);
+      //GBE_ASSERT(!sel.isScalarReg(insn.getValue(0)));
 
       AddressSpace addrSpace = insn.getAddressSpace();
 
@@ -4994,18 +4989,18 @@ extern bool OCL_DEBUGINFO; // first defined by calling BVAR in program.cpp
         // XXX TODO read 64bit constant through constant cache
         // Per HW Spec, constant cache messages can read at least DWORD data.
         // So, byte/short data type, we have to read through data cache.
-        if(insn.isAligned() == true && elemSize == GEN_BYTE_SCATTER_QWORD)
+        if(insn.isAligned() && elemSize == GEN_BYTE_SCATTER_QWORD)
           this->emitRead64(sel, insn, address, addrSpace);
-        else if(insn.isAligned() == true && elemSize == GEN_BYTE_SCATTER_DWORD)
+        else if(insn.isAligned() && elemSize == GEN_BYTE_SCATTER_DWORD)
           this->emitDWordGather(sel, insn, address, addrSpace);
-        else if (insn.isAligned() == true)
+        else if (insn.isAligned())
           this->emitAlignedByteGather(sel, insn, elemSize, address, addrSpace);
         else
           this->emitUnalignedByteGather(sel, insn, elemSize, address, addrSpace);
       } else {
-        if (insn.isAligned() == true && elemSize == GEN_BYTE_SCATTER_QWORD)
+        if (insn.isAligned() && elemSize == GEN_BYTE_SCATTER_QWORD)
           this->emitRead64(sel, insn, address, addrSpace);
-        else if (insn.isAligned() == true && elemSize == GEN_BYTE_SCATTER_DWORD)
+        else if (insn.isAligned() && elemSize == GEN_BYTE_SCATTER_DWORD)
           this->emitUntypedRead(sel, insn, address, addrSpace);
         else if (insn.isAligned())
           this->emitAlignedByteGather(sel, insn, elemSize, address, addrSpace);
@@ -5022,7 +5017,7 @@ extern bool OCL_DEBUGINFO; // first defined by calling BVAR in program.cpp
   {
   public:
     /*! Register the pattern for all opcodes of the family */
-    StoreInstructionPattern(void) : SelectionPattern(1, 1) {
+    StoreInstructionPattern() : SelectionPattern(1, 1) {
        this->opcodes.push_back(ir::OP_STORE);
     }
     GenRegister convertU64ToU32(Selection::Opaque &sel,
@@ -5491,9 +5486,9 @@ extern bool OCL_DEBUGINFO; // first defined by calling BVAR in program.cpp
 
       if (insn.isBlock())
         this->emitOWordWrite(sel, insn, address, addrSpace);
-      else if (insn.isAligned() == true && elemSize == GEN_BYTE_SCATTER_QWORD)
+      else if (insn.isAligned() && elemSize == GEN_BYTE_SCATTER_QWORD)
         this->emitWrite64(sel, insn, address, addrSpace);
-      else if (insn.isAligned() == true && elemSize == GEN_BYTE_SCATTER_DWORD)
+      else if (insn.isAligned() && elemSize == GEN_BYTE_SCATTER_DWORD)
         this->emitUntypedWrite(sel, insn, address, addrSpace);
       else {
         this->emitByteScatter(sel, insn, elemSize, address, addrSpace, isUniform);
@@ -5508,16 +5503,16 @@ extern bool OCL_DEBUGINFO; // first defined by calling BVAR in program.cpp
   class CompareInstructionPattern : public SelectionPattern
   {
   public:
-    CompareInstructionPattern(void) : SelectionPattern(1,1) {
+    CompareInstructionPattern() : SelectionPattern(1,1) {
       for (uint32_t op = 0; op < ir::OP_INVALID; ++op)
-        if (ir::isOpcodeFrom<ir::CompareInstruction>(ir::Opcode(op)) == true)
+        if (ir::isOpcodeFrom<ir::CompareInstruction>(ir::Opcode(op)))
           this->opcodes.push_back(ir::Opcode(op));
     }
 
-    INLINE bool emit(Selection::Opaque &sel, SelectionDAG &dag) const
+    bool emit(Selection::Opaque &sel, SelectionDAG &dag) const override
     {
       using namespace ir;
-      const ir::CompareInstruction &insn = cast<CompareInstruction>(dag.insn);
+      const auto &insn = cast<CompareInstruction>(dag.insn);
       const Opcode opcode = insn.getOpcode();
       const Type type = insn.getType();
       const Register dst = insn.getDst(0);
@@ -5554,8 +5549,8 @@ extern bool OCL_DEBUGINFO; // first defined by calling BVAR in program.cpp
         sel.curr.grfFlag = needStoreBool; // indicate whether we need to allocate grf to store this boolean.
         if ((type == TYPE_S64 || type == TYPE_U64) && !sel.hasLongType()) {
           GenRegister tmp[3];
-          for(int i=0; i<3; i++)
-            tmp[i] = sel.selReg(sel.reg(FAMILY_DWORD));
+          for(auto & i : tmp)
+            i = sel.selReg(sel.reg(FAMILY_DWORD));
           sel.curr.flagGen = 1;
           sel.I64CMP(getGenCompare(opcode, inverseCmp), src0, src1, tmp);
         } else if(opcode == OP_ORD) {
@@ -5606,19 +5601,19 @@ extern bool OCL_DEBUGINFO; // first defined by calling BVAR in program.cpp
         narrowType = dstType;
         narrowNum = dstNum;
         wideNum = srcNum;
-        narrowDst = 1;
+        narrowDst = true;
         wideScalar = sel.isScalarReg(insn.getSrc(0));
       } else {
         multiple = srcNum / dstNum;
         narrowType = srcType;
         narrowNum = srcNum;
         wideNum = dstNum;
-        narrowDst = 0;
+        narrowDst = false;
         wideScalar = sel.isScalarReg(insn.getDst(0));
       }
 
       sel.push();
-      if (sel.isScalarReg(insn.getDst(0)) == true) {
+      if (sel.isScalarReg(insn.getDst(0))) {
         sel.curr.execWidth = 1;
         sel.curr.predicate = GEN_PREDICATE_NONE;
         sel.curr.noMask = 1;
@@ -5772,7 +5767,7 @@ extern bool OCL_DEBUGINFO; // first defined by calling BVAR in program.cpp
           return true;
         }
       } else if (dag->insn.getOpcode() == OP_CVT) {
-        const auto cvtInsn = cast<ConvertInstruction>(dag->insn);
+        const auto& cvtInsn = cast<ConvertInstruction>(dag->insn);
         auto srcType = cvtInsn.getSrcType();
         if (((srcType == TYPE_U32 || srcType == TYPE_S32) &&
             (type == GEN_TYPE_UD || type == GEN_TYPE_D)) ||
@@ -6065,8 +6060,8 @@ extern bool OCL_DEBUGINFO; // first defined by calling BVAR in program.cpp
 
       if (!sel.hasLongType()) {
         GenRegister tmp[6];
-        for(int i=0; i<6; i++) {
-          tmp[i] = sel.selReg(sel.reg(FAMILY_DWORD), TYPE_U32);
+        for(auto & i : tmp) {
+          i = sel.selReg(sel.reg(FAMILY_DWORD), TYPE_U32);
         }
         sel.push();
         sel.curr.flag = 0;
@@ -6251,8 +6246,6 @@ extern bool OCL_DEBUGINFO; // first defined by calling BVAR in program.cpp
         // float to double, just mov
         sel.MOV(dst, src);
       }
-
-      return;
     }
 
     INLINE void convertBetweenHalfDouble(Selection::Opaque &sel, const ir::ConvertInstruction &insn, bool &markChildren) const
@@ -6492,7 +6485,7 @@ extern bool OCL_DEBUGINFO; // first defined by calling BVAR in program.cpp
       const GenRegister src = sel.selReg(insn.getSrc(0), srcType);
       const Opcode opcode = insn.getOpcode();
       sel.push();
-      if (sel.isScalarReg(insn.getDst(0)) == true) {
+      if (sel.isScalarReg(insn.getDst(0))) {
         sel.curr.execWidth = 1;
         sel.curr.predicate = GEN_PREDICATE_NONE;
         sel.curr.noMask = 1;
@@ -6567,9 +6560,9 @@ extern bool OCL_DEBUGINFO; // first defined by calling BVAR in program.cpp
   class AtomicInstructionPattern : public SelectionPattern
   {
   public:
-    AtomicInstructionPattern(void) : SelectionPattern(1,1) {
+    AtomicInstructionPattern() : SelectionPattern(1,1) {
       for (uint32_t op = 0; op < ir::OP_INVALID; ++op)
-        if (ir::isOpcodeFrom<ir::AtomicInstruction>(ir::Opcode(op)) == true)
+        if (ir::isOpcodeFrom<ir::AtomicInstruction>(ir::Opcode(op)))
           this->opcodes.push_back(ir::Opcode(op));
     }
 
@@ -6595,7 +6588,7 @@ extern bool OCL_DEBUGINFO; // first defined by calling BVAR in program.cpp
       using namespace ir;
       GenRegister addrQ;
       const AtomicOps atomicOp = insn.getAtomicOpcode();
-      GenAtomicOpCode genAtomicOp = (GenAtomicOpCode)atomicOp;
+      auto genAtomicOp = (GenAtomicOpCode)atomicOp;
       unsigned addrBytes = typeSize(addr.type);
       GBE_ASSERT(msgPayload <= 3);
 
@@ -6661,9 +6654,9 @@ extern bool OCL_DEBUGINFO; // first defined by calling BVAR in program.cpp
       }
     }
 
-    INLINE bool emit(Selection::Opaque &sel, SelectionDAG &dag) const {
+    bool emit(Selection::Opaque &sel, SelectionDAG &dag) const override {
       using namespace ir;
-      const ir::AtomicInstruction &insn = cast<ir::AtomicInstruction>(dag.insn);
+      const auto &insn = cast<ir::AtomicInstruction>(dag.insn);
 
       const AtomicOps atomicOp = insn.getAtomicOpcode();
       unsigned srcNum = insn.getSrcNum();
@@ -6692,7 +6685,7 @@ extern bool OCL_DEBUGINFO; // first defined by calling BVAR in program.cpp
       if(msgPayload > 1) src1 = sel.selReg(insn.getSrc(1), type);
       if(msgPayload > 2) src2 = sel.selReg(insn.getSrc(2), type);
 
-      GenAtomicOpCode genAtomicOp = (GenAtomicOpCode)atomicOp;
+      auto genAtomicOp = (GenAtomicOpCode)atomicOp;
       if (AM == AM_DynamicBti || AM == AM_StaticBti) {
         if (AM == AM_DynamicBti) {
           Register btiReg = insn.getBtiReg();
@@ -6731,16 +6724,16 @@ extern bool OCL_DEBUGINFO; // first defined by calling BVAR in program.cpp
   class SelectInstructionPattern : public SelectionPattern
   {
   public:
-    SelectInstructionPattern(void) : SelectionPattern(1,1) {
+    SelectInstructionPattern() : SelectionPattern(1,1) {
       for (uint32_t op = 0; op < ir::OP_INVALID; ++op)
-        if (ir::isOpcodeFrom<ir::SelectInstruction>(ir::Opcode(op)) == true)
+        if (ir::isOpcodeFrom<ir::SelectInstruction>(ir::Opcode(op)))
           this->opcodes.push_back(ir::Opcode(op));
     }
 
-    INLINE bool emit(Selection::Opaque &sel, SelectionDAG &dag) const
+    bool emit(Selection::Opaque &sel, SelectionDAG &dag) const override
     {
       using namespace ir;
-      const ir::SelectInstruction &insn = cast<SelectInstruction>(dag.insn);
+      const auto &insn = cast<SelectInstruction>(dag.insn);
 
       // Get all registers for the instruction
       const Type type = insn.getType();
@@ -6757,7 +6750,7 @@ extern bool OCL_DEBUGINFO; // first defined by calling BVAR in program.cpp
       sel.getSrcGenRegImm(dag, dag1, dag2, src0, src1, type, inverse);
       const Register pred = insn.getPredicate();
       sel.push();
-        if (sel.isScalarReg(insn.getDst(0)) == true) {
+        if (sel.isScalarReg(insn.getDst(0))) {
           sel.curr.execWidth = 1;
           sel.curr.predicate = GEN_PREDICATE_NONE;
           sel.curr.noMask = 1;
@@ -6803,9 +6796,9 @@ extern bool OCL_DEBUGINFO; // first defined by calling BVAR in program.cpp
            int tmp_num;
            if (!sel.hasLongType()) {
              tmp_num = 9;
-             for(int i=0; i<9; i++) {
-               tmp[i] = sel.selReg(sel.reg(FAMILY_DWORD));
-               tmp[i].type = GEN_TYPE_UD;
+             for(auto & i : tmp) {
+               i = sel.selReg(sel.reg(FAMILY_DWORD));
+               i.type = GEN_TYPE_UD;
              }
            } else {
              tmp_num = 6;
@@ -7191,7 +7184,7 @@ extern bool OCL_DEBUGINFO; // first defined by calling BVAR in program.cpp
   class ReadARFInstructionPattern : public SelectionPattern
   {
   public:
-    ReadARFInstructionPattern(void) : SelectionPattern(1,1) {
+    ReadARFInstructionPattern() : SelectionPattern(1,1) {
       this->opcodes.push_back(ir::OP_READ_ARF);
     }
 
@@ -7204,9 +7197,9 @@ extern bool OCL_DEBUGINFO; // first defined by calling BVAR in program.cpp
       }
     }
 
-    INLINE bool emit(Selection::Opaque &sel, SelectionDAG &dag) const {
+    bool emit(Selection::Opaque &sel, SelectionDAG &dag) const override {
       using namespace ir;
-      const ir::ReadARFInstruction &insn = cast<ir::ReadARFInstruction>(dag.insn);
+      const auto &insn = cast<ir::ReadARFInstruction>(dag.insn);
       GenRegister dst;
       dst = sel.selReg(insn.getDst(0), insn.getType());
 
@@ -7229,12 +7222,12 @@ extern bool OCL_DEBUGINFO; // first defined by calling BVAR in program.cpp
   class SimdShuffleInstructionPattern : public SelectionPattern
   {
   public:
-    SimdShuffleInstructionPattern(void) : SelectionPattern(1,1) {
+    SimdShuffleInstructionPattern() : SelectionPattern(1,1) {
       this->opcodes.push_back(ir::OP_SIMD_SHUFFLE);
     }
-    INLINE bool emit(Selection::Opaque &sel, SelectionDAG &dag) const {
+    bool emit(Selection::Opaque &sel, SelectionDAG &dag) const override {
       using namespace ir;
-      const ir::SimdShuffleInstruction &insn = cast<SimdShuffleInstruction>(dag.insn);
+      const auto &insn = cast<SimdShuffleInstruction>(dag.insn);
       assert(insn.getOpcode() == OP_SIMD_SHUFFLE);
       const Type type = insn.getType();
       GenRegister dst  = sel.selReg(insn.getDst(0), type);
@@ -7243,7 +7236,7 @@ extern bool OCL_DEBUGINFO; // first defined by calling BVAR in program.cpp
 
       SelectionDAG *dag0 = dag.child[0];
       SelectionDAG *dag1 = dag.child[1];
-      if (dag1 != NULL && dag1->insn.getOpcode() == OP_LOADI && canGetRegisterFromImmediate(dag1->insn)) {
+      if (dag1 != nullptr && dag1->insn.getOpcode() == OP_LOADI && canGetRegisterFromImmediate(dag1->insn)) {
         const auto &childInsn = cast<LoadImmInstruction>(dag1->insn);
         src1 = getRegisterFromImmediate(childInsn.getImmediate(), TYPE_U32);
         if (dag0) dag0->isRoot = 1;
@@ -7286,12 +7279,12 @@ extern bool OCL_DEBUGINFO; // first defined by calling BVAR in program.cpp
   class RegionInstructionPattern : public SelectionPattern
   {
   public:
-    RegionInstructionPattern(void) : SelectionPattern(1,1) {
+    RegionInstructionPattern() : SelectionPattern(1,1) {
       this->opcodes.push_back(ir::OP_REGION);
     }
-    INLINE bool emit(Selection::Opaque &sel, SelectionDAG &dag) const {
+    bool emit(Selection::Opaque &sel, SelectionDAG &dag) const override {
       using namespace ir;
-      const ir::RegionInstruction &insn = cast<ir::RegionInstruction>(dag.insn);
+      const auto &insn = cast<ir::RegionInstruction>(dag.insn);
       GenRegister dst, src;
       dst = sel.selReg(insn.getDst(0), ir::TYPE_U32);
       src = GenRegister::ud1grf(insn.getSrc(0));
@@ -7311,12 +7304,12 @@ extern bool OCL_DEBUGINFO; // first defined by calling BVAR in program.cpp
   class IndirectMovInstructionPattern : public SelectionPattern
   {
   public:
-    IndirectMovInstructionPattern(void) : SelectionPattern(1,1) {
+    IndirectMovInstructionPattern() : SelectionPattern(1,1) {
       this->opcodes.push_back(ir::OP_INDIRECT_MOV);
     }
-    INLINE bool emit(Selection::Opaque &sel, SelectionDAG &dag) const {
+    bool emit(Selection::Opaque &sel, SelectionDAG &dag) const override {
       using namespace ir;
-      const ir::IndirectMovInstruction &insn = cast<ir::IndirectMovInstruction>(dag.insn);
+      const auto &insn = cast<ir::IndirectMovInstruction>(dag.insn);
       GenRegister dst, src0, src1;
       uint32_t offset = insn.getOffset();
       dst = sel.selReg(insn.getDst(0), insn.getType());
@@ -7333,12 +7326,12 @@ extern bool OCL_DEBUGINFO; // first defined by calling BVAR in program.cpp
   class CalcTimestampInstructionPattern : public SelectionPattern
   {
   public:
-    CalcTimestampInstructionPattern(void) : SelectionPattern(1,1) {
+    CalcTimestampInstructionPattern() : SelectionPattern(1,1) {
       this->opcodes.push_back(ir::OP_CALC_TIMESTAMP);
     }
-    INLINE bool emit(Selection::Opaque &sel, SelectionDAG &dag) const {
+    bool emit(Selection::Opaque &sel, SelectionDAG &dag) const override {
       using namespace ir;
-      const ir::CalcTimestampInstruction &insn = cast<ir::CalcTimestampInstruction>(dag.insn);
+      const auto &insn = cast<ir::CalcTimestampInstruction>(dag.insn);
       uint32_t pointNum = insn.getPointNum();
       uint32_t tsType = insn.getTimestamptType();
       GBE_ASSERT(sel.ctx.getSimdWidth() == 16 || sel.ctx.getSimdWidth() == 8);
@@ -7376,12 +7369,12 @@ extern bool OCL_DEBUGINFO; // first defined by calling BVAR in program.cpp
   class StoreProfilingInstructionPattern : public SelectionPattern
   {
   public:
-    StoreProfilingInstructionPattern(void) : SelectionPattern(1,1) {
+    StoreProfilingInstructionPattern() : SelectionPattern(1,1) {
       this->opcodes.push_back(ir::OP_STORE_PROFILING);
     }
-    INLINE bool emit(Selection::Opaque &sel, SelectionDAG &dag) const {
+    bool emit(Selection::Opaque &sel, SelectionDAG &dag) const override {
       using namespace ir;
-      const ir::StoreProfilingInstruction &insn = cast<ir::StoreProfilingInstruction>(dag.insn);
+      const auto &insn = cast<ir::StoreProfilingInstruction>(dag.insn);
       uint32_t profilingType = insn.getProfilingType();
       uint32_t BTI = insn.getBTI();
       GBE_ASSERT(sel.ctx.getSimdWidth() == 16 || sel.ctx.getSimdWidth() == 8);
@@ -7418,12 +7411,12 @@ extern bool OCL_DEBUGINFO; // first defined by calling BVAR in program.cpp
   class PrintfInstructionPattern : public SelectionPattern
   {
   public:
-    PrintfInstructionPattern(void) : SelectionPattern(1,1) {
+    PrintfInstructionPattern() : SelectionPattern(1,1) {
       this->opcodes.push_back(ir::OP_PRINTF);
     }
-    INLINE bool emit(Selection::Opaque &sel, SelectionDAG &dag) const {
+    bool emit(Selection::Opaque &sel, SelectionDAG &dag) const override {
       using namespace ir;
-      const ir::PrintfInstruction &insn = cast<ir::PrintfInstruction>(dag.insn);
+      const auto &insn = cast<ir::PrintfInstruction>(dag.insn);
       uint16_t num = insn.getNum();
       uint8_t BTI = insn.getBti();
       GenRegister tmp0, tmp1;
@@ -7478,9 +7471,9 @@ extern bool OCL_DEBUGINFO; // first defined by calling BVAR in program.cpp
   class BranchInstructionPattern : public SelectionPattern
   {
   public:
-    BranchInstructionPattern(void) : SelectionPattern(1,1) {
+    BranchInstructionPattern() : SelectionPattern(1,1) {
       for (uint32_t op = 0; op < ir::OP_INVALID; ++op)
-        if (ir::isOpcodeFrom<ir::BranchInstruction>(ir::Opcode(op)) == true)
+        if (ir::isOpcodeFrom<ir::BranchInstruction>(ir::Opcode(op)))
           this->opcodes.push_back(ir::Opcode(op));
     }
 
@@ -7496,7 +7489,7 @@ extern bool OCL_DEBUGINFO; // first defined by calling BVAR in program.cpp
       const BasicBlock *curr = insn.getParent();
       const BasicBlock *next = curr->getNextBlock();
       const LabelIndex nextLabel = next->getLabelIndex();
-      if (insn.isPredicated() == true) {
+      if (insn.isPredicated()) {
         const Register pred = insn.getPredicateIndex();
         sel.push();
           // we don't need to set next label to the pcip
@@ -7544,16 +7537,15 @@ extern bool OCL_DEBUGINFO; // first defined by calling BVAR in program.cpp
                             ir::LabelIndex src) const
     {
       using namespace ir;
-      //const GenRegister ip = sel.selReg(ocl::blockip, TYPE_U16);
       const GenRegister ip = sel.getBlockIP();
       const Function &fn = sel.ctx.getFunction();
       const BasicBlock &bb = fn.getBlock(src);
       const LabelIndex jip = sel.ctx.getLabelIndex(&insn);
       const LabelIndex label = bb.getLabelIndex();
       const uint32_t simdWidth = sel.ctx.getSimdWidth();
-      GBE_ASSERT(bb.getNextBlock() != NULL);
+      GBE_ASSERT(bb.getNextBlock() != nullptr);
 
-      if (insn.isPredicated() == true) {
+      if (insn.isPredicated()) {
         const Register pred = insn.getPredicateIndex();
 
         // Update the PcIPs for all the branches. Just put the IPs of the next
@@ -7585,7 +7577,7 @@ extern bool OCL_DEBUGINFO; // first defined by calling BVAR in program.cpp
         sel.curr.flag = 0;
         sel.curr.subFlag = 1;
         if(insn.getParent()->needEndif)
-        sel.setBlockIP(ip, dst.value());
+          sel.setBlockIP(ip, dst.value());
         sel.block->endifOffset = -1;
         if (!sel.block->hasBarrier && !sel.block->removeSimpleIfEndif) {
           if(insn.getParent()->needEndif && !insn.getParent()->needIf)
@@ -7603,9 +7595,9 @@ extern bool OCL_DEBUGINFO; // first defined by calling BVAR in program.cpp
       }
     }
 
-    INLINE bool emit(Selection::Opaque &sel, SelectionDAG &dag) const {
+    bool emit(Selection::Opaque &sel, SelectionDAG &dag) const override {
       using namespace ir;
-      const ir::BranchInstruction &insn = cast<BranchInstruction>(dag.insn);
+      const auto &insn = cast<BranchInstruction>(dag.insn);
       const Opcode opcode = insn.getOpcode();
       if (opcode == OP_RET)
         sel.EOT();
@@ -7614,8 +7606,8 @@ extern bool OCL_DEBUGINFO; // first defined by calling BVAR in program.cpp
         const LabelIndex src = insn.getParent()->getLabelIndex();
 
         sel.push();
-        if (insn.isPredicated() == true) {
-          if (dag.child[0] == NULL)
+        if (insn.isPredicated()) {
+          if (dag.child[0] == nullptr)
             sel.curr.externFlag = 1;
         }
 
@@ -7798,8 +7790,8 @@ extern bool OCL_DEBUGINFO; // first defined by calling BVAR in program.cpp
           /* arrange data in QWORD */
           GenRegister _addr = GenRegister::retype(addr, GEN_TYPE_UD);
           GenRegister srcQW = sel.selReg(sel.reg(FAMILY_QWORD), ir::TYPE_U64);
-          GenRegister srcQW_p1 = src.retype(srcQW, GEN_TYPE_UD);
-          GenRegister srcQW_p2 = src.retype(src.offset(srcQW, 2, 0), GEN_TYPE_UD);
+          GenRegister srcQW_p1 = gbe::GenRegister::retype(srcQW, GEN_TYPE_UD);
+          GenRegister srcQW_p2 = gbe::GenRegister::retype(src.offset(srcQW, 2, 0), GEN_TYPE_UD);
           vector<GenRegister> srcVec;
           srcVec.push_back(srcQW_p1);
           srcVec.push_back(srcQW_p2);
@@ -7832,7 +7824,7 @@ extern bool OCL_DEBUGINFO; // first defined by calling BVAR in program.cpp
         vector<GenRegister> _dst;
         _dst.push_back(sel.selReg(sel.reg(FAMILY_WORD), ir::TYPE_U32));
         _dst.push_back(sel.selReg(sel.reg(FAMILY_WORD), ir::TYPE_U32));
-        GenRegister _dstQ = dst.toUniform(_dst[0], GEN_TYPE_UL);
+        GenRegister _dstQ = gbe::GenRegister::toUniform(_dst[0], GEN_TYPE_UL);
 
         sel.push(); {
         /* emit read through SEND */
@@ -7840,8 +7832,8 @@ extern bool OCL_DEBUGINFO; // first defined by calling BVAR in program.cpp
         sel.UNTYPED_READ(_addr, _dst.data(), 2, GenRegister::immw(0xfe), fakeTemps);
 
         /* reconstruct QWORD type */
-        _dst[0] = dst.toUniform(dst.offset(_dst[0], 0, 4), GEN_TYPE_UD);
-        _dst[1] = dst.toUniform(_dst[1], GEN_TYPE_UD);
+        _dst[0] = gbe::GenRegister::toUniform(dst.offset(_dst[0], 0, 4), GEN_TYPE_UD);
+        _dst[1] = gbe::GenRegister::toUniform(_dst[1], GEN_TYPE_UD);
         sel.curr.execWidth = 1;
         sel.MOV(_dst[0], _dst[1]);
         } sel.pop();
@@ -7879,9 +7871,9 @@ extern bool OCL_DEBUGINFO; // first defined by calling BVAR in program.cpp
   class SubGroupInstructionPattern : public SelectionPattern
   {
   public:
-    SubGroupInstructionPattern(void) : SelectionPattern(1,1) {
+    SubGroupInstructionPattern() : SelectionPattern(1,1) {
       for (uint32_t op = 0; op < ir::OP_INVALID; ++op)
-        if (ir::isOpcodeFrom<ir::SubGroupInstruction>(ir::Opcode(op)) == true)
+        if (ir::isOpcodeFrom<ir::SubGroupInstruction>(ir::Opcode(op)))
           this->opcodes.push_back(ir::Opcode(op));
     }
 
@@ -7921,7 +7913,7 @@ extern bool OCL_DEBUGINFO; // first defined by calling BVAR in program.cpp
 
       SelectionDAG *dag0 = dag.child[0];
       SelectionDAG *dag1 = dag.child[1];
-      if (dag1 != NULL && dag1->insn.getOpcode() == OP_LOADI && canGetRegisterFromImmediate(dag1->insn)) {
+      if (dag1 != nullptr && dag1->insn.getOpcode() == OP_LOADI && canGetRegisterFromImmediate(dag1->insn)) {
         const auto &childInsn = cast<LoadImmInstruction>(dag1->insn);
         src1 = getRegisterFromImmediate(childInsn.getImmediate(), TYPE_U32);
         if (dag0) dag0->isRoot = 1;
@@ -7949,10 +7941,10 @@ extern bool OCL_DEBUGINFO; // first defined by calling BVAR in program.cpp
       return true;
     }
 
-    INLINE bool emit(Selection::Opaque &sel, SelectionDAG &dag) const
+    bool emit(Selection::Opaque &sel, SelectionDAG &dag) const override
     {
       using namespace ir;
-      const ir::SubGroupInstruction &insn = cast<SubGroupInstruction>(dag.insn);
+      const auto &insn = cast<SubGroupInstruction>(dag.insn);
       const WorkGroupOps workGroupOp = insn.getWorkGroupOpcode();
 
       if (workGroupOp == WORKGROUP_OP_BROADCAST){
@@ -8155,7 +8147,7 @@ extern bool OCL_DEBUGINFO; // first defined by calling BVAR in program.cpp
     return p0->cost < p1->cost;
   }
 
-  SelectionLibrary::SelectionLibrary(void) {
+  SelectionLibrary::SelectionLibrary() {
     this->insert<UnaryInstructionPattern>();
     this->insert<SqrtDivInstructionPattern>();
     this->insert<BinaryInstructionPattern>();
@@ -8194,17 +8186,17 @@ extern bool OCL_DEBUGINFO; // first defined by calling BVAR in program.cpp
     this->insert<MediaBlockWriteInstructionPattern>();
 
     // Sort all the patterns with the number of instructions they output
-    for (uint32_t op = 0; op < ir::OP_INVALID; ++op)
-      std::sort(this->patterns[op].begin(), this->patterns[op].end(), cmp);
+    for (auto & pattern : this->patterns)
+      std::sort(pattern.begin(), pattern.end(), cmp);
   }
 
-  SelectionLibrary::~SelectionLibrary(void) {
+  SelectionLibrary::~SelectionLibrary() {
     for (auto pattern : this->toFree)
       GBE_DELETE(const_cast<SelectionPattern*>(pattern));
   }
 
   template <typename PatternType>
-  void SelectionLibrary::insert(void) {
+  void SelectionLibrary::insert() {
     const SelectionPattern *pattern = GBE_NEW_NO_ARG(PatternType);
     this->toFree.push_back(pattern);
     for (auto opcode : pattern->opcodes)

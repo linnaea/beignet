@@ -48,7 +48,7 @@ namespace gbe
   /*! Selection opcodes properly encoded from 0 to n for fast jump tables
    *  generations
    */
-  enum SelectionOpcode {
+  enum SelectionOpcode : uint8_t {
 #define DECL_SELECTION_IR(OP, FN) SEL_OP_##OP,
 #include "backend/gen_insn_selection.hxx"
 #undef DECL_SELECTION_IR
@@ -73,19 +73,19 @@ namespace gbe
     /*! Append an instruction after this one */
     void append(SelectionInstruction &insn);
     /*! Does it read memory? */
-    bool isRead(void) const;
+    bool isRead() const;
     /*! Does it write memory? */
-    bool isWrite(void) const;
+    bool isWrite() const;
     /*! Does it modify the acc register. */
-    bool modAcc(void) const;
+    bool modAcc() const;
     /*! Is it a branch instruction (i.e. modify control flow) */
-    bool isBranch(void) const;
+    bool isBranch() const;
     /*! Is it a label instruction (i.e. change the implicit mask) */
-    bool isLabel(void) const;
+    bool isLabel() const;
     /*! Is the src's gen register region is same as all dest regs' region  */
     bool sameAsDstRegion(uint32_t srcID);
     /*! Is it a simple navtive instruction (i.e. will be one simple ISA) */
-    bool isNative(void) const;
+    bool isNative() const;
     /*! Get the destination register */
     GenRegister &dst(uint32_t dstID) { return regs[dstID]; }
     /*! Get the source register */
@@ -168,7 +168,7 @@ namespace gbe
       }wgop;
     } extra;
     /*! Gen opcode */
-    uint8_t opcode;
+    SelectionOpcode opcode;
     /*! Number of destinations */
     uint8_t dstNum:5;
     /*! Number of sources */
@@ -225,7 +225,7 @@ namespace gbe
   class SelectionVector : public NonCopyable, public intrusive_list_node
   {
   public:
-    SelectionVector(void);
+    SelectionVector();
     /*! The instruction that requires the vector of registers */
     SelectionInstruction *insn;
     /*! Directly points to the selection instruction registers */
@@ -247,7 +247,7 @@ namespace gbe
   class SelectionBlock : public NonCopyable, public intrusive_list_node
   {
   public:
-    SelectionBlock(const ir::BasicBlock *bb);
+    explicit SelectionBlock(const ir::BasicBlock *bb);
     /*! All the emitted instructions in the block */
     intrusive_list<SelectionInstruction> insnList;
     /*! The vectors that may be required by some instructions of the block */
@@ -271,7 +271,7 @@ namespace gbe
     bool removeSimpleIfEndif;
   };
 
-  enum SEL_IR_OPT_FEATURE {
+  enum SEL_IR_OPT_FEATURE : uint32_t {
     //for OP_AND/not/or/xor , on BDW+, SrcMod value indicates a logical source modifier
     //                        on PRE-BDW, SrcMod value indicates a numeric source modifier
     SIOF_LOGICAL_SRCMOD = 1 << 0,
@@ -286,17 +286,17 @@ namespace gbe
   {
   public:
     /*! Initialize internal structures used for the selection */
-    Selection(GenContext &ctx);
+    explicit Selection(GenContext &ctx);
     /*! Release everything */
-    ~Selection(void);
+    ~Selection();
     /*! Implements the instruction selection itself */
-    void select(void);
+    void select();
     /*! Get the number of instructions of the largest block */
-    uint32_t getLargestBlockSize(void) const;
+    uint32_t getLargestBlockSize() const;
     /*! Number of register vectors in the selection */
-    uint32_t getVectorNum(void) const;
+    uint32_t getVectorNum() const;
     /*! Number of registers (temporaries are created during selection) */
-    uint32_t getRegNum(void) const;
+    uint32_t getRegNum() const;
     /*! Get the family for the given register */
     ir::RegisterFamily getRegisterFamily(ir::Register reg) const;
     /*! Get the data for the given register */
@@ -321,11 +321,11 @@ namespace gbe
     Opaque *opaque;
 
     /* optimize at selection IR level */
-    void optimize(void);
-    uint32_t opt_features;
+    void optimize();
+    SEL_IR_OPT_FEATURE opt_features;
 
     /* Add insn ID for sel IR */
-    void addID(void);
+    void addID();
     const GenContext &getCtx();
 
     /*! Use custom allocators */
@@ -336,49 +336,49 @@ namespace gbe
   {
     public:
       /*! Initialize internal structures used for the selection */
-      Selection75(GenContext &ctx);
+      explicit Selection75(GenContext &ctx);
   };
 
   class Selection8: public Selection
   {
     public:
       /*! Initialize internal structures used for the selection */
-      Selection8(GenContext &ctx);
+      explicit Selection8(GenContext &ctx);
   };
 
   class SelectionChv: public Selection
   {
     public:
       /*! Initialize internal structures used for the selection */
-      SelectionChv(GenContext &ctx);
+      explicit SelectionChv(GenContext &ctx);
   };
 
   class Selection9: public Selection
   {
     public:
       /*! Initialize internal structures used for the selection */
-      Selection9(GenContext &ctx);
+      explicit Selection9(GenContext &ctx);
   };
 
   class SelectionBxt: public Selection
   {
     public:
       /*! Initialize internal structures used for the selection */
-      SelectionBxt(GenContext &ctx);
+      explicit SelectionBxt(GenContext &ctx);
   };
 
   class SelectionKbl : public Selection
   {
     public:
       /*! Initialize internal structures used for the selection */
-      SelectionKbl(GenContext &ctx);
+      explicit SelectionKbl(GenContext &ctx);
   };
 
   class SelectionGlk: public Selection
   {
     public:
       /*! Initialize internal structures used for the selection */
-      SelectionGlk(GenContext &ctx);
+      explicit SelectionGlk(GenContext &ctx);
   };
 
 } /* namespace gbe */

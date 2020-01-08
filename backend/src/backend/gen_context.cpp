@@ -98,7 +98,7 @@ namespace gbe
 #define SET_GENINSN_DBGINFO(I) \
   if(OCL_DEBUGINFO) p->DBGInfo = I.DBGInfo;
       
-  void GenContext::emitInstructionStream(void) {
+  void GenContext::emitInstructionStream() {
     // Emit Gen ISA
     for (auto &block : *sel->blockList)
     for (auto &insn : block.insnList) {
@@ -123,7 +123,7 @@ namespace gbe
   }
 #undef SET_GENINSN_DBGINFO
 
-  bool GenContext::patchBranches(void) {
+  bool GenContext::patchBranches() {
     using namespace ir;
     for (auto pair : branchPos2) {
       const LabelIndex label = pair.first;
@@ -301,7 +301,6 @@ namespace gbe
         {
           const ir::LabelIndex label0(insn.index), label1(insn.index1);
           const LabelPair labelPair(label0, label1);
-          const GenRegister src = ra->genReg(insn.src(0));
           this->branchPos3.push_back(std::make_pair(labelPair, p->store.size()));
           p->BRC(src);
         }
@@ -318,7 +317,6 @@ namespace gbe
         {
           const ir::LabelIndex label0(insn.index), label1(insn.index1);
           const LabelPair labelPair(label0, label1);
-          const GenRegister src = ra->genReg(insn.src(0));
           this->branchPos3.push_back(std::make_pair(labelPair, p->store.size()));
           p->IF(src);
         }
@@ -3644,8 +3642,8 @@ namespace gbe
 
   BVAR(OCL_OUTPUT_SEL_IR, false);
   BVAR(OCL_OPTIMIZE_SEL_IR, true);
-  bool GenContext::emitCode(void) {
-    GenKernel *genKernel = static_cast<GenKernel*>(this->kernel);
+  bool GenContext::emitCode() {
+    auto *genKernel = static_cast<GenKernel*>(this->kernel);
     sel->select();
     if (OCL_OPTIMIZE_SEL_IR)
       sel->optimize();
@@ -3654,7 +3652,7 @@ namespace gbe
       outputSelectionIR(*this, this->sel, genKernel->getName());
     schedulePreRegAllocation(*this, *this->sel);
     sel->addID();
-    if (UNLIKELY(ra->allocate(*this->sel) == false))
+    if (UNLIKELY(!ra->allocate(*this->sel)))
       return false;
     schedulePostRegAllocation(*this, *this->sel);
     if (OCL_OUTPUT_REG_ALLOC)
@@ -3666,7 +3664,7 @@ namespace gbe
     this->clearFlagRegister();
     this->emitSLMOffset();
     this->emitInstructionStream();
-    if (this->patchBranches() == false)
+    if (!this->patchBranches())
       return false;
     genKernel->insnNum = p->store.size();
     genKernel->insns = GBE_NEW_ARRAY_NO_ARG(GenInstruction, genKernel->insnNum);

@@ -65,7 +65,7 @@ namespace gbe
     GenContext(const ir::Unit &unit, const std::string &name, uint32_t deviceID,
                bool relaxMath = false);
     /*! Release everything needed */
-    virtual ~GenContext(void);
+    ~GenContext() override;
     /*! device's max srcatch buffer size */
     #define GEN7_SCRATCH_SIZE  (12 * KB)
     /*! Start new code generation with specific parameters */
@@ -75,27 +75,25 @@ namespace gbe
     /*! Target device ID*/
     uint32_t deviceID;
     /*! Implements base class */
-    virtual bool emitCode(void);
+    bool emitCode() override;
     /*! Align the scratch size to the device's scratch unit size */
-    virtual uint32_t alignScratchSize(uint32_t size);
+    uint32_t alignScratchSize(uint32_t size) override;
     /*! Get the device's max srcatch size */
-    virtual uint32_t getScratchSize(void) { return GEN7_SCRATCH_SIZE; }
+    uint32_t getScratchSize() override { return GEN7_SCRATCH_SIZE; }
     /*! Get the pointer argument size for curbe alloc */
-    virtual uint32_t getPointerSize(void) { return 4; }
-    /*! Function we emit code for */
-    INLINE const ir::Function &getFunction(void) const { return fn; }
+    virtual uint32_t getPointerSize() { return 4; }
     /*! Simd width chosen for the current function */
-    INLINE uint32_t getSimdWidth(void) const { return simdWidth; }
-    void clearFlagRegister(void);
-    void profilingProlog(void);
+    INLINE uint32_t getSimdWidth() const { return simdWidth; }
+    void clearFlagRegister();
+    void profilingProlog();
     /*! check the flag reg, if is grf, use f0.1 instead */
-    GenRegister checkFlagRegister(GenRegister flagReg);
+    // GenRegister checkFlagRegister(GenRegister flagReg);
     /*! Emit the per-lane stack pointer computation */
-    virtual void emitStackPointer(void);
+    virtual void emitStackPointer();
     /*! Emit the instructions */
-    void emitInstructionStream(void);
+    void emitInstructionStream();
     /*! Set the correct target values for the branches */
-    virtual bool patchBranches(void);
+    virtual bool patchBranches();
     /*! Forward ir::Function isSpecialReg method */
     INLINE bool isSpecialReg(ir::Register reg) const {
       return fn.isSpecialReg(reg);
@@ -110,7 +108,7 @@ namespace gbe
     }
 
     void loadLaneID(GenRegister dst);
-    GenRegister getBlockIP(void);
+    GenRegister getBlockIP();
     void setBlockIP(GenRegister blockip, uint32_t label);
     void collectShifter(GenRegister dest, GenRegister src);
     void loadTopHalf(GenRegister dest, GenRegister src);
@@ -181,7 +179,7 @@ namespace gbe
     void emitTypedWriteInstruction(const SelectionInstruction &insn);
     void emitSpillRegInstruction(const SelectionInstruction &insn);
     void emitUnSpillRegInstruction(const SelectionInstruction &insn);
-    void emitGetImageInfoInstruction(const SelectionInstruction &insn);
+    // void emitGetImageInfoInstruction(const SelectionInstruction &insn);
     virtual void emitI64MULInstruction(const SelectionInstruction &insn);
     virtual void emitI64DIVREMInstruction(const SelectionInstruction &insn);
     virtual void emitF64DIVInstruction(const SelectionInstruction &insn);
@@ -190,8 +188,8 @@ namespace gbe
     virtual void emitWorkGroupOpInstruction(const SelectionInstruction &insn);
     virtual void emitSubGroupOpInstruction(const SelectionInstruction &insn);
     void emitPrintfInstruction(const SelectionInstruction &insn);
-    void scratchWrite(const GenRegister header, uint32_t offset, uint32_t reg_num, uint32_t reg_type, uint32_t channel_mode);
-    void scratchRead(const GenRegister dst, const GenRegister header, uint32_t offset, uint32_t reg_num, uint32_t reg_type, uint32_t channel_mode);
+    void scratchWrite(GenRegister header, uint32_t offset, uint32_t reg_num, uint32_t reg_type, uint32_t channel_mode);
+    void scratchRead(GenRegister dst, GenRegister header, uint32_t offset, uint32_t reg_num, uint32_t reg_type, uint32_t channel_mode);
     unsigned beforeMessage(const SelectionInstruction &insn, GenRegister bti, GenRegister flagTemp, GenRegister btiTmp, unsigned desc);
     void afterMessage(const SelectionInstruction &insn, GenRegister bti, GenRegister flagTemp, GenRegister btiTmp, unsigned jip0);
     void emitOBReadInstruction(const SelectionInstruction &insn);
@@ -200,7 +198,7 @@ namespace gbe
     void emitMBWriteInstruction(const SelectionInstruction &insn);
 
     /*! Implements base class */
-    virtual Kernel *allocateKernel(void);
+    Kernel *allocateKernel() override;
     /*! Store the position of each label instruction in the Gen ISA stream */
     map<ir::LabelIndex, uint32_t> labelPos;
     typedef struct LabelPair {
@@ -226,14 +224,14 @@ namespace gbe
     uint32_t reservedSpillRegs;
     bool limitRegisterPressure;
     bool relaxMath;
-    bool getIFENDIFFix(void) const { return ifEndifFix; }
+    bool getIFENDIFFix() const { return ifEndifFix; }
     void setIFENDIFFix(bool fix) { ifEndifFix = fix; }
-    bool getProfilingMode(void) const { return inProfilingMode; }
+    bool getProfilingMode() const { return inProfilingMode; }
     void setProfilingMode(bool b) { inProfilingMode = b; }
     CompileErrorCode getErrCode() { return errCode; }
 
   protected:
-    virtual GenEncoder* generateEncoder(void) {
+    virtual GenEncoder* generateEncoder() {
       return GBE_NEW(Gen7Encoder, this->simdWidth, 7, deviceID);
     }
     /*! allocate a new curbe register and insert to curbe pool. */
@@ -252,13 +250,13 @@ namespace gbe
     uint32_t regSpillTick;
     const char* asmFileName;
     /*! Build the curbe patch list for the given kernel */
-    void buildPatchList(void);
+    void buildPatchList();
     /* Helper for printing the assembly */
     void outputAssembly(FILE *file, GenKernel* genKernel);
     /*! Calc the group's slm offset from R0.0, to work around HSW SLM bug*/
-    virtual void emitSLMOffset(void) { };
+    virtual void emitSLMOffset() { };
     /*! new selection of device */
-    virtual void newSelection(void);
+    virtual void newSelection();
     friend class GenRegAllocator;               //!< need to access errCode directly.
 
   };

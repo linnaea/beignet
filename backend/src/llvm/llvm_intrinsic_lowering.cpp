@@ -29,11 +29,11 @@
 using namespace llvm;
 
 namespace gbe {
-    class IntrinsicLowering : public BasicBlockPass
+    class GenIntrinsicLowering : public BasicBlockPass
     {
     public:
       static char ID;
-      IntrinsicLowering() :
+      GenIntrinsicLowering() :
         BasicBlockPass(ID) {}
 
       void getAnalysisUsage(AnalysisUsage &AU) const override {
@@ -266,9 +266,9 @@ namespace gbe {
       }
     };
 
-    char IntrinsicLowering::ID = 0;
+    char GenIntrinsicLowering::ID = 0;
 
-    BasicBlockPass *createIntrinsicLoweringPass() {
-      return new IntrinsicLowering();
+    BasicBlockPass *createGenIntrinsicLoweringPass() {
+      return new GenIntrinsicLowering();
     }
 } // end namespace

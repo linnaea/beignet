@@ -128,7 +128,7 @@ namespace gbe
     MPM.add(createTypeBasedAliasAnalysisPass());
     MPM.add(createBasicAliasAnalysisPass());
 #endif
-    MPM.add(createIntrinsicLoweringPass());
+    MPM.add(createGenIntrinsicLoweringPass());
     MPM.add(createBarrierNodupPass(false));   // remove noduplicate fnAttr before inlining.
     MPM.add(createFunctionInliningPass(512));
     MPM.add(createBarrierNodupPass(true));    // restore noduplicate fnAttr after inlining.
@@ -334,7 +334,7 @@ namespace gbe
     passes.add(new DataLayout(DL));
 #endif
     // Print the code before further optimizations
-    passes.add(createIntrinsicLoweringPass());
+    passes.add(createGenIntrinsicLoweringPass());
     passes.add(createStripAttributesPass(true));     // Strip unsupported attributes and calling conventions.
     passes.add(createFunctionInliningPass(512));
 #if LLVM_VERSION_MAJOR * 10 + LLVM_VERSION_MINOR >= 37

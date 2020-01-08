@@ -73,15 +73,15 @@
 namespace gbe {
 
   GenKernel::GenKernel(const std::string &name, uint32_t deviceID) :
-    Kernel(name), deviceID(deviceID), insns(NULL), insnNum(0)
+    Kernel(name), deviceID(deviceID), insns(nullptr), insnNum(0)
   {}
-  GenKernel::~GenKernel(void) { GBE_SAFE_DELETE_ARRAY(insns); }
-  const char *GenKernel::getCode(void) const { return (const char*) insns; }
+  GenKernel::~GenKernel() { GBE_SAFE_DELETE_ARRAY(insns); }
+  const char *GenKernel::getCode() const { return (const char*) insns; }
   void GenKernel::setCode(const char * ins, size_t size) {
     insns = (GenInstruction *)ins;
     insnNum = size / sizeof(GenInstruction);
   }
-  uint32_t GenKernel::getCodeSize(void) const { return insnNum * sizeof(GenInstruction); }
+  uint32_t GenKernel::getCodeSize() const { return insnNum * sizeof(GenInstruction); }
 
   void GenKernel::printStatus(int indent, std::ostream& outs) {
 #ifdef GBE_COMPILER_AVAILABLE
@@ -95,7 +95,7 @@ namespace gbe {
 
     char *buf = new char[4096];
     setbuffer(f, buf, 4096);
-    GenCompactInstruction * pCom = NULL;
+    GenCompactInstruction * pCom = nullptr;
     GenInstruction insn[2];
 
     uint32_t insn_version = 0;
@@ -116,34 +116,34 @@ namespace gbe {
       }
       outs << buf;
       fflush(f);
-      setbuffer(f, NULL, 0);
+      setbuffer(f, nullptr, 0);
       setbuffer(f, buf, 4096);
     }
 
-    setbuffer(f, NULL, 0);
+    setbuffer(f, nullptr, 0);
     delete [] buf;
     fclose(f);
 #endif
   }
 
-  void GenProgram::CleanLlvmResource(void){
+  void GenProgram::CleanLlvmResource(){
 #ifdef GBE_COMPILER_AVAILABLE
-    llvm::LLVMContext* ctx = NULL;
+    llvm::LLVMContext* ctx = nullptr;
     if(module){
       ctx = &((llvm::Module*)module)->getContext();
       (void)ctx;
       delete (llvm::Module*)module;
-      module = NULL;
+      module = nullptr;
     }
 //llvm's version < 3.9, ctx is global ctx, can't be deleted.
 #if LLVM_VERSION_MAJOR * 10 + LLVM_VERSION_MINOR >= 39
     //each module's context is individual, just delete it, ignaor llvm_ctx.
-    if (ctx != NULL)
+    if (ctx != nullptr)
       delete ctx;
 #else
     if(llvm_ctx){
       delete (llvm::LLVMContext*)llvm_ctx;
-      llvm_ctx = NULL;
+      llvm_ctx = nullptr;
     }
 #endif
 #endif
@@ -176,11 +176,11 @@ namespace gbe {
     // non zero)
     const ir::Function *fn = unit.getFunction(name);
     const struct CodeGenStrategy* codeGenStrategy = codeGenStrategyDefault;
-    if(fn == NULL)
+    if(fn == nullptr)
       GBE_ASSERT(0);
     uint32_t codeGenNum = sizeof(codeGenStrategyDefault) / sizeof(codeGenStrategyDefault[0]);
     uint32_t codeGen = 0;
-    GenContext *ctx = NULL;
+    GenContext *ctx = nullptr;
     if ( fn->getSimdWidth() != 0 && OCL_SIMD_WIDTH != 15) {
       GBE_ASSERTM(0, "unsupported SIMD width!");
     }else if (fn->getSimdWidth() == 8 || OCL_SIMD_WIDTH == 8) {
@@ -192,7 +192,7 @@ namespace gbe {
       codeGen = 0;
     } else
       GBE_ASSERTM(0, "unsupported SIMD width!");
-    Kernel *kernel = NULL;
+    Kernel *kernel = nullptr;
 
     // Stop when compilation is successful
     if (IS_IVYBRIDGE(deviceID)) {
@@ -214,7 +214,7 @@ namespace gbe {
     } else if (IS_GEMINILAKE(deviceID)) {
       ctx = GBE_NEW(GlkContext, unit, name, deviceID, relaxMath);
     }
-    GBE_ASSERTM(ctx != NULL, "Fail to create the gen context\n");
+    GBE_ASSERTM(ctx != nullptr, "Fail to create the gen context\n");
 
     if (profiling) {
       ctx->setProfilingMode(true);
@@ -230,12 +230,12 @@ namespace gbe {
 
       // Force the SIMD width now and try to compile
       ir::Function *simdFn = unit.getFunction(name);
-      if(simdFn == NULL)
+      if(simdFn == nullptr)
         GBE_ASSERT(0);
       simdFn->setSimdWidth(simdWidth);
       ctx->startNewCG(simdWidth, reservedSpillRegs, limitRegisterPressure);
       kernel = ctx->compileKernel();
-      if (kernel != NULL) {
+      if (kernel != nullptr) {
         GBE_ASSERT(ctx->getErrCode() == NO_ERROR);
         kernel->setOclVersion(unit.getOclVersion());
         break;
@@ -250,10 +250,10 @@ namespace gbe {
         GBE_ASSERT(!(ctx->getErrCode() == OUT_OF_RANGE_IF_ENDIF && ctx->getIFENDIFFix()));
     }
 
-    //GBE_ASSERTM(kernel != NULL, "Fail to compile kernel, may need to increase reserved registers for spilling.");
+    //GBE_ASSERTM(kernel != nullptr, "Fail to compile kernel, may need to increase reserved registers for spilling.");
     return kernel;
 #else
-    return NULL;
+    return nullptr;
 #endif
   }
 
@@ -339,11 +339,11 @@ namespace gbe {
     std::string binary_content;
 
     if(size < GEN_BINARY_HEADER_LENGTH)
-      return NULL;
+      return nullptr;
 
     //the header length is 8 bytes: 1 byte is binary type, 4 bytes are bitcode header, 3  bytes are hw info.
     if(!MATCH_DEVICE(deviceID, (unsigned char*)binary)){
-      return NULL;
+      return nullptr;
     }
 
     binary_content.assign(binary+GEN_BINARY_HEADER_LENGTH, size-GEN_BINARY_HEADER_LENGTH);
@@ -352,7 +352,7 @@ namespace gbe {
 
     if (!program->deserializeFromBin(ifs)) {
       delete program;
-      return NULL;
+      return nullptr;
     }
 
     //program->printStatus(0, std::cout);
@@ -367,7 +367,7 @@ namespace gbe {
     binary_content.assign(binary+1, size-1);
     llvm::StringRef llvm_bin_str(binary_content);
 #if LLVM_VERSION_MAJOR * 10 + LLVM_VERSION_MINOR >= 39
-    llvm::LLVMContext *c = new llvm::LLVMContext;
+    auto *c = new llvm::LLVMContext;
 #else
     llvm::LLVMContext *c = &llvm::getGlobalContext();
 #endif
@@ -389,7 +389,7 @@ namespace gbe {
       module->setTargetTriple("spir64");
     }
     releaseLLVMContextLock();
-    if(module == NULL){
+    if(module == nullptr){
       GBE_ASSERT(0);
     }
 
@@ -398,7 +398,7 @@ namespace gbe {
     //program->printStatus(0, std::cout);
     return reinterpret_cast<gbe_program>(program);
 #else
-      return NULL;
+      return nullptr;
 #endif
   }
 
@@ -406,19 +406,19 @@ namespace gbe {
     using namespace gbe;
     size_t sz;
     std::ostringstream oss;
-    GenProgram *prog = (GenProgram*)program;
+    auto *prog = (GenProgram*)program;
 
     //0 means GEN binary, 1 means LLVM bitcode compiled object, 2 means LLVM bitcode library
     if(binary_type == 0){
       if ((sz = prog->serializeToBin(oss)) == 0) {
-        *binary = NULL;
+        *binary = nullptr;
         return 0;
       }
 
       //add header to differetiate from llvm bitcode binary.
       //the header length is 8 bytes: 1 byte is binary type, 4 bytes are bitcode header, 3  bytes are hw info.
       *binary = (char *)malloc(sizeof(char) * (sz+GEN_BINARY_HEADER_LENGTH) );
-      if(*binary == NULL)
+      if(*binary == nullptr)
         return 0;
 
       memset(*binary, 0, sizeof(char) * (sz+GEN_BINARY_HEADER_LENGTH) );
@@ -445,7 +445,7 @@ namespace gbe {
         FILL_GLK_HEADER(*binary);
       }else {
         free(*binary);
-        *binary = NULL;
+        *binary = nullptr;
         return 0;
       }
       memcpy(*binary+GEN_BINARY_HEADER_LENGTH, oss.str().c_str(), sz*sizeof(char));
@@ -462,7 +462,7 @@ namespace gbe {
       std::string& bin_str = OS.str();
       int llsz = bin_str.size();
       *binary = (char *)malloc(sizeof(char) * (llsz+1) );
-      if(*binary == NULL)
+      if(*binary == nullptr)
         return 0;
 
       *(*binary) = binary_type;
@@ -486,22 +486,22 @@ namespace gbe {
   {
     using namespace gbe;
     uint32_t fast_relaxed_math = 0;
-    if (options != NULL)
-      if (strstr(options, "-cl-fast-relaxed-math") != NULL)
+    if (options != nullptr)
+      if (strstr(options, "-cl-fast-relaxed-math") != nullptr)
         fast_relaxed_math = 1;
 
     GenProgram *program = GBE_NEW(GenProgram, deviceID, module, llvm_ctx, asm_file_name, fast_relaxed_math);
 #ifdef GBE_COMPILER_AVAILABLE
     std::string error;
     // Try to compile the program
-    if (program->buildFromLLVMModule(module, error, optLevel) == false) {
-      if (err != NULL && errSize != NULL && stringSize > 0u) {
+    if (!program->buildFromLLVMModule(module, error, optLevel)) {
+      if (err != nullptr && errSize != nullptr && stringSize > 0u) {
         const size_t msgSize = std::min(error.size(), stringSize-1u);
         std::memcpy(err, error.c_str(), msgSize);
         *errSize = error.size();
       }
       GBE_DELETE(program);
-      return NULL;
+      return nullptr;
     }
 #endif
     // Everything run fine
@@ -524,8 +524,8 @@ namespace gbe {
   {
 #ifdef GBE_COMPILER_AVAILABLE
     using namespace gbe;
-    char* errMsg = NULL;
-    if(((GenProgram*)dst_program)->module == NULL){
+    char* errMsg = nullptr;
+    if(((GenProgram*)dst_program)->module == nullptr){
 #if LLVM_VERSION_MAJOR * 10 + LLVM_VERSION_MINOR >= 39
       LLVMModuleRef modRef;
       LLVMParseBitcodeInContext2(wrap(new llvm::LLVMContext()),
@@ -537,10 +537,10 @@ namespace gbe {
 #else
       ((GenProgram*)dst_program)->module = llvm::CloneModule((llvm::Module*)((GenProgram*)src_program)->module);
 #endif
-      errSize = 0;
+      errSize = nullptr;
     } else {
-      llvm::Module* src = (llvm::Module*)((GenProgram*)src_program)->module;
-      llvm::Module* dst = (llvm::Module*)((GenProgram*)dst_program)->module;
+      auto* src = (llvm::Module*)((GenProgram*)src_program)->module;
+      auto* dst = (llvm::Module*)((GenProgram*)dst_program)->module;
 #if LLVM_VERSION_MAJOR * 10 + LLVM_VERSION_MINOR >= 39
       if (&src->getContext() != &dst->getContext()) {
         LLVMModuleRef modRef;
@@ -560,7 +560,7 @@ namespace gbe {
 #else
       if (LLVMLinkModules(wrap(dst), wrap(src), LLVMLinkerPreserveSource, &errMsg)) {
 #endif
-        if (err != NULL && errSize != NULL && stringSize > 0u && errMsg) {
+        if (err != nullptr && errSize != nullptr && stringSize > 0u && errMsg) {
           strncpy(err, errMsg, stringSize-1);
           err[stringSize-1] = '\0';
           *errSize = strlen(err);
@@ -592,12 +592,12 @@ namespace gbe {
       if (p)
         optLevel = 0;
 
-      if (options != NULL)
-        if (strstr(options, "-cl-fast-relaxed-math") != NULL)
+      if (options != nullptr)
+        if (strstr(options, "-cl-fast-relaxed-math") != nullptr)
           fast_relaxed_math = 1;
 
       char *options_str = (char *)malloc(sizeof(char) * (strlen(options) + 1));
-      if (options_str == NULL)
+      if (options_str == nullptr)
         return;
       memcpy(options_str, options, strlen(options) + 1);
       std::string optionStr(options_str);
@@ -605,18 +605,18 @@ namespace gbe {
         end = optionStr.find(' ', start);
         std::string str = optionStr.substr(start, end - start);
         start = end + 1;
-        if(str.size() == 0)
+        if(str.empty())
           continue;
 
         if(str.find("-dump-opt-asm=") != std::string::npos) {
-          dumpASMFileName = str.substr(str.find("=") + 1);
+          dumpASMFileName = str.substr(str.find('=') + 1);
           continue; // Don't push this str back; ignore it.
         }
       }
       free(options_str);
     }
 
-    GenProgram* p = (GenProgram*) program;
+    auto* p = (GenProgram*) program;
     p->fast_relaxed_math = fast_relaxed_math;
     if (!dumpASMFileName.empty()) {
       p->asm_file_name = dumpASMFileName.c_str();
@@ -626,10 +626,10 @@ namespace gbe {
     }
     // Try to compile the program
     acquireLLVMContextLock();
-    llvm::Module* module = (llvm::Module*)p->module;
+    auto* module = (llvm::Module*)p->module;
 
-    if (p->buildFromLLVMModule(module, error, optLevel) == false) {
-      if (err != NULL && errSize != NULL && stringSize > 0u) {
+    if (!p->buildFromLLVMModule(module, error, optLevel)) {
+      if (err != nullptr && errSize != nullptr && stringSize > 0u) {
         const size_t msgSize = std::min(error.size(), stringSize-1u);
         std::memcpy(err, error.c_str(), msgSize);
         *errSize = error.size();
@@ -641,7 +641,7 @@ namespace gbe {
 
 } /* namespace gbe */
 
-void genSetupCallBacks(void)
+void genSetupCallBacks()
 {
   gbe_program_new_from_binary = gbe::genProgramNewFromBinary;
   gbe_program_new_from_llvm_binary = gbe::genProgramNewFromLLVMBinary;

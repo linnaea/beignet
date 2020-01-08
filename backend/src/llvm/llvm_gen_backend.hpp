@@ -144,7 +144,7 @@ namespace gbe
   llvm::ModulePass* createBarrierNodupPass(bool);
 
   /*! Convert the Intrinsic call to gen function */
-  llvm::BasicBlockPass *createIntrinsicLoweringPass();
+  llvm::BasicBlockPass *createGenIntrinsicLoweringPass();
 
   /*! Passer the printf function call. */
   llvm::FunctionPass* createPrintfParserPass(ir::Unit &unit);

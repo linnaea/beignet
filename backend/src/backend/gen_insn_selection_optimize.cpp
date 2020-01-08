@@ -1,15 +1,12 @@
 
 #include "backend/gen_insn_selection.hpp"
-#include "backend/gen_context.hpp"
 #include "ir/function.hpp"
 #include "ir/liveness.hpp"
 #include "ir/profile.hpp"
 #include "sys/cvar.hpp"
-#include "sys/vector.hpp"
+#include "gen_register.hpp"
 #include <algorithm>
-#include <climits>
 #include <map>
-#include <math.h>
 
 namespace gbe
 {
@@ -33,7 +30,7 @@ namespace gbe
         //the reseason is that if one instruction span several registers,
         //the other registers' visit pattern is same as first register if the vstride is normal(width * hstride)
         assert(vstride == width * hstride);
-        elements |= (1 << offsetInType);
+        elements |= (1u << offsetInType);
         offsetInByte += hstride * elementSize;
       }
       base += vstride * elementSize;
@@ -44,26 +41,24 @@ namespace gbe
   class SelOptimizer
   {
   public:
-    SelOptimizer(const GenContext& ctx, uint32_t features) : ctx(ctx), features(features) {}
+    SelOptimizer(uint32_t features) : features(features) {}
     virtual void run() = 0;
-    virtual ~SelOptimizer() {}
+    virtual ~SelOptimizer() = default;
   protected:
-    const GenContext &ctx;      //in case that we need it
     uint32_t features;
   };
 
   class SelBasicBlockOptimizer : public SelOptimizer
   {
   public:
-    SelBasicBlockOptimizer(const GenContext& ctx,
-                           const ir::Liveness::LiveOut& liveout,
+    SelBasicBlockOptimizer(const ir::Liveness::LiveOut& liveout,
                            uint32_t features,
                            SelectionBlock &bb) :
-        SelOptimizer(ctx, features), bb(bb), liveout(liveout), optimized(false)
+        SelOptimizer(features), bb(bb), liveout(liveout), optimized(false)
     {
     }
-    ~SelBasicBlockOptimizer() {}
-    virtual void run();
+    ~SelBasicBlockOptimizer() override = default;
+    void run() override;
 
   private:
     // local copy propagation
@@ -71,26 +66,26 @@ namespace gbe
     {
     public:
       ReplaceInfo(SelectionInstruction& insn,
-                  const GenRegister& intermedia,
+                  const GenRegister& intermediate,
                   const GenRegister& replacement) :
-                  insn(insn), intermedia(intermedia), replacement(replacement)
+          insn(insn), intermediate(intermediate), replacement(replacement)
       {
         assert(insn.opcode == SEL_OP_MOV);
         assert(&(insn.src(0)) == &replacement);
-        assert(&(insn.dst(0)) == &intermedia);
-        this->elements = CalculateElements(intermedia, insn.state.execWidth);
+        assert(&(insn.dst(0)) == &intermediate);
+        this->elements = CalculateElements(intermediate, insn.state.execWidth);
         replacementOverwritten = false;
       }
       ~ReplaceInfo()
       {
-        this->toBeReplaceds.clear();
+        this->toBeReplaced.clear();
       }
 
       SelectionInstruction& insn;
-      const GenRegister& intermedia;
+      const GenRegister& intermediate;
       uint32_t elements;
       const GenRegister& replacement;
-      set<GenRegister*> toBeReplaceds;
+      set<GenRegister*> toBeReplaced;
       bool replacementOverwritten;
       GBE_CLASS(ReplaceInfo);
     };
@@ -112,7 +107,7 @@ namespace gbe
 
   void SelBasicBlockOptimizer::doReplacement(ReplaceInfo* info)
   {
-    for (GenRegister* reg : info->toBeReplaceds) {
+    for (GenRegister* reg : info->toBeReplaced) {
       GenRegister::propagateRegister(*reg, info->replacement);
     }
     bb.insnList.erase(&(info->insn));
@@ -131,11 +126,11 @@ namespace gbe
 
   void SelBasicBlockOptimizer::removeFromReplaceInfoMap(const SelectionInstruction& insn, const GenRegister& var)
   {
-    for (ReplaceInfoMap::iterator pos = replaceInfoMap.begin(); pos != replaceInfoMap.end(); ++pos) {
+    for (auto pos = replaceInfoMap.begin(); pos != replaceInfoMap.end(); ++pos) {
       ReplaceInfo* info = pos->second;
-      if (info->intermedia.reg() == var.reg()) {   //intermedia is overwritten
-        if (info->intermedia.quarter == var.quarter && info->intermedia.subnr == var.subnr && info->intermedia.nr == var.nr) {
-          // We need to check the if intermedia is fully overwritten, they may be in some prediction state.
+      if (info->intermediate.reg() == var.reg()) {   //intermediate is overwritten
+        if (info->intermediate.quarter == var.quarter && info->intermediate.subnr == var.subnr && info->intermediate.nr == var.nr) {
+          // We need to check the if intermediate is fully overwritten, they may be in some prediction state.
           if (CanBeReplaced(info, insn, var))
             doReplacement(info);
         }
@@ -172,7 +167,7 @@ namespace gbe
     if (liveout.find(dst.reg()) != liveout.end())
       return;
 
-    ReplaceInfo* info = new ReplaceInfo(insn, dst, src);
+    auto* info = new ReplaceInfo(insn, dst, src);
     replaceInfoMap[dst.reg()] = info;
   }
 
@@ -246,8 +241,8 @@ namespace gbe
     if (info->insn.state.inversePredicate != insn.state.inversePredicate)
       return false;
 
-    if (info->intermedia.type == var.type && info->intermedia.quarter == var.quarter &&
-        info->intermedia.subnr == var.subnr && info->intermedia.nr == var.nr) {
+    if (info->intermediate.type == var.type && info->intermediate.quarter == var.quarter &&
+        info->intermediate.subnr == var.subnr && info->intermediate.nr == var.nr) {
       uint32_t elements = CalculateElements(var, insn.state.execWidth);  //considering width, hstrid, vstrid and execWidth
       if (info->elements == elements)
         return true;
@@ -258,11 +253,11 @@ namespace gbe
 
   void SelBasicBlockOptimizer::changeInsideReplaceInfoMap(const SelectionInstruction& insn, GenRegister& var)
   {
-    ReplaceInfoMap::iterator it = replaceInfoMap.find(var.reg());
+    auto it = replaceInfoMap.find(var.reg());
     if (it != replaceInfoMap.end()) {    //same ir register
       ReplaceInfo* info = it->second;
       if (CanBeReplaced(info, insn, var)) {
-        info->toBeReplaceds.insert(&var);
+        info->toBeReplaced.insert(&var);
       } else {
         //if it is the same ir register, but could not be replaced for some reason,
         //that means we could not remove MOV instruction, and so no replacement,
@@ -294,36 +289,19 @@ namespace gbe
       optimized = false;
 
       doLocalCopyPropagation();
-      //doOtherLocalOptimization();
 
       if (!optimized)
         break;      //break since no optimization found at this round
     }
   }
 
-  class SelGlobalOptimizer : public SelOptimizer
-  {
-  public:
-    SelGlobalOptimizer(const GenContext& ctx, uint32_t features) : SelOptimizer(ctx, features) {}
-    ~SelGlobalOptimizer() {}
-    virtual void run();
-  };
-
-  void SelGlobalOptimizer::run()
-  {
-
-  }
-
   void Selection::optimize()
   {
     //do basic block level optimization
     for (SelectionBlock &block : *blockList) {
-      SelBasicBlockOptimizer bbopt(getCtx(), getCtx().getLiveOut(block.bb), opt_features, block);
+      SelBasicBlockOptimizer bbopt(getCtx().getLiveOut(block.bb), opt_features, block);
       bbopt.run();
     }
-
-    //do global optimization
-
   }
 
   void Selection::addID()

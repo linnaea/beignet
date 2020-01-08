@@ -74,7 +74,7 @@ namespace gbe
     /*! Get the kernel we are currently compiling */
     INLINE Kernel *getKernel(void) const { return this->kernel; }
     /*! Get the function we are currently compiling */
-    INLINE const ir::Function &getFunction(void) const { return this->fn; }
+    INLINE const ir::Function &getFunction() const { return this->fn; }
     /*! Get the target label index for the given instruction */
     INLINE ir::LabelIndex getLabelIndex(const ir::Instruction *insn) const {
       GBE_ASSERT(JIPs.find(insn) != JIPs.end());

@@ -1002,13 +1002,11 @@ namespace gbe
     }
 
     if (insn.header.opcode != GEN_OPCODE_JMPI || (jip > -32769 && jip < 32768))  {
-      if (insn.header.opcode == GEN_OPCODE_IF) {
-        this->setSrc1(&insn, GenRegister::immd((jip & 0xffff) | uip<<16));
-        return;
-      } else if (insn.header.opcode == GEN_OPCODE_JMPI) {
-        jip = jip - 2;
-      } else if(insn.header.opcode == GEN_OPCODE_ENDIF)
-        jip += 2;
+      switch(insn.header.opcode) {
+      case GEN_OPCODE_JMPI: jip -= 2; break;
+      case GEN_OPCODE_ENDIF: jip += 2; break;
+      default: break;
+      }
        this->setSrc1(&insn, GenRegister::immd((jip & 0xffff) | uip<<16));
     } else if ( insn.header.predicate_control == GEN_PREDICATE_NONE ) {
       // For the conditional jump distance out of S15 range, we need to use an
@@ -1041,7 +1039,7 @@ namespace gbe
   }
 
   void GenEncoder::CMP(uint32_t conditional, GenRegister src0, GenRegister src1, GenRegister dst) {
-    if (needToSplitCmp(this, src0, src1, dst) == false) {
+    if (!needToSplitCmp(this, src0, src1, dst)) {
       if(!GenRegister::isNull(dst) && compactAlu2(this, GEN_OPCODE_CMP, dst, src0, src1, conditional, false)) {
         return;
       }
