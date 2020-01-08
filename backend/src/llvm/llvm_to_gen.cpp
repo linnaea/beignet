@@ -182,25 +182,6 @@ namespace gbe
 #endif
       MPM.add(createGVNPass());                 // Remove redundancies
     }
-#if LLVM_VERSION_MAJOR * 10 + LLVM_VERSION_MINOR >= 35
-    // FIXME Workaround: we find that CustomLoopUnroll may increase register pressure greatly,
-    // and it may even make som cl kernel cannot compile because of limited scratch memory for spill.
-    // As we observe this under strict math. So we disable CustomLoopUnroll if strict math is enabled.
-    if (!strictMath) {
-#if !defined(__ANDROID__)
-      MPM.add(createCustomLoopUnrollPass());      //Unroll loops
-#endif
-      MPM.add(createLoopUnrollPass());            //Unroll loops
-      if(optLevel > 0) {
-#if LLVM_VERSION_MAJOR * 10 + LLVM_VERSION_MINOR >= 38
-        MPM.add(createSROAPass());
-#else
-        MPM.add(createSROAPass(/*RequiresDomTree*/ false));
-#endif
-        MPM.add(createGVNPass());                 // Remove redundancies
-      }
-    }
-#endif
     MPM.add(createMemCpyOptPass());             // Remove memcpy / form memset
     MPM.add(createSCCPPass());                  // Constant prop with SCCP
 

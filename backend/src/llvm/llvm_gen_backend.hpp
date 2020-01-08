@@ -152,10 +152,6 @@ namespace gbe
   /*! Insert the time stamp for profiling. */
   llvm::FunctionPass* createProfilingInserterPass(int profilingType, ir::Unit &unit);
 
-#if LLVM_VERSION_MAJOR * 10 + LLVM_VERSION_MINOR >= 35
-  /* customized loop unrolling pass. */
-  llvm::LoopPass *createCustomLoopUnrollPass();
-#endif
   llvm::FunctionPass* createSamplerFixPass();
 
   /*! Add all the function call of ocl to our bitcode. */

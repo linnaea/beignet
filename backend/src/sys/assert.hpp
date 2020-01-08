@@ -28,7 +28,7 @@
 namespace gbe
 {
   /*! To ensure that condition truth. Optional message is supported */
-  void onFailedAssertion(const char *msg, const char *file, const char *fn, int line);
+  [[noreturn]] void onFailedAssertion(const char *msg, const char *file, const char *fn, int line);
 } /* namespace gbe */
 
 #endif /* __GBE_ASSERT_HPP__ */

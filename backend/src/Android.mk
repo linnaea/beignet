@@ -87,7 +87,6 @@ BACKEND_SRC_FILES:= \
     llvm/llvm_loadstore_optimization.cpp \
     llvm/llvm_gen_backend.hpp \
     llvm/llvm_gen_ocl_function.hxx \
-    llvm/llvm_unroll.cpp \
     llvm/llvm_to_gen.hpp \
     llvm/llvm_profiling.cpp \
     backend/gen/gen_mesa_disasm.c \
