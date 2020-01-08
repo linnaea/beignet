@@ -29,24 +29,24 @@
 using namespace llvm;
 
 namespace gbe {
-    class InstrinsicLowering : public BasicBlockPass
+    class IntrinsicLowering : public BasicBlockPass
     {
     public:
       static char ID;
-      InstrinsicLowering() :
+      IntrinsicLowering() :
         BasicBlockPass(ID) {}
 
-      void getAnalysisUsage(AnalysisUsage &AU) const {
+      void getAnalysisUsage(AnalysisUsage &AU) const override {
 
       }
 
 #if LLVM_VERSION_MAJOR * 10 + LLVM_VERSION_MINOR >= 40
-      virtual StringRef getPassName() const
+      StringRef getPassName() const override
 #else
-      virtual const char *getPassName() const
+      const char *getPassName() const override
 #endif
       {
-        return "SPIR backend: lowering instrinsics";
+        return "SPIR backend: lowering intrinsics";
       }
       static char convertSpaceToName(Value *val) {
         const uint32_t space = val->getType()->getPointerAddressSpace();
@@ -62,7 +62,7 @@ namespace gbe {
           case 4:
             return 'n';
           default:
-            assert(0 && "Non support address space");
+            GBE_ASSERTM(0, "Non support address space");
             return '\0';
         }
       }
@@ -102,14 +102,14 @@ namespace gbe {
         LLVMContext &Context = BB.getContext();
         for (BasicBlock::iterator DI = BB.begin(); DI != BB.end(); ) {
           Instruction *Inst = &*DI++;
-          CallInst* CI = dyn_cast<CallInst>(Inst);
-          if(CI == NULL)
+          auto* CI = dyn_cast<CallInst>(Inst);
+          if(CI == nullptr)
             continue;
 
           IRBuilder<> Builder(&BB, BasicBlock::iterator(CI));
           // only support memcpy and memset
           if (Function *F = CI->getCalledFunction()) {
-            const Intrinsic::ID intrinsicID = (Intrinsic::ID) F->getIntrinsicID();
+            const auto intrinsicID = (Intrinsic::ID) F->getIntrinsicID();
             if (intrinsicID == 0)
               continue;
             switch (intrinsicID) {
@@ -119,7 +119,7 @@ namespace gbe {
                                                     /* isSigned */ false);
                 Value *align = Builder.CreateIntCast(CI->getArgOperand(3), IntPtr,
                                                     /* isSigned */ false);
-                ConstantInt *ci = dyn_cast<ConstantInt>(align);
+                auto *ci = dyn_cast<ConstantInt>(align);
                 Value *Ops[3];
                 Ops[0] = CI->getArgOperand(0);
                 Ops[1] = CI->getArgOperand(1);
@@ -141,7 +141,7 @@ namespace gbe {
                                                     /* isSigned */ false);
                 Value *align = Builder.CreateIntCast(CI->getArgOperand(3), IntPtr,
                                                     /* isSigned */ false);
-                ConstantInt *ci = dyn_cast<ConstantInt>(align);
+                auto *ci = dyn_cast<ConstantInt>(align);
                 Value *Ops[3];
                 Ops[0] = Op0;
                 // Extend the amount to i32.
@@ -154,6 +154,109 @@ namespace gbe {
                 replaceCallWith(name, CI, Ops, Ops+3, Type::getVoidTy(Context));
                 break;
               }
+#if LLVM_VERSION_MAJOR >= 8
+              case Intrinsic::fshl:
+              case Intrinsic::fshr: {
+                // %result = call T @llvm.fsh{l,r}.T(T %a, T %b, T %c)
+                // ->
+                // ;intrinsic has different semantic on shift amount larger than bit size
+                // realShift = c % Tbits
+                // funneled = Tbits - realShift
+                // visibleBits = a {<<,>>} realShift
+                // funnelBits = b {>>,<<} funneled
+                // result = visibleBits | funnelBits
+                //
+                // %realShift = urem T Tbits, %c
+                // %funShift = sub T Tbits, %realShift
+                // %visBits = {shl,lshr} T %a, %realShift
+                // %funBits = {lshr,shl} T %b, %funShift
+                // %result = or T %visBits, %funBits
+                auto operandBits = CI->getOperand(0)->getType()->getScalarSizeInBits();
+                Constant *nBits = Builder.getIntN(operandBits, operandBits);
+                if(CI->getType()->isVectorTy()) {
+                  nBits = ConstantVector::getSplat(CI->getType()->getVectorNumElements(), nBits);
+                }
+
+                auto realShift = Builder.CreateURem(CI->getOperand(2), nBits);
+                auto funShift = Builder.CreateSub(nBits, realShift);
+
+                if(intrinsicID == Intrinsic::fshr) {
+                  std::swap(realShift, funShift);
+                }
+
+                auto upperBits = Builder.CreateShl(CI->getOperand(0), realShift);
+                auto lowerBits = Builder.CreateLShr(CI->getOperand(1), funShift);
+                auto combined = Builder.CreateOr(upperBits, lowerBits);
+
+                CI->replaceAllUsesWith(combined);
+                CI->eraseFromParent();
+                break;
+              }
+#endif
+#if LLVM_VERSION_MAJOR >= 9
+              case Intrinsic::usub_sat: {
+                // %res = call T @llvm.usub.sat.T(T %a, T %b)
+                // -> max(a, b) - b
+                //
+                // %pred = icmp ugt T %a %b
+                // %op0 = select i1 %pred, T %a, T %b
+                // %res = sub T %op0, %b
+                auto pred = Builder.CreateICmpUGT(CI->getOperand(0), CI->getOperand(1));
+                auto op0 = Builder.CreateSelect(pred, CI->getOperand(0), CI->getOperand(1));
+                auto res = Builder.CreateSub(op0, CI->getOperand(1));
+
+                CI->replaceAllUsesWith(res);
+                CI->eraseFromParent();
+                break;
+              }
+              case Intrinsic::ssub_sat: {
+                // %res = call T @llvm.ssub.sat.T(T %a, T %b)
+                // ->
+                // s = a - b
+                // overflow = (a ^ b) & (a ^ s)
+                // bound = (Tmask >>> 1) + (a >>> (Tbits - 1))
+                // res = overflow ? bound : s
+                //
+                // %sub = sub T %a, %b
+                // %asign = lshr T %a, Sub(Tbits, 1)
+                // %bound = add T %asign, LShr(Tmask, 1)
+                // %ovf1 = xor T %a, %b
+                // %ovf2 = xor T %a, %sub
+                // %ovf3 = and T %ovf1, %ovf2
+                // %ovf4 = lshr T %ovf3, Sub(Tbits, 1)
+                // %ovf = trunc %ovf4 to i1
+                // %res = select i1 %ovf, T %bound, T %sub
+                auto type = CI->getType();
+                auto scalarType = dyn_cast<IntegerType>(type->getScalarType());
+                GBE_ASSERT(scalarType);
+                auto scalarMax = scalarType->getMask();
+                scalarMax.lshrInPlace(1);
+
+                Constant *tMaxPos = Builder.getInt(scalarMax);
+                Constant *tBitsM1 = Builder.getIntN(scalarType->getBitWidth(), scalarType->getBitWidth() - 1);
+                Type *tyI1 = Builder.getInt1Ty();
+                if(type->isVectorTy()) {
+                  tMaxPos = ConstantVector::getSplat(type->getVectorNumElements(), tMaxPos);
+                  tBitsM1 = ConstantVector::getSplat(type->getVectorNumElements(), tBitsM1);
+                  tyI1 = VectorType::get(tyI1, type->getVectorNumElements());
+                }
+
+                auto sub = Builder.CreateSub(CI->getOperand(0), CI->getOperand(1));
+                auto aSign = Builder.CreateLShr(CI->getOperand(0), tBitsM1);
+                auto aBound = Builder.CreateAdd(aSign, tMaxPos);
+
+                auto canOverflow = Builder.CreateXor(CI->getOperand(0), CI->getOperand(1));
+                auto mayOverflow = Builder.CreateXor(CI->getOperand(0), sub);
+                auto didOverflow = Builder.CreateAnd(canOverflow, mayOverflow);
+                didOverflow = Builder.CreateLShr(didOverflow, tBitsM1);
+                didOverflow = Builder.CreateTrunc(didOverflow, tyI1);
+                auto result = Builder.CreateSelect(didOverflow, aBound, sub);
+
+                CI->replaceAllUsesWith(result);
+                CI->eraseFromParent();
+                break;
+              }
+#endif
               default:
                 continue;
             }
@@ -163,9 +266,9 @@ namespace gbe {
       }
     };
 
-    char InstrinsicLowering::ID = 0;
+    char IntrinsicLowering::ID = 0;
 
     BasicBlockPass *createIntrinsicLoweringPass() {
-      return new InstrinsicLowering();
+      return new IntrinsicLowering();
     }
 } // end namespace

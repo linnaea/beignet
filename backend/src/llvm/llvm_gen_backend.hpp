@@ -60,7 +60,7 @@ namespace gbe
   namespace ir { class Unit; }
 
   /*! All intrinsic Gen functions */
-  enum OCLInstrinsic {
+  enum OCLIntrinsic {
 #define DECL_LLVM_GEN_FUNCTION(ID, NAME) GEN_OCL_##ID,
 #include "llvm_gen_ocl_function.hxx"
   GEN_OCL_NOT_FOUND,   
@@ -77,8 +77,8 @@ namespace gbe
 #undef DECL_LLVM_GEN_FUNCTION
     }
     /*! Sort intrinsics with their names */
-    gbe::map<std::string, OCLInstrinsic> map;
-    OCLInstrinsic find(const std::string symbol) const {
+    gbe::map<std::string, OCLIntrinsic> map;
+    OCLIntrinsic find(const std::string symbol) const {
       auto it = map.find(symbol);
 
       if (it == map.end()) {
@@ -102,7 +102,7 @@ namespace gbe
     }
   };
 
-  /*! Sort the OCL Gen instrinsic functions (built on pre-main) */
+  /*! Sort the OCL Gen intrinsic functions (built on pre-main) */
   static const OCLIntrinsicMap intrinsicMap;
 
   /*! Pad the offset */
