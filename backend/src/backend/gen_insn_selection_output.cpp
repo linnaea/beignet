@@ -1,16 +1,15 @@
 #include "backend/gen_insn_selection.hpp"
-#include "backend/gen_insn_selection_output.hpp"
-#include "sys/cvar.hpp"
 #include "sys/intrusive_list.hpp"
-#include <string.h>
 #include <iostream>
 #include <iomanip>
+#include <sstream>
 using namespace std;
 
 namespace gbe
 {
-  static void outputGenReg(GenRegister& reg, bool dst)
+  static void outputGenReg(const GenRegister& reg, bool dst)
   {
+    ostringstream regName;
     if (reg.file == GEN_IMMEDIATE_VALUE || reg.file == GEN_GENERAL_REGISTER_FILE) {
       if (reg.file == GEN_IMMEDIATE_VALUE) {
         switch (reg.type) {
@@ -18,126 +17,133 @@ namespace gbe
           case GEN_TYPE_UW:
           case GEN_TYPE_UB:
           case GEN_TYPE_HF_IMM:
-            cout << hex << "0x" << reg.value.ud  << dec;
+            regName << hex << "0x" << reg.value.ud  << dec;
             break;
           case GEN_TYPE_D:
           case GEN_TYPE_W:
           case GEN_TYPE_B:
-            cout << reg.value.d;
+            regName << reg.value.d;
             break;
           case GEN_TYPE_V:
-            cout << hex << "0x" << reg.value.ud << dec;
+            regName << hex << "0x" << reg.value.ud << dec;
             break;
           case GEN_TYPE_UL:
-            cout << reg.value.u64;
+            regName << hex << "0x" << reg.value.u64 << dec;
             break;
           case GEN_TYPE_L:
-            cout << reg.value.i64;
+            regName << reg.value.i64;
             break;
           case GEN_TYPE_F:
-            cout << reg.value.f;
+            regName << reg.value.f;
             break;
         }
-      }else {
+      } else {
         if (reg.negation)
-          cout << "-";
+          regName << "-";
         if (reg.absolute)
-          cout << "(abs)";
-        cout << "%" << reg.value.reg;
+          regName << "(abs)";
+        regName << "%" << reg.value.reg;
         if (reg.subphysical)
-          cout << "." << reg.subnr + reg.nr * GEN_REG_SIZE;
+          regName << "." << reg.subnr + reg.nr * GEN_REG_SIZE;
 
         if (dst)
-          cout << "<" << GenRegister::hstride_size(reg) << ">";
+          regName << "<" << GenRegister::hstride_size(reg) << ">";
         else
-          cout << "<" << GenRegister::vstride_size(reg) << "," << GenRegister::width_size(reg) << "," << GenRegister::hstride_size(reg) << ">";
+          regName << "<" << GenRegister::vstride_size(reg) << "," << GenRegister::width_size(reg) << "," << GenRegister::hstride_size(reg) << ">";
       }
 
-      cout << ":";
+      regName << ":";
       switch (reg.type) {
         case GEN_TYPE_UD:
-          cout << "UD";
+          regName << "UD";
           break;
         case GEN_TYPE_UW:
-          cout << "UW";
+          regName << "UW";
           break;
         case GEN_TYPE_UB:
-          cout << "UB";
+          regName << "UB";
           break;
         case GEN_TYPE_HF_IMM:
-          cout << "HF";
+          regName << "HF";
           break;
         case GEN_TYPE_D:
-          cout << "D";
+          regName << "D ";
           break;
         case GEN_TYPE_W:
-          cout << "W";
+          regName << "W ";
           break;
         case GEN_TYPE_B:
-          cout << "B";
+          regName << "B ";
           break;
         case GEN_TYPE_V:
-          cout << "V";
+          regName << "V ";
           break;
         case GEN_TYPE_UL:
-          cout << "UL";
+          regName << "UL";
           break;
         case GEN_TYPE_L:
-          cout << "L";
+          regName << "L ";
           break;
         case GEN_TYPE_F:
-          cout << "F";
+          regName << "F ";
           break;
       }
     } else if (reg.file == GEN_ARCHITECTURE_REGISTER_FILE) {
-      cout << setw(8) << "arf";
+      if(reg.nr == GEN_ARF_NULL) {
+        regName << "null";
+      } else if((reg.nr & GEN_ARF_ACCUMULATOR) == GEN_ARF_ACCUMULATOR) {
+        regName << "acc." << (reg.nr & 0xF);
+      } else {
+        regName << "arf." << reg.nr;
+      }
     } else
       assert(!"should not reach here");
+
+    cout << right << setw(dst ? 15 : 23) << regName.str();
   }
 
 #define OP_NAME_LENGTH 512
-  void outputSelectionInst(SelectionInstruction &insn) {
-    cout<<"["<<insn.ID<<"]";
+  void outputSelectionInst(const SelectionInstruction &insn) {
+    cout << "[" << insn.ID << "]\t";
+    if (insn.isLabel()) {
+      cout << "L" << insn.index << ":" << endl;
+      return;
+    }
+
     if (insn.state.predicate != GEN_PREDICATE_NONE) {
       if (insn.state.physicalFlag == 0)
-        cout << "(f" << insn.state.flagIndex << ")\t";
+        cout << "(" << insn.state.flagIndex << ")";
       else
-        cout << "(f" << insn.state.flag << "." << insn.state.subFlag << ")\t";
-    }
-    else
-      cout << "    \t";
-
-    char opname[OP_NAME_LENGTH];
-    if (insn.isLabel()) {
-        cout << "  L" << insn.index << ":" << endl;
-        return;
-    } else {
-      switch (insn.opcode) {
-        #define DECL_SELECTION_IR(OP, FAMILY) case SEL_OP_##OP: sprintf(opname, "%s", #OP); break;
-        #include "backend/gen_insn_selection.hxx"
-        #undef DECL_SELECTION_IR
-      }
+        cout << "(" << insn.state.flag << "." << insn.state.subFlag << ")";
     }
 
-    if (insn.opcode == SEL_OP_CMP) {
+    cout << "\t";
+    ostringstream opName;
+    switch (insn.opcode) {
+      #define DECL_SELECTION_IR(OP, FAMILY) case SEL_OP_##OP: opName << #OP; break;
+      #include "backend/gen_insn_selection.hxx"
+      #undef DECL_SELECTION_IR
+    }
+
+    if (insn.opcode == SEL_OP_CMP || insn.opcode == SEL_OP_I64CMP) {
       switch (insn.extra.function) {
         case GEN_CONDITIONAL_LE:
-          strcat(opname, ".le");
+          opName << ".le";
           break;
         case GEN_CONDITIONAL_L:
-          strcat(opname, ".l");
+          opName << ".lt";
           break;
         case GEN_CONDITIONAL_GE:
-          strcat(opname, ".ge");
+          opName << (".ge");
           break;
         case GEN_CONDITIONAL_G:
-          strcat(opname, ".g");
+          opName << (".gt");
           break;
         case GEN_CONDITIONAL_EQ:
-          strcat(opname, ".eq");
+          opName << (".eq");
           break;
         case GEN_CONDITIONAL_NEQ:
-          strcat(opname, ".neq");
+          opName << (".ne");
           break;
       }
     }
@@ -145,68 +151,94 @@ namespace gbe
     if (insn.opcode == SEL_OP_MATH) {
       switch (insn.extra.function) {
         case GEN_MATH_FUNCTION_INV:
-          strcat(opname, ".inv");
+          opName << (".inv");
           break;
         case GEN_MATH_FUNCTION_LOG:
-          strcat(opname, ".log");
+          opName << (".log");
           break;
         case GEN_MATH_FUNCTION_EXP:
-          strcat(opname, ".exp");
+          opName << (".exp");
           break;
         case GEN_MATH_FUNCTION_SQRT:
-          strcat(opname, ".sqrt");
+          opName << (".sqrt");
           break;
         case GEN_MATH_FUNCTION_RSQ:
-          strcat(opname, ".rsq");
+          opName << (".rsq");
           break;
         case GEN_MATH_FUNCTION_SIN:
-          strcat(opname, ".sin");
+          opName << (".sin");
           break;
         case GEN_MATH_FUNCTION_COS:
-          strcat(opname, ".cos");
+          opName << (".cos");
           break;
         case GEN_MATH_FUNCTION_FDIV:
-          strcat(opname, ".fdiv");
+          opName << (".fdiv");
           break;
         case GEN_MATH_FUNCTION_POW:
-          strcat(opname, ".pow");
+          opName << (".pow");
           break;
         case GEN_MATH_FUNCTION_INT_DIV_QUOTIENT_AND_REMAINDER:
-          strcat(opname, ".intdivmod");
+          opName << (".divmod");
           break;
         case GEN_MATH_FUNCTION_INT_DIV_QUOTIENT:
-          strcat(opname, ".intdiv");
+          opName << (".idiv");
           break;
         case GEN_MATH_FUNCTION_INT_DIV_REMAINDER:
-          strcat(opname, ".intmod");
+          opName << (".mod");
           break;
       }
     }
 
+    opName << "(" << insn.state.execWidth << ")";
+    if(insn.opcode == SEL_OP_CMP || insn.opcode == SEL_OP_I64CMP || insn.state.modFlag) {
+      if(!insn.state.physicalFlag) {
+        opName << "[" << insn.state.flagIndex << "]";
+      } else if(insn.opcode == SEL_OP_I64CMP || insn.opcode == SEL_OP_CMP) {
+        opName << "[" << insn.state.flag << "." << insn.state.subFlag << "]";
+      }
+    }
 
-    int n = strlen(opname);
-    if(n >= OP_NAME_LENGTH - 20) {
-      cout << "opname too long: " << opname << endl;
+    if(opName.tellp() >= 24) {
+      cout << "opname too long: " << opName.str() << endl;
       return;
     }
 
-    sprintf(&opname[n], "(%d)", insn.state.execWidth);
-    cout << left << setw(20) << opname;
+    cout << left << setw(24) << opName.str();
 
     for (int i = 0; i < insn.dstNum; ++i)
     {
-      GenRegister dst = insn.dst(i);
+      auto dst = insn.dst(i);
       outputGenReg(dst, true);
-      cout << "\t";
+      cout << " ";
     }
 
-    cout << ":\t";
+    if(insn.dstNum == 0) {
+      cout << "                ";
+    }
+
+    cout << "= ";
 
     for (int i = 0; i < insn.srcNum; ++i)
     {
       GenRegister src = insn.src(i);
       outputGenReg(src, false);
-      cout << "\t";
+      cout << " ";
+    }
+
+    switch(insn.opcode) {
+    case SEL_OP_IF:
+    case SEL_OP_BRC:
+      cout << "; jip=L" << insn.index;
+      cout << " uip=L" << insn.index1;
+      break;
+    case SEL_OP_ELSE:
+    case SEL_OP_ENDIF:
+    case SEL_OP_BRD:
+    case SEL_OP_WHILE:
+    case SEL_OP_JMPI:
+      cout << "; jip=L" << insn.index;
+      break;
+    default:break;
     }
 
     cout << endl;
@@ -216,13 +248,13 @@ namespace gbe
   {
     cout << KernelName <<"'s SELECTION IR begin:" << endl;
     cout << "WARNING: not completed yet, welcome for the FIX!" << endl;
-    for (SelectionBlock &block : *sel->blockList) {
-      for (SelectionInstruction &insn : block.insnList) {
+    for (const SelectionBlock &block : *sel->blockList) {
+      for (const SelectionInstruction &insn : block.insnList) {
         outputSelectionInst(insn);
       }
       cout << endl;
     }
-    cout <<KernelName << "'s SELECTION IR end." << endl << endl;
+    cout << KernelName << "'s SELECTION IR end." << endl << endl;
   }
 
 }

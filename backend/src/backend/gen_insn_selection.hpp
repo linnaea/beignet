@@ -44,7 +44,6 @@ namespace gbe
   /*! Translate IR compare to Gen compare */
   uint32_t getGenCompare(ir::Opcode opcode);
 
-
   /*! Selection opcodes properly encoded from 0 to n for fast jump tables
    *  generations
    */
@@ -274,9 +273,9 @@ namespace gbe
   enum SEL_IR_OPT_FEATURE : uint32_t {
     //for OP_AND/not/or/xor , on BDW+, SrcMod value indicates a logical source modifier
     //                        on PRE-BDW, SrcMod value indicates a numeric source modifier
-    SIOF_LOGICAL_SRCMOD = 1 << 0,
+    SIOF_LOGICAL_SRCMOD = 1u << 0,
     //for OP_MOV, on BSW, for long data type, src and dst hstride must be aligned to the same qword
-    SIOF_OP_MOV_LONG_REG_RESTRICT = 1 << 1,
+    SIOF_OP_MOV_LONG_REG_RESTRICT = 1u << 1,
   };
 
   /*! Owns the selection engine */
@@ -380,6 +379,8 @@ namespace gbe
       /*! Initialize internal structures used for the selection */
       explicit SelectionGlk(GenContext &ctx);
   };
+
+  void outputSelectionIR(GenContext &ctx, Selection* sel, const char* KernelName);
 
 } /* namespace gbe */
 

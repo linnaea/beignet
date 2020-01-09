@@ -28,7 +28,6 @@
 #include "backend/gen_encoder.hpp"
 #include "backend/gen_insn_selection.hpp"
 #include "backend/gen_insn_scheduling.hpp"
-#include "backend/gen_insn_selection_output.hpp"
 #include "backend/gen_reg_allocation.hpp"
 #include "backend/gen/gen_mesa_disasm.h"
 #include "ir/function.hpp"
