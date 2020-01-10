@@ -41,7 +41,7 @@ namespace gbe
   class SelOptimizer
   {
   public:
-    SelOptimizer(uint32_t features) : features(features) {}
+    explicit SelOptimizer(uint32_t features) : features(features) {}
     virtual void run() = 0;
     virtual ~SelOptimizer() = default;
   protected:
@@ -70,8 +70,8 @@ namespace gbe
                   const GenRegister& replacement) :
           insn(insn), intermediate(intermediate), replacement(replacement)
       {
-        assert(insn.opcode == SEL_OP_MOV);
-        assert(&(insn.src(0)) == &replacement);
+        assert(insn.opcode == SEL_OP_MOV || insn.opcode == SEL_OP_ADD);
+        assert((&(insn.src(0)) == &replacement) || (&(insn.src(1)) == &replacement));
         assert(&(insn.dst(0)) == &intermediate);
         this->elements = CalculateElements(intermediate, insn.state.execWidth);
         replacementOverwritten = false;
@@ -155,8 +155,12 @@ namespace gbe
 
   void SelBasicBlockOptimizer::addToReplaceInfoMap(SelectionInstruction& insn)
   {
-    assert(insn.opcode == SEL_OP_MOV);
-    const GenRegister& src = insn.src(0);
+    assert(insn.opcode == SEL_OP_MOV || insn.opcode == SEL_OP_ADD);
+    GenRegister& src = insn.src(0);
+    if(insn.opcode == SEL_OP_ADD && src.file == GEN_IMMEDIATE_VALUE) {
+      src = insn.src(1);
+    }
+
     const GenRegister& dst = insn.dst(0);
     if (src.type != dst.type || src.file != dst.file)
       return;
@@ -279,6 +283,52 @@ namespace gbe
 
       if (insn.opcode == SEL_OP_MOV)
         addToReplaceInfoMap(insn);
+
+      if (insn.opcode == SEL_OP_ADD) {
+        auto src = insn.src(0);
+        if(src.file != GEN_IMMEDIATE_VALUE) {
+          src = insn.src(1);
+        }
+        if(src.file == GEN_IMMEDIATE_VALUE) {
+          if(src.width == GEN_WIDTH_1) {
+            switch(src.type) {
+            case GEN_TYPE_F:
+              if(src.value.f == 0.0f) addToReplaceInfoMap(insn);
+              break;
+
+            case GEN_TYPE_DF_IMM:
+              if(src.value.df == 0.0) addToReplaceInfoMap(insn);
+              break;
+
+            case GEN_TYPE_L:
+              if(src.value.i64 == 0) addToReplaceInfoMap(insn);
+              break;
+
+            case GEN_TYPE_UL:
+              if(src.value.u64 == 0) addToReplaceInfoMap(insn);
+              break;
+
+            case GEN_TYPE_B:
+            case GEN_TYPE_W:
+            case GEN_TYPE_D:
+              if(src.value.d == 0) addToReplaceInfoMap(insn);
+              break;
+
+            case GEN_TYPE_HF_IMM: // -0.0
+              if(src.value.ud == 0x8000) addToReplaceInfoMap(insn);
+            case GEN_TYPE_UD:
+            case GEN_TYPE_UW:
+            case GEN_TYPE_UB:
+              if(src.value.ud == 0) addToReplaceInfoMap(insn);
+              break;
+
+            default: break;
+            }
+          } else if(src.width == GEN_WIDTH_8 && src.type == GEN_TYPE_V) {
+            if(src.value.ud == 0) addToReplaceInfoMap(insn);
+          }
+        }
+      }
     }
     cleanReplaceInfoMap();
   }
