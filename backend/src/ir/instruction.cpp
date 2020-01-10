@@ -1402,7 +1402,7 @@ namespace ir {
       // Check all registers
       const RegisterFamily family = getFamily(insn.getValueType());
       for (uint32_t valueID = 0; valueID < insn.getValueNum(); ++valueID) {
-        const Register regID = insn.getValue(fn, valueID);;
+        const Register regID = insn.getValue(fn, valueID);
         if (UNLIKELY(checkRegisterData(family, regID, fn, whyNot) == false))
           return false;
       }

@@ -662,7 +662,7 @@ OVERLOADABLE double fract(double x, double *p)
 	return 0.0;
 
     if(ret == as_double(DF_NEGTIVE_INF))
-		return as_double(DF_SIGN_MASK);;
+		return as_double(DF_SIGN_MASK);
 
     return fmin(x -ret, 0x1.fffffffffffffp-1);
 }

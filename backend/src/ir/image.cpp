@@ -159,7 +159,7 @@ namespace ir {
     IN_UPDATE_SZ(image_map_sz); //regMap
     for (uint32_t i = 0; i < image_map_sz; i++) {
       ir::Register reg;
-      ImageInfo *img_info = GBE_NEW(struct ImageInfo);;
+      ImageInfo *img_info = GBE_NEW(struct ImageInfo);
 
       IN_UPDATE_SZ(reg);
       IN_UPDATE_SZ(img_info->arg_idx);
@@ -177,7 +177,7 @@ namespace ir {
     IN_UPDATE_SZ(image_map_sz); //indexMap
     for (uint32_t i = 0; i < image_map_sz; i++) {
       uint32_t index;
-      ImageInfo *img_info = GBE_NEW(struct ImageInfo);;
+      ImageInfo *img_info = GBE_NEW(struct ImageInfo);
 
       IN_UPDATE_SZ(index);
       IN_UPDATE_SZ(img_info->arg_idx);

@@ -141,9 +141,9 @@ namespace ir {
         this->opaque[byte] = opaque[byte];
     }
     /*! Uninitialized instruction */
-    INLINE InstructionBase(void) {}
+    INLINE InstructionBase() = default;
     /*! Get the instruction opcode */
-    INLINE Opcode getOpcode(void) const { return opcode; }
+    INLINE Opcode getOpcode() const { return opcode; }
   protected:
     enum { opaqueSize = sizeof(uint64_t)*4-sizeof(uint8_t) };
     Opcode opcode;               //!< Idendifies the instruction
@@ -156,8 +156,8 @@ namespace ir {
   {
   public:
     /*! Initialize the instruction from a 8 bytes stream */
-    INLINE Instruction(const char *stream) : InstructionBase(Opcode(stream[0]), &stream[1]) {
-      parent = NULL;
+    INLINE explicit Instruction(const char *stream) : InstructionBase(Opcode(stream[0]), &stream[1]) {
+      parent = nullptr;
     }
     /*! Copy the private fields and give it the same parent */
     INLINE Instruction(const Instruction &other) :
@@ -170,13 +170,13 @@ namespace ir {
     INLINE Instruction &operator= (const Instruction &other) { return *this; }
   public:
     /*! Nothing to do here */
-    INLINE ~Instruction(void) {}
+    INLINE ~Instruction() {}
     /*! Uninitialized instruction */
-    INLINE Instruction(void) {}
+    INLINE Instruction() {}
     /*! Get the number of sources for this instruction  */
-    uint32_t getSrcNum(void) const;
+    uint32_t getSrcNum() const;
     /*! Get the number of destination for this instruction */
-    uint32_t getDstNum(void) const;
+    uint32_t getDstNum() const;
     /*! Get the register index of the given source */
     Register getSrc(uint32_t ID = 0u) const;
     /*! Get the register index of the given destination */
@@ -190,14 +190,14 @@ namespace ir {
     /*! Set a register in dst dstID */
     void setDst(uint32_t dstID, Register reg);
     /*! Is there any side effect in the memory sub-system? */
-    bool hasSideEffect(void) const;
+    bool hasSideEffect() const;
     /*! Get / set the parent basic block */
-    BasicBlock *getParent(void) { return parent; }
-    const BasicBlock *getParent(void) const { return parent; }
+    BasicBlock *getParent() { return parent; }
+    const BasicBlock *getParent() const { return parent; }
     void setParent(BasicBlock *block) { this->parent = block; }
     /*! Get the function from the parent basic block */
-    const Function &getFunction(void) const;
-    Function &getFunction(void);
+    const Function &getFunction() const;
+    Function &getFunction();
     /*! Check that the instruction is well formed (type properly match,
      *  registers not of bound and so on). If not well formed, provide a reason
      *  in string why
@@ -206,14 +206,14 @@ namespace ir {
     /*! Replace other by this instruction */
     void replace(Instruction *other) const;
     /*! Remove the instruction from the instruction stream */
-    void remove(void);
+    void remove();
     /* Insert the instruction after the previous one. */
-    void insert(Instruction *prev, Instruction ** new_ins = NULL);
+    void insert(Instruction *prev, Instruction ** new_ins = nullptr);
     void setDBGInfo(DebugInfo in) { DBGInfo = in; }
     /*! Indicates if the instruction belongs to instruction type T. Typically, T
      *  can be BinaryInstruction, UnaryInstruction, LoadInstruction and so on
      */
-    template <typename T> INLINE bool isMemberOf(void) const {
+    template <typename T> INLINE bool isMemberOf() const {
       return T::isClassOf(*this);
     }
     /*! max_src used by vme for payload passing and setting */
@@ -232,7 +232,7 @@ namespace ir {
   class NullaryInstruction : public Instruction {
   public:
     /*! Get the type manipulated by the instruction */
-    Type getType(void) const;
+    Type getType() const;
     /*! Return true if the given instruction is an instance of this class */
     static bool isClassOf(const Instruction &insn);
   };
@@ -241,7 +241,7 @@ namespace ir {
   class UnaryInstruction : public Instruction {
   public:
     /*! Get the type manipulated by the instruction */
-    Type getType(void) const;
+    Type getType() const;
     /*! Return true if the given instruction is an instance of this class */
     static bool isClassOf(const Instruction &insn);
   };
@@ -250,9 +250,9 @@ namespace ir {
   class BinaryInstruction : public Instruction {
   public:
     /*! Get the type manipulated by the instruction */
-    Type getType(void) const;
+    Type getType() const;
     /*! Commutative instructions can allow better optimizations */
-    bool commutes(void) const;
+    bool commutes() const;
     /*! Return true if the given instruction is an instance of this class */
     static bool isClassOf(const Instruction &insn);
   };
@@ -260,7 +260,7 @@ namespace ir {
   /*! Ternary instructions are typed. dst and sources share the same type */
   class TernaryInstruction : public Instruction {
    public:
-    Type getType(void) const;
+    Type getType() const;
     static bool isClassOf(const Instruction &insn);
   };
 
@@ -274,9 +274,9 @@ namespace ir {
     /*! Second source to select is in slot 2 */
     static const uint32_t src1Index = 2;
     /*! Get the predicate of the selection instruction */
-    INLINE Register getPredicate(void) const { return this->getSrc(0); }
+    INLINE Register getPredicate() const { return this->getSrc(0); }
     /*! Get the type of both sources */
-    Type getType(void) const;
+    Type getType() const;
     /*! Return true if the given instruction is an instance of this class */
     static bool isClassOf(const Instruction &insn);
   };
@@ -287,7 +287,7 @@ namespace ir {
   class CompareInstruction : public Instruction {
   public:
     /*! Get the type of the source registers */
-    Type getType(void) const;
+    Type getType() const;
     /*! Return true if the given instruction is an instance of this class */
     static bool isClassOf(const Instruction &insn);
   };
@@ -296,9 +296,9 @@ namespace ir {
   class BitCastInstruction : public Instruction {
   public:
     /*! Get the type of the source */
-    Type getSrcType(void) const;
+    Type getSrcType() const;
     /*! Get the type of the destination */
-    Type getDstType(void) const;
+    Type getDstType() const;
     /*! Return true if the given instruction is an instance of this class */
     static bool isClassOf(const Instruction &insn);
   };
@@ -307,9 +307,9 @@ namespace ir {
   class ConvertInstruction : public Instruction {
   public:
     /*! Get the type of the source */
-    Type getSrcType(void) const;
+    Type getSrcType() const;
     /*! Get the type of the destination */
-    Type getDstType(void) const;
+    Type getDstType() const;
     /*! Return true if the given instruction is an instance of this class */
     static bool isClassOf(const Instruction &insn);
   };
@@ -326,7 +326,7 @@ namespace ir {
     AddressSpace getAddressSpace() const;
     /*! Return the types of the values */
     Type getValueType() const;
-    bool isAligned(void) const;
+    bool isAligned() const;
     void setBtiReg(Register reg);
     void setSurfaceIndex(unsigned idx);
   };
@@ -337,7 +337,7 @@ namespace ir {
     /*! Where the address register goes */
     static const uint32_t addressIndex = 0;
     /*! Return the atomic function code */
-    AtomicOps getAtomicOpcode(void) const;
+    AtomicOps getAtomicOpcode() const;
     /*! Return true if the given instruction is an instance of this class */
     static bool isClassOf(const Instruction &insn);
   };
@@ -349,7 +349,7 @@ namespace ir {
   public:
     /*! Where the address register goes */
     static const uint32_t addressIndex = 0;
-    uint32_t getValueNum(void) const;
+    uint32_t getValueNum() const;
     /*! Return the register that contain value valueID */
     INLINE Register getValue(uint32_t valueID) const {
       GBE_ASSERT(valueID < this->getValueNum());
@@ -368,7 +368,7 @@ namespace ir {
   class LoadInstruction : public MemInstruction {
   public:
     /*! Number of values loaded (ie number of destinations) */
-    uint32_t getValueNum(void) const;
+    uint32_t getValueNum() const;
     /*! Return the register that contain value valueID */
     INLINE Register getValue(uint32_t valueID) const {
       return this->getDst(valueID);
@@ -388,9 +388,9 @@ namespace ir {
   class LoadImmInstruction : public Instruction {
   public:
     /*! Return the value stored in the instruction */
-    Immediate getImmediate(void) const;
+    Immediate getImmediate() const;
     /*! Return the type of the stored value */
-    Type getType(void) const;
+    Type getType() const;
     /*! Return true if the given instruction is an instance of this class */
     static bool isClassOf(const Instruction &insn);
   };
@@ -401,18 +401,18 @@ namespace ir {
     /*! Return true if the given instruction is an instance of this class */
     static bool isClassOf(const Instruction &insn);
     uint8_t getImageIndex() const;
-    Type getSrcType(void) const;
-    Type getCoordType(void) const;
+    Type getSrcType() const;
+    Type getCoordType() const;
   };
 
   /*! Load texels from a texture */
   class SampleInstruction : public Instruction {
   public:
     uint8_t getImageIndex() const;
-    uint8_t getSamplerIndex(void) const;
-    uint8_t getSamplerOffset(void) const;
-    Type getSrcType(void) const;
-    Type getDstType(void) const;
+    uint8_t getSamplerIndex() const;
+    uint8_t getSamplerOffset() const;
+    Type getSrcType() const;
+    Type getDstType() const;
     /*! Return true if the given instruction is an instance of this class */
     static bool isClassOf(const Instruction &insn);
   };
@@ -422,15 +422,15 @@ namespace ir {
   public:
     uint8_t getImageIndex() const;
     uint8_t getMsgType() const;
-    Type getSrcType(void) const;
-    Type getDstType(void) const;
+    Type getSrcType() const;
+    Type getDstType() const;
     /*! Return true if the given instruction is an instance of this class */
     static bool isClassOf(const Instruction &insn);
   };
 
   typedef union _ImageInfoKey{
     _ImageInfoKey(uint8_t i, uint8_t t) : index(i), type(t) {};
-    _ImageInfoKey(int key) : data(key) {};
+    explicit _ImageInfoKey(int key) : data(key) {};
     struct {
      uint8_t index; /*! the allocated image index */
      uint8_t  type;  /*! the information type */
@@ -476,9 +476,9 @@ namespace ir {
     /*! Return true if the given instruction is an instance of this class */
     static bool isClassOf(const Instruction &insn);
     /*! Get the point number of timestamp point */
-    uint32_t getPointNum(void) const;
+    uint32_t getPointNum() const;
     /*! Get the timestamp type */
-    uint32_t getTimestamptType(void) const;
+    uint32_t getTimestamptType() const;
   };
 
   /*! store the profiling information. */
@@ -487,9 +487,9 @@ namespace ir {
     /*! Return true if the given instruction is an instance of this class */
     static bool isClassOf(const Instruction &insn);
     /*! Get the profiling info type */
-    uint32_t getProfilingType(void) const;
+    uint32_t getProfilingType() const;
     /*! Get the BTI index*/
-    uint32_t getBTI(void) const;
+    uint32_t getBTI() const;
   };
 
   /*! Branch instruction is the unified way to branch (with or without
@@ -498,21 +498,21 @@ namespace ir {
   class BranchInstruction : public Instruction {
   public:
     /*! Indicate if the branch is predicated */
-    bool isPredicated(void) const;
+    bool isPredicated() const;
     /*! Indicate if the branch is inverse predicated */
-    bool getInversePredicated(void) const;
+    bool getInversePredicated() const;
     /*! Return the predicate register (if predicated) */
-    RegisterData getPredicate(void) const {
-      GBE_ASSERTM(this->isPredicated() == true, "Branch is not predicated");
+    RegisterData getPredicate() const {
+      GBE_ASSERTM(this->isPredicated(), "Branch is not predicated");
       return this->getSrcData(0);
     }
     /*! Return the predicate register index (if predicated) */
-    Register getPredicateIndex(void) const {
-      GBE_ASSERTM(this->isPredicated() == true, "Branch is not predicated");
+    Register getPredicateIndex() const {
+      GBE_ASSERTM(this->isPredicated(), "Branch is not predicated");
       return this->getSrc(0);
     }
     /*! Return the label index pointed by the branch */
-    LabelIndex getLabelIndex(void) const;
+    LabelIndex getLabelIndex() const;
     /*! Return true if the given instruction is an instance of this class */
     static bool isClassOf(const Instruction &insn);
   };
@@ -523,27 +523,27 @@ namespace ir {
   class LabelInstruction : public Instruction {
   public:
     /*! Return the label index of the instruction */
-    LabelIndex getLabelIndex(void) const;
+    LabelIndex getLabelIndex() const;
     /*! Return true if the given instruction is an instance of this class */
     static bool isClassOf(const Instruction &insn);
   };
 
   /*! Texture instruction are used for any texture mapping requests */
-  class TextureInstruction : public Instruction {
-  public:
-    /*! Return true if the given instruction is an instance of this class */
-    static bool isClassOf(const Instruction &insn);
-  };
+  // class TextureInstruction : public Instruction {
+  // public:
+  //   /*! Return true if the given instruction is an instance of this class */
+  //   static bool isClassOf(const Instruction &insn);
+  // };
 
   /*! Mapped to OpenCL (mem_fence, read_mem_fence, write_mem_fence, barrier) */
   enum {
-    SYNC_WORKGROUP_EXEC     = 1<<0,
-    SYNC_LOCAL_READ_FENCE   = 1<<1,
-    SYNC_LOCAL_WRITE_FENCE  = 1<<2,
-    SYNC_GLOBAL_READ_FENCE  = 1<<3,
-    SYNC_GLOBAL_WRITE_FENCE = 1<<4,
-    SYNC_IMAGE_FENCE        = 1<<5,
-    SYNC_INVALID            = 1<<6
+    SYNC_WORKGROUP_EXEC     = 1u<<0,
+    SYNC_LOCAL_READ_FENCE   = 1u<<1,
+    SYNC_LOCAL_WRITE_FENCE  = 1u<<2,
+    SYNC_GLOBAL_READ_FENCE  = 1u<<3,
+    SYNC_GLOBAL_WRITE_FENCE = 1u<<4,
+    SYNC_IMAGE_FENCE        = 1u<<5,
+    SYNC_INVALID            = 1u<<6
   };
 
   /*! 5 bits to encode all possible synchronization capablities */
@@ -562,7 +562,7 @@ namespace ir {
   class SyncInstruction : public Instruction {
   public:
     /*! Get the parameters (bitfields) of the sync instructions (see above) */
-    uint32_t getParameters(void) const;
+    uint32_t getParameters() const;
     /*! Return true if the given instruction is an instance of this class */
     static bool isClassOf(const Instruction &insn);
   };
@@ -579,7 +579,7 @@ namespace ir {
   /*! simd shuffle */
   class SimdShuffleInstruction : public Instruction {
   public:
-    Type getType(void) const;
+    Type getType() const;
     /*! Return true if the given instruction is an instance of this class */
     static bool isClassOf(const Instruction &insn);
   };
@@ -587,7 +587,7 @@ namespace ir {
   /*! return a region of a register, make sure the offset does not exceed the register size */
   class RegionInstruction : public Instruction {
   public:
-    uint32_t getOffset(void) const;
+    uint32_t getOffset() const;
     /*! Return true if the given instruction is an instance of this class */
     static bool isClassOf(const Instruction &insn);
   };
@@ -595,8 +595,8 @@ namespace ir {
   /*! Indirect Move instruction */
   class IndirectMovInstruction : public Instruction {
   public:
-    Type getType(void) const;
-    uint32_t getOffset(void) const;
+    Type getType() const;
+    uint32_t getOffset() const;
     /*! Return true if the given instruction is an instance of this class */
     static bool isClassOf(const Instruction &insn);
   };
@@ -613,9 +613,9 @@ namespace ir {
   public:
     /*! Return true if the given instruction is an instance of this class */
     static bool isClassOf(const Instruction &insn);
-    Type getType(void) const;
-    WorkGroupOps getWorkGroupOpcode(void) const;
-    uint32_t getSlmAddr(void) const;
+    Type getType() const;
+    WorkGroupOps getWorkGroupOpcode() const;
+    uint32_t getSlmAddr() const;
   };
 
   /*! Related to Sub Group. */
@@ -623,15 +623,15 @@ namespace ir {
   public:
     /*! Return true if the given instruction is an instance of this class */
     static bool isClassOf(const Instruction &insn);
-    Type getType(void) const;
-    WorkGroupOps getWorkGroupOpcode(void) const;
+    Type getType() const;
+    WorkGroupOps getWorkGroupOpcode() const;
   };
 
   /*! Printf instruction. */
   class PrintfInstruction : public Instruction {
   public:
-    uint32_t getNum(void) const;
-    uint32_t getBti(void) const;
+    uint32_t getNum() const;
+    uint32_t getBti() const;
     Type getType(const Function& fn, uint32_t ID) const;
     Type getType(uint32_t ID) const { return this->getType(this->getFunction(), ID); };
     /*! Return true if the given instruction is an instance of this class */
@@ -645,7 +645,7 @@ namespace ir {
     static bool isClassOf(const Instruction &insn);
     uint8_t getImageIndex() const;
     uint8_t getVectorSize() const;
-    Type getType(void) const;
+    Type getType() const;
   };
 
   /*! Media Block Write.  */
@@ -655,7 +655,7 @@ namespace ir {
     static bool isClassOf(const Instruction &insn);
     uint8_t getImageIndex() const;
     uint8_t getVectorSize() const;
-    Type getType(void) const;
+    Type getType() const;
   };
 
   /*! Specialize the instruction. Also performs typechecking first based on the
@@ -666,23 +666,23 @@ namespace ir {
     if(insn->isMemberOf<T>())
       return reinterpret_cast<T*>(insn);
     else
-      return NULL;
+      return nullptr;
   }
   template <typename T>
   INLINE const T *cast(const Instruction *insn) {
     if(insn->isMemberOf<T>())
       return reinterpret_cast<const T*>(insn);
     else
-      return NULL;
+      return nullptr;
   }
   template <typename T>
   INLINE T &cast(Instruction &insn) {
-    GBE_ASSERTM(insn.isMemberOf<T>() == true, "Invalid instruction type");
+    GBE_ASSERTM(insn.isMemberOf<T>(), "Invalid instruction type");
     return reinterpret_cast<T&>(insn);
   }
   template <typename T>
   INLINE const T &cast(const Instruction &insn) {
-    GBE_ASSERTM(insn.isMemberOf<T>() == true, "Invalid instruction type");
+    GBE_ASSERTM(insn.isMemberOf<T>(), "Invalid instruction type");
     return reinterpret_cast<const T&>(insn);
   }
 
@@ -854,7 +854,7 @@ namespace ir {
   /*! (pred) while labelIndex */
   Instruction WHILE(LabelIndex labelIndex, Register pred);
   /*! ret */
-  Instruction RET(void);
+  Instruction RET();
   /*! load.type.space {dst1,...,dst_valueNum} offset value, {bti} */
   Instruction LOAD(Type type, Tuple dst, Register offset, AddressSpace space, uint32_t valueNum, bool dwAligned, AddressMode, unsigned SurfaceIndex, bool isBlock = false);
   Instruction LOAD(Type type, Tuple dst, Register offset, AddressSpace space, uint32_t valueNum, bool dwAligned, AddressMode, Register bti);
@@ -884,7 +884,7 @@ namespace ir {
   /*! calculate the execute timestamp for profiling */
   Instruction STORE_PROFILING(uint32_t bti, uint32_t Type);
   /*! wait */
-  Instruction WAIT(void);
+  Instruction WAIT();
 
   /*! work group */
   Instruction WORKGROUP(WorkGroupOps opcode, uint32_t slmAddr, Register dst, Tuple srcTuple, uint8_t srcNum, Type type);

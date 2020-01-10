@@ -117,14 +117,14 @@ namespace gbe
   static std::string getTypeName(ir::Context &ctx, const Type *type, int sign)
   {
     GBE_ASSERT(isScalarType(type));
-    if (type->isFloatTy() == true)
+    if (type->isFloatTy())
       return "float";
-    if (type->isHalfTy() == true)
+    if (type->isHalfTy())
       return "half";
-    if (type->isDoubleTy() == true)
+    if (type->isDoubleTy())
       return "double";
 
-    GBE_ASSERT(type->isIntegerTy() == true);
+    GBE_ASSERT(type->isIntegerTy());
     if(sign) {
       if (type == Type::getInt1Ty(type->getContext()))
         return "char";
@@ -158,19 +158,19 @@ namespace gbe
   static ir::Type getType(ir::Context &ctx, const Type *type)
   {
     GBE_ASSERT(isScalarType(type));
-    if (type->isFloatTy() == true)
+    if (type->isFloatTy())
       return ir::TYPE_FLOAT;
-    if (type->isHalfTy() == true)
+    if (type->isHalfTy())
       return ir::TYPE_HALF;
-    if (type->isDoubleTy() == true)
+    if (type->isDoubleTy())
       return ir::TYPE_DOUBLE;
-    if (type->isPointerTy() == true) {
+    if (type->isPointerTy()) {
       if (ctx.getPointerSize() == ir::POINTER_32_BITS)
         return ir::TYPE_U32;
       else
         return ir::TYPE_U64;
     }
-    GBE_ASSERT(type->isIntegerTy() == true);
+    GBE_ASSERT(type->isIntegerTy());
     if (type == Type::getInt1Ty(type->getContext()))
       return ir::TYPE_BOOL;
     if (type == Type::getInt8Ty(type->getContext()))
@@ -187,7 +187,7 @@ namespace gbe
   /*! LLVM IR Type to Gen IR unsigned type translation */
   static ir::Type getUnsignedType(ir::Context &ctx, const Type *type)
   {
-    GBE_ASSERT(type->isIntegerTy() == true);
+    GBE_ASSERT(type->isIntegerTy());
     if (type == Type::getInt1Ty(type->getContext()))
       return ir::TYPE_BOOL;
     if (type == Type::getInt8Ty(type->getContext()))
@@ -205,7 +205,7 @@ namespace gbe
   /*! Type to register family translation */
   static ir::RegisterFamily getFamily(ir::Context &ctx, const Type *type)
   {
-    GBE_ASSERT(isScalarType(type) == true);
+    GBE_ASSERT(isScalarType(type));
     if (type == Type::getInt1Ty(type->getContext()))
       return ir::FAMILY_BOOL;
     if (type == Type::getInt8Ty(type->getContext()))
@@ -229,7 +229,7 @@ namespace gbe
   {
     ir::Type type;
     Type *llvmType = value->getType();
-    if (llvmType->isVectorTy() == true) {
+    if (llvmType->isVectorTy()) {
       VectorType *vectorType = cast<VectorType>(llvmType);
       Type *elementType = vectorType->getElementType();
       elemNum = vectorType->getNumElements();
@@ -326,7 +326,7 @@ namespace gbe
     RegisterTranslator(ir::Context &ctx) : ctx(ctx) {}
 
     /*! Empty the maps */
-    void clear(void) {
+    void clear() {
       valueMap.clear();
       scalarMap.clear();
     }
@@ -403,7 +403,7 @@ namespace gbe
           break;
         }
         default: NOT_SUPPORTED;
-      };
+      }
       return ir::Register();
     }
 
@@ -601,7 +601,7 @@ namespace gbe
     virtual bool doInitialization(Module &M);
     /*! helper function for parsing global constant data */
     void getConstantData(const Constant * c, void* mem, uint32_t& offset, vector<ir::RelocEntry> &) const;
-    void collectGlobalConstant(void) const;
+    void collectGlobalConstant() const;
     ir::ImmediateIndex processConstantImmIndex(Constant *CPV, int32_t index = 0u);
     const ir::Immediate &processConstantImm(Constant *CPV, int32_t index = 0u);
 
@@ -691,7 +691,7 @@ namespace gbe
      */
     INLINE void simplifyTerminator(BasicBlock *bb);
     /*! Helper function to emit loads and stores */
-    template <bool IsLoad, typename T> void emitLoadOrStore(T &I);
+    // template <bool IsLoad, typename T> void emitLoadOrStore(T &I);
     /*! Will try to remove MOVs due to PHI resolution */
     void removeMOVs(const ir::Liveness &liveness, ir::Function &fn);
     /*! Optimize phi move based on liveness information */
@@ -764,19 +764,19 @@ namespace gbe
     void visitResumeInst(ResumeInst &I) {NOT_SUPPORTED;}
     void visitInlineAsm(CallInst &I) {NOT_SUPPORTED;}
     void visitIndirectBrInst(IndirectBrInst &I) {NOT_SUPPORTED;}
-    void visitUnreachableInst(UnreachableInst &I) {;}
+    void visitUnreachableInst(UnreachableInst &I) {}
     void visitGetElementPtrInst(GetElementPtrInst &I) {NOT_SUPPORTED;}
     void visitInsertValueInst(InsertValueInst &I) {NOT_SUPPORTED;}
-    template <bool IsLoad, typename T> void visitLoadOrStore(T &I);
+    // template <bool IsLoad, typename T> void visitLoadOrStore(T &I);
 
-    INLINE void gatherBTI(Value *pointer, ir::BTI &bti);
+    // INLINE void gatherBTI(Value *pointer, ir::BTI &bti);
     // batch vec4/8/16 load/store
-    INLINE void emitBatchLoadOrStore(const ir::Type type, const uint32_t elemNum,
-                  Value *llvmValue, const ir::Register ptr,
-                  const ir::AddressSpace addrSpace, Type * elemType, bool isLoad, ir::Register bti,
-                  bool dwAligned, bool fixedBTI);
+    // INLINE void emitBatchLoadOrStore(const ir::Type type, const uint32_t elemNum,
+    //               Value *llvmValue, const ir::Register ptr,
+    //               const ir::AddressSpace addrSpace, Type * elemType, bool isLoad, ir::Register bti,
+    //               bool dwAligned, bool fixedBTI);
     // handle load of dword/qword with unaligned address
-    void emitUnalignedDQLoadStore(ir::Register ptr, Value *llvmValues, ir::AddressSpace addrSpace, ir::Register bti, bool isLoad, bool dwAligned, bool fixedBTI);
+    // void emitUnalignedDQLoadStore(ir::Register ptr, Value *llvmValues, ir::AddressSpace addrSpace, ir::Register bti, bool isLoad, bool dwAligned, bool fixedBTI);
     void visitInstruction(Instruction &I) {NOT_SUPPORTED;}
     ir::PrintfSet::PrintfFmt* getPrintfInfo(CallInst* inst) {
       if (unit.printfs.find((void *)inst) == unit.printfs.end())
@@ -1668,7 +1668,7 @@ namespace gbe
     // private/global/constant
     return (addrSpace == 2 || addrSpace == 1 || addrSpace == 0);
   }
-  void GenWriter::collectGlobalConstant(void) const {
+  void GenWriter::collectGlobalConstant() const {
     const Module::GlobalListType &globalList = TheModule->getGlobalList();
     // The first pass just create the global variable constants
     for(auto i = globalList.begin(); i != globalList.end(); i ++) {
@@ -1952,7 +1952,7 @@ namespace gbe
         break;
       }
       default: NOT_SUPPORTED;
-    };
+    }
   }
 
   ir::Register GenWriter::getConstantRegister(Constant *c, uint32_t elemID) {
@@ -2439,7 +2439,7 @@ namespace gbe
           continue;
         }
 
-        GBE_ASSERTM(isScalarType(type) == true,
+        GBE_ASSERTM(isScalarType(type),
                     "vector type in the function argument is not supported yet");
         const ir::Register reg = getRegister(&*I);
         if (llvmInfo.isImageType()) {
@@ -2451,7 +2451,7 @@ namespace gbe
 
         if (llvmInfo.isSamplerType()) {
           ctx.input(argName, ir::FunctionArgument::SAMPLER, reg, llvmInfo, 4, 4, 0);
-          (void)ctx.getFunction().getSamplerSet()->append(reg, &ctx);
+          ctx.getFunction().getSamplerSet()->append(reg, &ctx);
           continue;
         }
 
@@ -2501,7 +2501,7 @@ namespace gbe
     // structure
 #if GBE_DEBUG
     const Type *type = F.getReturnType();
-    GBE_ASSERTM(type->isVoidTy() == true,
+    GBE_ASSERTM(type->isVoidTy(),
                 "Returned value for kernel functions is forbidden");
 
     // Variable number of arguments is not supported
@@ -2840,7 +2840,7 @@ namespace gbe
       const ir::Liveness::BlockInfo &info = liveness.getBlockInfo(&bb);
 
       auto it = --bb.end();
-      if (it->isMemberOf<ir::BranchInstruction>() == true) --it;
+      if (it->isMemberOf<ir::BranchInstruction>()) --it;
       for (auto it = --bb.end(); it != bb.end();) {
         ir::Instruction *insn = &*it; it--;
         const ir::Opcode op = insn->getOpcode();
@@ -3981,7 +3981,7 @@ namespace gbe
       {
         // dst is a 4 elements vector. We allocate all 4 registers here.
         uint32_t elemNum;
-        (void)getVectorInfo(ctx, &I, elemNum);
+        getVectorInfo(ctx, &I, elemNum);
         GBE_ASSERT(elemNum == 4);
         this->newRegister(&I);
         break;
@@ -4170,7 +4170,7 @@ namespace gbe
       default:
         has_errors = true;
         Func->getContext().emitError(&I,"function '" + fnName + "' not found or cannot be inlined");
-    };
+    }
   }
 
   void GenWriter::emitRoundingCallInst(CallInst &I, CallSite &CS, ir::Opcode opcode) {
@@ -4310,7 +4310,7 @@ namespace gbe
 
     ir::Register ptr;
     ir::Register btiReg;
-    unsigned SurfaceIndex = 0xff;;
+    unsigned SurfaceIndex = 0xff;
 
     ir::AddressMode AM;
     if (legacyMode) {
@@ -5041,7 +5041,6 @@ namespace gbe
             bool isFloatCoord = coordType == ir::TYPE_FLOAT;
             bool requiredFloatCoord = samplerOffset == 0;
 
-            (void) isFloatCoord;
             GBE_ASSERT(isFloatCoord == requiredFloatCoord);
 
             vector<ir::Register> dstTupleData, srcTupleData;
@@ -5071,7 +5070,7 @@ namespace gbe
             const uint8_t imageID = getImageID(I);
             GBE_ASSERT(AI != AE); ++AI; GBE_ASSERT(AI != AE);
             uint32_t coordNum;
-            (void)getVectorInfo(ctx, *AI, coordNum);
+            getVectorInfo(ctx, *AI, coordNum);
             if (coordNum == 4)
               coordNum = 3;
             const uint32_t imageDim = coordNum;
@@ -5425,7 +5424,6 @@ namespace gbe
             Value *bti = getBtiRegister(llvmPtr);
             GBE_ASSERT(isa<ConstantInt>(bti)); //Should never be mixed pointer.
             uint32_t index = cast<ConstantInt>(bti)->getZExtValue();
-            (void) index;
             GBE_ASSERT(btiToGen(index) == ir::MEM_GLOBAL);
             ++AI;
             GBE_ASSERT(AI != AE);
@@ -5635,7 +5633,7 @@ namespace gbe
       immIndex = ctx.newImmediate(uint64_t(elementSize));
 
     // OK, we try to see if we know compile time the size we need to allocate
-    if (I.isArrayAllocation() == true) {
+    if (I.isArrayAllocation()) {
       Constant *CPV = dyn_cast<Constant>(src);
       GBE_ASSERT(CPV);
       const ir::Immediate &imm = processConstantImm(CPV);
@@ -5864,7 +5862,7 @@ namespace gbe
       return;
     }
     // Scalar is easy. We neednot build register tuples
-    if (isScalarType(llvmType) == true) {
+    if (isScalarType(llvmType)) {
       const ir::Type type = getType(ctx, llvmType);
       const ir::Register values = writer->getRegister(llvmValues);
       const ir::Tuple tuple = ctx.arrayTuple(&values, 1);
@@ -5872,7 +5870,7 @@ namespace gbe
     }
     // A vector type requires to build a tuple
     else {
-      VectorType *vectorType = cast<VectorType>(llvmType);
+      auto *vectorType = cast<VectorType>(llvmType);
       Type *elemType = vectorType->getElementType();
 
       // We follow OCL spec and support 2,3,4,8,16 elements only

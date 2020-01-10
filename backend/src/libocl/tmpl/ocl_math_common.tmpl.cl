@@ -4120,7 +4120,7 @@ OVERLOADABLE double expm1(double x)
 
 		if (k <= -2 || k>56) {	 /* suffice to return exp(x)-1 */
 			y = one-(e-x);
-			__setHigh(&y, __HI(y) + (k<<20));;	/* add k to y's exponent */
+			__setHigh(&y, __HI(y) + (k<<20));	/* add k to y's exponent */
 			return y-one;
 		}
 		t = one;

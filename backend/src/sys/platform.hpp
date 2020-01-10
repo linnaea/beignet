@@ -247,10 +247,10 @@ do { \
 class SAFE \
 { \
 public: \
-  INLINE SAFE(void) {} \
+  INLINE SAFE() = default; \
   explicit INLINE SAFE(UNSAFE unsafe) : unsafe(unsafe) {} \
-  INLINE operator UNSAFE (void) const { return unsafe; } \
-  UNSAFE value(void) const { return unsafe; } \
+  INLINE operator UNSAFE () const { return unsafe; } \
+  UNSAFE value() const { return unsafe; } \
 private: \
   UNSAFE unsafe; \
 };
