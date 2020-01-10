@@ -272,6 +272,10 @@ namespace gbe {
           case Intrinsic::ceil:
           case Intrinsic::trunc:
           case Intrinsic::fmuladd:
+#if LLVM_VERSION_MAJOR >= 9
+          case Intrinsic::ssub_sat:
+          case Intrinsic::usub_sat:
+#endif
               return true;
         }
     }
@@ -411,7 +415,7 @@ namespace gbe {
     }
 
     if (IntrinsicInst* intr = dyn_cast<IntrinsicInst>(inst)) {
-      if (! IsPerComponentOp(inst))
+      if (!IsPerComponentOp(inst))
         NOT_IMPLEMENTED; //gla::UnsupportedFunctionality("Scalarize instruction on a non-per-component intrinsic");
 
       // TODO: Assumption is that all per-component intrinsics have all their

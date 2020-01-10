@@ -3841,6 +3841,10 @@ namespace gbe
           case Intrinsic::usub_with_overflow:
           case Intrinsic::smul_with_overflow:
           case Intrinsic::umul_with_overflow:
+#if LLVM_VERSION_MAJOR >= 9
+          case Intrinsic::ssub_sat:
+          case Intrinsic::usub_sat:
+#endif
             this->newRegister(&I);
           break;
           case Intrinsic::ctlz:
@@ -4793,6 +4797,22 @@ namespace gbe
             ctx.ALU1(ir::OP_ABS, getType(ctx, (*AI)->getType()), dst, src);
             break;
           }
+#if LLVM_VERSION_MAJOR >= 9
+          case Intrinsic::ssub_sat:
+            ctx.SUBSAT(
+                getType(ctx, I.getType()),
+                this->getRegister(&I),
+                this->getRegister(I.getOperand(0)),
+                this->getRegister(I.getOperand(1)));
+            break;
+          case Intrinsic::usub_sat:
+            ctx.SUBSAT(
+                getUnsignedType(ctx, I.getType()),
+                this->getRegister(&I),
+                this->getRegister(I.getOperand(0)),
+                this->getRegister(I.getOperand(1)));
+            break;
+#endif
           default: NOT_IMPLEMENTED;
         }
       } else {
