@@ -753,7 +753,7 @@ namespace gbe
   {
     if (dst.isdf() && src0.isdf() && src1.isdf()) {
        p->handleDouble(p, opcode, dst, src0, src1);
-    } else if (needToSplitAlu2(p, dst, src0, src1) == false) {
+    } else if (!needToSplitAlu2(p, dst, src0, src1)) {
        if(compactAlu2(p, opcode, dst, src0, src1, condition, false))
          return;
        GenNativeInstruction *insn = p->next(opcode);

@@ -3647,10 +3647,10 @@ namespace gbe
     if (OCL_OPTIMIZE_SEL_IR)
       sel->optimize();
     sel->addID();
-    if (OCL_OUTPUT_SEL_IR)
-      outputSelectionIR(*this, this->sel, genKernel->getName());
     schedulePreRegAllocation(*this, *this->sel);
     sel->addID();
+    if (OCL_OUTPUT_SEL_IR)
+      outputSelectionIR(*this, this->sel, genKernel->getName());
     if (UNLIKELY(!ra->allocate(*this->sel)))
       return false;
     schedulePostRegAllocation(*this, *this->sel);

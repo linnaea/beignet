@@ -111,10 +111,13 @@ namespace gbe
     }
 
     if (insn.state.predicate != GEN_PREDICATE_NONE) {
+      cout << "(";
+      if (insn.state.inversePredicate)
+        cout << "-";
       if (insn.state.physicalFlag == 0)
-        cout << "(" << insn.state.flagIndex << ")";
+        cout << insn.state.flagIndex << ")";
       else
-        cout << "(" << insn.state.flag << "." << insn.state.subFlag << ")";
+        cout << insn.state.flag << "." << insn.state.subFlag << ")";
     }
 
     cout << "\t";
@@ -189,6 +192,10 @@ namespace gbe
       }
     }
 
+    if(insn.state.saturate) {
+      opName << ".sat";
+    }
+
     opName << "(" << insn.state.execWidth << ")";
     if(insn.opcode == SEL_OP_CMP || insn.opcode == SEL_OP_I64CMP || insn.state.modFlag) {
       if(!insn.state.physicalFlag) {
@@ -223,6 +230,17 @@ namespace gbe
       GenRegister src = insn.src(i);
       outputGenReg(src, false);
       cout << " ";
+    }
+
+    if(insn.state.quarterControl || insn.state.noMask || insn.state.accWrEnable) {
+      const char *space = "";
+      cout << "{";
+#define OUTPUT_FLAG(test, name) if(test) { cout << space << name; space = " "; }
+      OUTPUT_FLAG(insn.state.noMask, "NoMask")
+      OUTPUT_FLAG(insn.state.quarterControl, "Q2")
+      OUTPUT_FLAG(insn.state.accWrEnable, "AccWr")
+#undef OUTPUT_FLAG
+      cout << "}";
     }
 
     switch(insn.opcode) {

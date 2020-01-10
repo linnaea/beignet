@@ -112,7 +112,7 @@ namespace gbe
   class GenInstructionState
   {
   public:
-    INLINE GenInstructionState(uint32_t simdWidth = 8) {
+    INLINE explicit GenInstructionState(uint8_t simdWidth = 8) {
       this->execWidth = simdWidth;
       this->quarterControl = GEN_COMPRESSION_Q1;
       this->nibControl = 0;
@@ -130,22 +130,22 @@ namespace gbe
       this->flagIndex = 0;
       this->saturate = GEN_MATH_SATURATE_NONE;
     }
-    uint32_t physicalFlag:1; //!< Physical or virtual flag register
-    uint32_t flag:1;         //!< Only if physical flag,
-    uint32_t subFlag:1;      //!< Only if physical flag
-    uint32_t grfFlag:1;      //!< Only if virtual flag, 0 means we do not need to allocate GRF.
-    uint32_t externFlag:1;   //!< Only if virtual flag, 1 means this flag is from external BB.
-    uint32_t modFlag:1;      //!< Only if virtual flag, 1 means will modify flag.
-    uint32_t flagGen:1;      //!< Only if virtual flag, 1 means the gen_context stage may need to
-                             //!< generate the flag.
-    uint32_t execWidth:5;
-    uint32_t quarterControl:1;
-    uint32_t nibControl:1;
-    uint32_t accWrEnable:1;
-    uint32_t noMask:1;
-    uint32_t predicate:4;
-    uint32_t inversePredicate:1;
-    uint32_t saturate:1;
+    uint8_t physicalFlag:1; //!< Physical or virtual flag register
+    uint8_t flag:1;         //!< Only if physical flag,
+    uint8_t subFlag:1;      //!< Only if physical flag
+    uint8_t grfFlag:1;      //!< Only if virtual flag, 0 means we do not need to allocate GRF.
+    uint8_t externFlag:1;   //!< Only if virtual flag, 1 means this flag is from external BB.
+    uint8_t modFlag:1;      //!< Only if virtual flag, 1 means will modify flag.
+    uint8_t flagGen:1;      //!< Only if virtual flag, 1 means the gen_context stage may need to
+                            //!< generate the flag.
+    uint8_t execWidth:5;
+    uint8_t quarterControl:1;
+    uint8_t nibControl:1;
+    uint8_t accWrEnable:1;
+    uint8_t noMask:1;
+    uint8_t predicate:4;
+    uint8_t inversePredicate:1;
+    uint8_t saturate:1;
     uint32_t flagIndex;   //!< Only if virtual flag (index of the register)
     void chooseNib(int nib) {
       switch (nib) {
@@ -169,10 +169,10 @@ namespace gbe
           NOT_IMPLEMENTED;
       }
     }
-    void useVirtualFlag(ir::Register flag, unsigned pred) {
+    void useVirtualFlag(ir::Register vFlag, unsigned pred) {
       modFlag = 0;
       physicalFlag = 0;
-      flagIndex = flag;
+      flagIndex = vFlag;
       predicate = pred;
     }
     void useFlag(int nr, int subnr) {
@@ -189,15 +189,15 @@ namespace gbe
   {
   public:
     /*! Empty constructor */
-    INLINE GenRegister(void) {}
+    INLINE GenRegister() = default;
 
     /*! General constructor */
-    INLINE GenRegister(uint32_t file,
+    INLINE GenRegister(uint8_t file,
                        ir::Register reg,
-                       uint32_t type,
-                       uint32_t vstride,
-                       uint32_t width,
-                       uint32_t hstride)
+                       uint8_t type,
+                       uint8_t vstride,
+                       uint8_t width,
+                       uint8_t hstride)
     {
       this->type = type;
       this->file = file;
@@ -217,13 +217,13 @@ namespace gbe
     }
 
     /*! For specific physical registers only */
-    INLINE GenRegister(uint32_t file,
-                       uint32_t nr,
-                       uint32_t subnr,
-                       uint32_t type,
-                       uint32_t vstride,
-                       uint32_t width,
-                       uint32_t hstride)
+    INLINE GenRegister(uint8_t file,
+                       uint8_t nr,
+                       uint8_t subnr,
+                       uint8_t type,
+                       uint8_t vstride,
+                       uint8_t width,
+                       uint8_t hstride)
     {
       this->type = type;
       this->file = file;
@@ -243,7 +243,7 @@ namespace gbe
     }
 
     /*! Return the IR virtual register */
-    INLINE ir::Register reg(void) const {
+    INLINE ir::Register reg() const {
       if (this->physical)
         return ir::Register();
       else
@@ -289,7 +289,7 @@ namespace gbe
       return r;
     }
 
-    static INLINE GenRegister toUniform(GenRegister reg, uint32_t type) {
+    static INLINE GenRegister toUniform(GenRegister reg, uint8_t type) {
       GenRegister r = reg;
       r.type = type;
       r.hstride = GEN_HORIZONTAL_STRIDE_0;
@@ -335,25 +335,21 @@ namespace gbe
       return r;
     }
 
-    INLINE bool isint64(void) const {
-      if ((type == GEN_TYPE_UL || type == GEN_TYPE_L) && file == GEN_GENERAL_REGISTER_FILE)
-        return true;
-      return false;
+    INLINE bool isint64() const {
+      return (type == GEN_TYPE_UL || type == GEN_TYPE_L) && file == GEN_GENERAL_REGISTER_FILE;
     }
 
     /* Besides long and double, there are also some cases which can also stride
        several registers, eg. unpacked ud for long<8,4:2> and unpacked uw for
        long<16,4:4> */
-    INLINE bool is_unpacked_long(void) const {
+    INLINE bool is_unpacked_long() const {
       if (file != GEN_GENERAL_REGISTER_FILE) return false;
       if (width == GEN_WIDTH_4 && hstride > GEN_HORIZONTAL_STRIDE_1) return true;
       return false;
     }
 
-    INLINE bool isimmdf(void) const {
-      if (type == GEN_TYPE_DF && file == GEN_IMMEDIATE_VALUE)
-        return true;
-      return false;
+    INLINE bool isimmdf() const {
+      return type == GEN_TYPE_DF && file == GEN_IMMEDIATE_VALUE;
     }
 
     INLINE GenRegister top_half(int simdWidth) const {
@@ -372,31 +368,31 @@ namespace gbe
       return reg;
     }
 
-    INLINE GenRegister bottom_half(void) const {
+    INLINE GenRegister bottom_half() const {
       GBE_ASSERT(isint64());
       GenRegister r = retype(*this, type == GEN_TYPE_UL ? GEN_TYPE_UD : GEN_TYPE_D);
       return r;
     }
 
-    INLINE bool is_signed_int(void) const {
+    INLINE bool is_signed_int() const {
       if ((type == GEN_TYPE_B || type == GEN_TYPE_W || type == GEN_TYPE_D || type == GEN_TYPE_L) && file == GEN_GENERAL_REGISTER_FILE)
         return true;
       return false;
     }
 
-    INLINE bool isdf(void) const {
+    INLINE bool isdf() const {
       if (type == GEN_TYPE_DF && file == GEN_GENERAL_REGISTER_FILE)
         return true;
       return false;
     }
 
-    INLINE int flag_nr(void) const {
+    INLINE int flag_nr() const {
       assert(file == GEN_ARCHITECTURE_REGISTER_FILE);
       assert(nr >= GEN_ARF_FLAG && nr < GEN_ARF_FLAG + 2);
       return nr & 15;
     }
 
-    INLINE int flag_subnr(void) const {
+    INLINE int flag_subnr() const {
       return subnr / typeSize(type);
     }
 
@@ -788,7 +784,7 @@ namespace gbe
       return ub16(GEN_GENERAL_REGISTER_FILE, reg);
     }
 
-    static INLINE GenRegister null(void) {
+    static INLINE GenRegister null() {
       return GenRegister(GEN_ARCHITECTURE_REGISTER_FILE,
                          GEN_ARF_NULL,
                          0,
@@ -798,7 +794,7 @@ namespace gbe
                          GEN_HORIZONTAL_STRIDE_1);
     }
 
-    static INLINE GenRegister nullud(void) {
+    static INLINE GenRegister nullud() {
       return GenRegister(GEN_ARCHITECTURE_REGISTER_FILE,
                          GEN_ARF_NULL,
                          0,
@@ -821,7 +817,7 @@ namespace gbe
       return reg;
     }
 
-    static INLINE GenRegister tm0(void) {
+    static INLINE GenRegister tm0() {
       return GenRegister(GEN_ARCHITECTURE_REGISTER_FILE,
                          0xc0,
                          0,
@@ -831,7 +827,7 @@ namespace gbe
                          GEN_HORIZONTAL_STRIDE_1);
     }
 
-    static INLINE GenRegister acc(void) {
+    static INLINE GenRegister acc() {
       return GenRegister(GEN_ARCHITECTURE_REGISTER_FILE,
                          GEN_ARF_ACCUMULATOR,
                          0,
@@ -841,7 +837,7 @@ namespace gbe
                          GEN_HORIZONTAL_STRIDE_1);
     }
 
-    static INLINE GenRegister ip(void) {
+    static INLINE GenRegister ip() {
       return GenRegister(GEN_ARCHITECTURE_REGISTER_FILE,
                          GEN_ARF_IP,
                          0,
