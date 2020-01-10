@@ -281,13 +281,13 @@ namespace gbe
     virtual void setDst(GenNativeInstruction *insn, GenRegister dest) = 0;
     virtual void setSrc0(GenNativeInstruction *insn, GenRegister reg) = 0;
     virtual void setSrc1(GenNativeInstruction *insn, GenRegister reg) = 0;
-    GenCompactInstruction *nextCompact(uint32_t opcode);
+    GenCompactInstruction *nextCompact(GenOpCode opcode);
     virtual uint32_t getCompactVersion() { return 7; }
-    GenNativeInstruction *next(uint32_t opcode);
+    GenNativeInstruction *next(GenOpCode opcode);
     uint32_t n_instruction(void) const { return store.size(); }
-    virtual bool canHandleLong(uint32_t opcode, GenRegister dst, GenRegister src0,
+    virtual bool canHandleLong(GenOpCode opcode, GenRegister dst, GenRegister src0,
                             GenRegister src1 = GenRegister::null());
-    virtual void handleDouble(GenEncoder *p, uint32_t opcode, GenRegister dst, GenRegister src0, GenRegister src1 = GenRegister::null());
+    virtual void handleDouble(GenEncoder *p, GenOpCode opcode, GenRegister dst, GenRegister src0, GenRegister src1 = GenRegister::null());
 
     /*! OBlock helper function */
     uint32_t getOBlockSize(uint32_t oword_size, bool low_half = true);
@@ -308,14 +308,14 @@ namespace gbe
     virtual void OBWRITEA64(GenRegister header, uint32_t bti, uint32_t ow_size);
 
     GBE_CLASS(GenEncoder); //!< Use custom allocators
-    virtual void alu3(uint32_t opcode, GenRegister dst,
+    virtual void alu3(GenOpCode opcode, GenRegister dst,
                        GenRegister src0, GenRegister src1, GenRegister src2) = 0;
   };
 
-  void alu1(GenEncoder *p, uint32_t opcode, GenRegister dst,
+  void alu1(GenEncoder *p, GenOpCode opcode, GenRegister dst,
             GenRegister src, uint32_t condition = 0);
 
-  void alu2(GenEncoder *p, uint32_t opcode, GenRegister dst,
+  void alu2(GenEncoder *p, GenOpCode opcode, GenRegister dst,
             GenRegister src0, GenRegister src1, uint32_t condition = 0);
 } /* namespace gbe */
 

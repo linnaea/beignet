@@ -63,11 +63,11 @@ namespace gbe
     virtual void setSrc0(GenNativeInstruction *insn, GenRegister reg);
     virtual void setSrc1(GenNativeInstruction *insn, GenRegister reg);
     virtual uint32_t getCompactVersion() { return 8; }
-    virtual void alu3(uint32_t opcode, GenRegister dst,
+    virtual void alu3(GenOpCode opcode, GenRegister dst,
                        GenRegister src0, GenRegister src1, GenRegister src2);
-    virtual bool canHandleLong(uint32_t opcode, GenRegister dst, GenRegister src0,
-                            GenRegister src1 = GenRegister::null());
-    virtual void handleDouble(GenEncoder *p, uint32_t opcode, GenRegister dst, GenRegister src0, GenRegister src1 = GenRegister::null());
+    bool canHandleLong(GenOpCode GenOpCode, GenRegister dst, GenRegister src0,
+                            GenRegister src1 = GenRegister::null()) override;
+    virtual void handleDouble(GenEncoder *p, GenOpCode opcode, GenRegister dst, GenRegister src0, GenRegister src1 = GenRegister::null());
     virtual unsigned setAtomicMessageDesc(GenNativeInstruction *insn, unsigned function, unsigned bti, unsigned srcNum);
     virtual unsigned setAtomicA64MessageDesc(GenNativeInstruction *insn, unsigned function, unsigned bti, unsigned srcNum, int type_long);
     virtual unsigned setUntypedReadMessageDesc(GenNativeInstruction *insn, unsigned bti, unsigned elemNum);

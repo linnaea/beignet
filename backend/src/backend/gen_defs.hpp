@@ -52,9 +52,6 @@
 #define __GEN_DEFS_HPP__
 
 #include <stdint.h>
-#include "backend/gen7_instruction.hpp"
-#include "backend/gen8_instruction.hpp"
-#include "backend/gen9_instruction.hpp"
 
 /////////////////////////////////////////////////////////////////////////////
 // Gen EU defines
@@ -114,7 +111,8 @@
 #define GEN_MASK_DISABLE  1
 
 /*! Gen opcode */
-enum opcode {
+enum GenOpCode
+{
   GEN_OPCODE_MOV = 1,
   GEN_OPCODE_SEL = 2,
   GEN_OPCODE_NOT = 4,
@@ -305,10 +303,10 @@ enum GenMessageTarget {
 #define GEN_WIDTH_32      5
 
 /* Channels to enable for the untyped reads and writes */
-#define GEN_UNTYPED_RED   (1 << 0)
-#define GEN_UNTYPED_GREEN (1 << 1)
-#define GEN_UNTYPED_BLUE  (1 << 2)
-#define GEN_UNTYPED_ALPHA (1 << 3)
+#define GEN_UNTYPED_RED   (1u << 0)
+#define GEN_UNTYPED_GREEN (1u << 1)
+#define GEN_UNTYPED_BLUE  (1u << 2)
+#define GEN_UNTYPED_ALPHA (1u << 3)
 
 /* SIMD mode for untyped reads and writes */
 #define GEN_UNTYPED_SIMD4x2 0
@@ -496,6 +494,9 @@ enum GenMessageTarget {
 #define GEN_MAX_GRF 128
 
 /* Instruction format for the execution units */
+#include "backend/gen7_instruction.hpp"
+#include "backend/gen8_instruction.hpp"
+#include "backend/gen9_instruction.hpp"
 
 struct GenInstruction {
   uint32_t low;
@@ -507,7 +508,7 @@ union GenCompactInstruction {
   /* Gen8+ src3 compact inst */
   struct {
     struct {
-      uint32_t opcode:7;
+      enum GenOpCode opcode:7;
       uint32_t pad:1;
       uint32_t control_index:2;
       uint32_t src_index:2;
@@ -532,7 +533,7 @@ union GenCompactInstruction {
   /* Normal src2 compact inst */
   struct {
     struct {
-      uint32_t opcode:7;
+      enum GenOpCode opcode:7;
       uint32_t debug_control:1;
       uint32_t control_index:5;
       uint32_t data_type_index:5;
@@ -566,20 +567,20 @@ union GenNativeInstruction
   //Gen7 & Gen8 common field
   struct {
     struct {
-      uint32_t opcode:7;
-      uint32_t pad:1;
-      uint32_t access_mode:1;
-      uint32_t pad1:3;
-      uint32_t quarter_control:2;
-      uint32_t thread_control:2;
-      uint32_t predicate_control:4;
-      uint32_t predicate_inverse:1;
-      uint32_t execution_size:3;
-      uint32_t destreg_or_condmod:4;
-      uint32_t acc_wr_control:1;
-      uint32_t cmpt_control:1;
-      uint32_t debug_control:1;
-      uint32_t saturate:1;
+      enum GenOpCode opcode:7;
+      uint8_t pad:1;
+      uint8_t access_mode:1;
+      uint8_t pad1:3;
+      uint8_t quarter_control:2;
+      uint8_t thread_control:2;
+      uint8_t predicate_control:4;
+      uint8_t predicate_inverse:1;
+      uint8_t execution_size:3;
+      uint8_t destreg_or_condmod:4;
+      uint8_t acc_wr_control:1;
+      uint8_t cmpt_control:1;
+      uint8_t debug_control:1;
+      uint8_t saturate:1;
     } header;
 
     struct {

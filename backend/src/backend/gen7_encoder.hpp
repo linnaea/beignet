@@ -40,7 +40,7 @@ namespace gbe
     virtual void setDst(GenNativeInstruction *insn, GenRegister dest);
     virtual void setSrc0(GenNativeInstruction *insn, GenRegister reg);
     virtual void setSrc1(GenNativeInstruction *insn, GenRegister reg);
-    virtual void alu3(uint32_t opcode, GenRegister dst,
+    virtual void alu3(GenOpCode opcode, GenRegister dst,
                        GenRegister src0, GenRegister src1, GenRegister src2);
     /*! MBlock read */
     virtual void MBREAD(GenRegister dst, GenRegister header, uint32_t bti, uint32_t elemSize);

@@ -37,7 +37,7 @@ static const uint32_t untypedRWMask[] = {
 
 namespace gbe
 {
-  extern bool compactAlu3(GenEncoder *p, uint32_t opcode, GenRegister dst, GenRegister src0, GenRegister src1, GenRegister src2);
+  extern bool compactAlu3(GenEncoder *p, GenOpCode opcode, GenRegister dst, GenRegister src0, GenRegister src1, GenRegister src2);
   void Gen8Encoder::setHeader(GenNativeInstruction *insn) {
     Gen8NativeInstruction *gen8_insn = &insn->gen8_insn;
     if (this->curr.execWidth == 8)
@@ -612,12 +612,12 @@ namespace gbe
     }
   }
 
-  bool Gen8Encoder::canHandleLong(uint32_t opcode, GenRegister dst, GenRegister src0, GenRegister src1)
+  bool Gen8Encoder::canHandleLong(GenOpCode opcode, GenRegister dst, GenRegister src0, GenRegister src1)
   {
     return false;
   }
 
-  void Gen8Encoder::handleDouble(GenEncoder *p, uint32_t opcode, GenRegister dst, GenRegister src0, GenRegister src1)
+  void Gen8Encoder::handleDouble(GenEncoder *p, GenOpCode opcode, GenRegister dst, GenRegister src0, GenRegister src1)
   {
     uint32_t w = p->curr.execWidth;
     GenNativeInstruction *insn = NULL;
@@ -666,7 +666,7 @@ namespace gbe
 
 #define NO_SWIZZLE ((0<<0) | (1<<2) | (2<<4) | (3<<6))
 
-  void Gen8Encoder::alu3(uint32_t opcode,
+  void Gen8Encoder::alu3(GenOpCode opcode,
                               GenRegister dest,
                               GenRegister src0,
                               GenRegister src1,

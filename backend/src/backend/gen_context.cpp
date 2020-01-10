@@ -101,7 +101,7 @@ namespace gbe
     // Emit Gen ISA
     for (auto &block : *sel->blockList)
     for (auto &insn : block.insnList) {
-      const uint32_t opcode = insn.opcode;
+      const auto opcode = insn.opcode;
       p->push();
       // no more virtual register here in that part of the code generation
       GBE_ASSERT(insn.state.physicalFlag);
@@ -138,7 +138,7 @@ namespace gbe
       if (((jip - insnID) > 32767 || (jip - insnID) < -32768) ||
           ((uip - insnID) > 32768 || (uip - insnID) < -32768)) {
         // The only possible error instruction is if/endif here.
-        errCode = OUT_OF_RANGE_IF_ENDIF; 
+        errCode = OUT_OF_RANGE_IF_ENDIF;
         return false;
       }
       p->patchJMPI(insnID, jip - insnID, uip - insnID);

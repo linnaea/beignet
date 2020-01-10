@@ -698,7 +698,7 @@ namespace gbe {
     return r->index;
   }
 
-  bool compactAlu1(GenEncoder *p, uint32_t opcode, GenRegister dst, GenRegister src, uint32_t condition, bool split) {
+  bool compactAlu1(GenEncoder *p, GenOpCode opcode, GenRegister dst, GenRegister src, uint32_t condition, bool split) {
     if(split) {
       // TODO support it
       return false;
@@ -733,7 +733,7 @@ namespace gbe {
     }
   }
 
-  bool compactAlu2(GenEncoder *p, uint32_t opcode, GenRegister dst, GenRegister src0, GenRegister src1, uint32_t condition, bool split) {
+  bool compactAlu2(GenEncoder *p, GenOpCode opcode, GenRegister dst, GenRegister src0, GenRegister src1, uint32_t condition, bool split) {
     if(split) {
       // TODO support it
       return false;
@@ -782,7 +782,7 @@ namespace gbe {
     }
   }
 
-  bool compactAlu3(GenEncoder *p, uint32_t opcode, GenRegister dst, GenRegister src0, GenRegister src1, GenRegister src2)
+  bool compactAlu3(GenEncoder *p, GenOpCode opcode, GenRegister dst, GenRegister src0, GenRegister src1, GenRegister src2)
   {
     if(p->getCompactVersion() < 8)
       return false;

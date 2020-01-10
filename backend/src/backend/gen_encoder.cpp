@@ -54,8 +54,8 @@
 
 namespace gbe
 {
-  extern bool compactAlu2(GenEncoder *p, uint32_t opcode, GenRegister dst, GenRegister src0, GenRegister src1, uint32_t condition, bool split);
-  extern bool compactAlu1(GenEncoder *p, uint32_t opcode, GenRegister dst, GenRegister src, uint32_t condition, bool split);
+  extern bool compactAlu2(GenEncoder *p, GenOpCode opcode, GenRegister dst, GenRegister src0, GenRegister src1, uint32_t condition, bool split);
+  extern bool compactAlu1(GenEncoder *p, GenOpCode opcode, GenRegister dst, GenRegister src, uint32_t condition, bool split);
   //////////////////////////////////////////////////////////////////////////
   // Some helper functions to encode
   //////////////////////////////////////////////////////////////////////////
@@ -674,18 +674,16 @@ namespace gbe
     }
   }
   
-  GenCompactInstruction *GenEncoder::nextCompact(uint32_t opcode) {
-    GenCompactInstruction insn;
-    std::memset(&insn, 0, sizeof(GenCompactInstruction));
+  GenCompactInstruction *GenEncoder::nextCompact(GenOpCode opcode) {
+    GenCompactInstruction insn{};
     insn.bits1.opcode = opcode;
     this->store.push_back(insn.low);
     setDBGInfo(DBGInfo, false);
     return (GenCompactInstruction *)&this->store.back();
   }
 
-  GenNativeInstruction *GenEncoder::next(uint32_t opcode) {
-     GenNativeInstruction insn;
-     std::memset(&insn, 0, sizeof(GenNativeInstruction));
+  GenNativeInstruction *GenEncoder::next(GenOpCode opcode) {
+     GenNativeInstruction insn{};
      insn.header.opcode = opcode;
      this->store.push_back(insn.low);
      this->store.push_back(insn.high);
@@ -693,7 +691,7 @@ namespace gbe
      return (GenNativeInstruction *)(&this->store.back()-1);
   }
 
-  bool GenEncoder::canHandleLong(uint32_t opcode, GenRegister dst, GenRegister src0, GenRegister src1)
+  bool GenEncoder::canHandleLong(GenOpCode opcode, GenRegister dst, GenRegister src0, GenRegister src1)
   {
     /* By now, just alu1 insn will come to here. So just MOV */
     this->MOV(dst.bottom_half(), src0.bottom_half());
@@ -701,19 +699,19 @@ namespace gbe
     return true;
   }
 
-  void GenEncoder::handleDouble(GenEncoder *p, uint32_t opcode, GenRegister dst, GenRegister src0, GenRegister src1) {
+  void GenEncoder::handleDouble(GenEncoder *p, GenOpCode opcode, GenRegister dst, GenRegister src0, GenRegister src1) {
     /* For platform before gen8, we do not support double and can not get here. */
     GBE_ASSERT(0);
   }
 
-  void alu1(GenEncoder *p, uint32_t opcode, GenRegister dst,
+  void alu1(GenEncoder *p, GenOpCode opcode, GenRegister dst,
             GenRegister src, uint32_t condition) {
      if (dst.isdf() && src.isdf()) {
        p->handleDouble(p, opcode, dst, src);
      } else if (dst.isint64() && src.isint64()
                 && p->canHandleLong(opcode, dst, src)) { // handle int64
        return;
-     } else if (needToSplitAlu1(p, dst, src) == false) {
+     } else if (!needToSplitAlu1(p, dst, src)) {
       if(compactAlu1(p, opcode, dst, src, condition, false))
         return;
        GenNativeInstruction *insn = p->next(opcode);
@@ -747,7 +745,7 @@ namespace gbe
   }
 
   void alu2(GenEncoder *p,
-            uint32_t opcode,
+            GenOpCode opcode,
             GenRegister dst,
             GenRegister src0,
             GenRegister src1,

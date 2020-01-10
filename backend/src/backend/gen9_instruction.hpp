@@ -20,12 +20,13 @@
 
 #ifndef __GEN9_INSTRUCTION_HPP__
 #define __GEN9_INSTRUCTION_HPP__
+#include "backend/gen_defs.hpp"
 
 union Gen9NativeInstruction
 {
   struct {
     struct {
-      uint32_t opcode:7;
+      enum GenOpCode opcode:7;
       uint32_t pad:1;
       uint32_t access_mode:1;
       uint32_t dependency_control:2;

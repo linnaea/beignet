@@ -173,7 +173,7 @@ namespace gbe
 
 #define NO_SWIZZLE ((0<<0) | (1<<2) | (2<<4) | (3<<6))
 
-  void Gen7Encoder::alu3(uint32_t opcode,
+  void Gen7Encoder::alu3(GenOpCode opcode,
                               GenRegister dest,
                               GenRegister src0,
                               GenRegister src1,
