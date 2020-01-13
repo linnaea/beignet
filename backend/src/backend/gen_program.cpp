@@ -246,8 +246,7 @@ namespace gbe {
       if ( ctx->getErrCode() == OUT_OF_RANGE_IF_ENDIF && !ctx->getIFENDIFFix() ) {
         ctx->setIFENDIFFix(true);
         codeGen--;
-      } else
-        GBE_ASSERT(!(ctx->getErrCode() == OUT_OF_RANGE_IF_ENDIF && ctx->getIFENDIFFix()));
+      }
     }
 
     //GBE_ASSERTM(kernel != nullptr, "Fail to compile kernel, may need to increase reserved registers for spilling.");

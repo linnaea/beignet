@@ -4799,15 +4799,9 @@ namespace gbe
           }
 #if LLVM_VERSION_MAJOR >= 9
           case Intrinsic::ssub_sat:
-            ctx.SUBSAT(
-                getType(ctx, I.getType()),
-                this->getRegister(&I),
-                this->getRegister(I.getOperand(0)),
-                this->getRegister(I.getOperand(1)));
-            break;
           case Intrinsic::usub_sat:
             ctx.SUBSAT(
-                getUnsignedType(ctx, I.getType()),
+                F->getIntrinsicID() == Intrinsic::usub_sat ? getUnsignedType(ctx, I.getType()) : getType(ctx, I.getType()),
                 this->getRegister(&I),
                 this->getRegister(I.getOperand(0)),
                 this->getRegister(I.getOperand(1)));
@@ -5262,7 +5256,7 @@ namespace gbe
             break;
            }
 #define DEF(DST_TYPE, SRC_TYPE) \
-  { ctx.SAT_CVT(DST_TYPE, SRC_TYPE, getRegister(&I), getRegister(I.getOperand(0))); break; }
+  { ctx.SAT_CVT(DST_TYPE, SRC_TYPE, getRegister(&I), getRegister(I.getOperand(0))); } break
           case GEN_OCL_SAT_CONV_U8_TO_I8:
             DEF(ir::TYPE_S8, ir::TYPE_U8);
           case GEN_OCL_SAT_CONV_I16_TO_I8:
