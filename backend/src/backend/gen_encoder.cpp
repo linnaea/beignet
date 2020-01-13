@@ -664,7 +664,7 @@ namespace gbe
     }
   }
 
-  extern bool OCL_DEBUGINFO; // first defined by calling BVAR in program.cpp
+  extern int32_t OCL_DEBUGINFO; // first defined by calling BVAR in program.cpp
   void GenEncoder::setDBGInfo(DebugInfo in, bool hasHigh)
   {
     if(OCL_DEBUGINFO)

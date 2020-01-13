@@ -81,7 +81,7 @@ namespace ir {
     return static_cast<int16_t>(apsInt.getZExtValue());
   }
 
-  half half::convToHalf(uint16_t u16) {
+  half half::toHalf(uint16_t u16) {
 #if LLVM_VERSION_MAJOR * 10 + LLVM_VERSION_MINOR >= 40
     llvm::APFloat res(llvm::APFloat::IEEEhalf(), llvm::APInt(16, 0, false));
 #else
@@ -93,7 +93,7 @@ namespace ir {
     return half(convAPFloatToU16(res));
   }
 
-  half half::convToHalf(int16_t v16) {
+  half half::toHalf(int16_t v16) {
 #if LLVM_VERSION_MAJOR * 10 + LLVM_VERSION_MINOR >= 40
     llvm::APFloat res(llvm::APFloat::IEEEhalf(), llvm::APInt(16, 0, true));
 #else

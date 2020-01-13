@@ -197,7 +197,7 @@ namespace ir {
       case TYPE_FLOAT: out << imm.getFloatValue(); break;
       case TYPE_DOUBLE: out << imm.getDoubleValue(); break;
       default:
-        GBE_ASSERT(0 && "unsupported imm type.\n");
+        GBE_ASSERTM(false, "unsupported imm type.\n");
     }
   }
 

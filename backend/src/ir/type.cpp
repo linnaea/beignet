@@ -41,7 +41,7 @@ namespace ir {
       case TYPE_FLOAT: return out << "float";
       case TYPE_DOUBLE: return out << "double";
       default :
-        GBE_ASSERT(0 && "Unsupported type\n");
+        GBE_ASSERTM(false, "Unsupported type\n");
     };
     return out;
   }

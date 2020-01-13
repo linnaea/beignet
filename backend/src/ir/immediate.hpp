@@ -88,26 +88,26 @@ namespace ir {
   class Immediate
   {
   public:
-    INLINE Immediate(void) { }
+    INLINE Immediate() = default;
 
     Immediate & operator= (const Immediate &);
 
-    INLINE Type getType(void) const {
+    INLINE Type getType() const {
       return (Type)type;
     }
 
-    INLINE bool isCompType(void) const {
+    INLINE bool isCompType() const {
       return type == IMM_TYPE_COMP;
     }
 
-    INLINE uint32_t getElemNum(void) const {
+    INLINE uint32_t getElemNum() const {
       return elemNum;
     }
 
-    uint32_t getTypeSize(void) const {
+    uint32_t getTypeSize() const {
       switch(type) {
         default:
-          GBE_ASSERT(0 && "Invalid immeidate type.\n");
+          GBE_ASSERTM(false, "Invalid immeidate type.\n");
         case TYPE_BOOL:
         case TYPE_S8:
         case TYPE_U8:   return 1;
@@ -125,7 +125,7 @@ namespace ir {
     }
 
 #define DECL_CONSTRUCTOR(TYPE, FIELD, IR_TYPE)                  \
-    Immediate(TYPE FIELD) {                                     \
+    explicit Immediate(TYPE FIELD) {                            \
       this->type = (ImmType)IR_TYPE;                            \
       this->elemNum = 1;                                        \
       this->data.p = &defaultData;                              \
@@ -148,7 +148,7 @@ namespace ir {
 #undef DECL_CONSTRUCTOR
 
 #define DECL_CONSTRUCTOR(TYPE, FIELD, IR_TYPE, ELEMNUM)         \
-    Immediate(TYPE *FIELD, uint32_t ELEMNUM) {                  \
+    Immediate(const TYPE *FIELD, uint32_t ELEMNUM) {            \
       this->type = (ImmType)IR_TYPE;                            \
       this->elemNum = ELEMNUM;                                  \
       if (elemNum * ELEMNUM > 8)                                \
@@ -173,12 +173,12 @@ namespace ir {
     DECL_CONSTRUCTOR(double, f64, TYPE_DOUBLE, elemNum)
 #undef DECL_CONSTRUCTOR
 
-    Immediate(const vector<const Immediate*> immVec, Type dstType);
+    Immediate(vector<const Immediate*> immVec, Type dstType);
 
-    INLINE int64_t getIntegerValue(void) const {
+    INLINE int64_t getIntegerValue() const {
       switch (type) {
         default:
-          GBE_ASSERT(0 && "Invalid immediate type.\n");
+          GBE_ASSERTM(false, "Invalid immediate type.\n");
         case TYPE_BOOL: return *data.b;
         case TYPE_S8:   return *data.s8;
         case TYPE_U8:   return *data.u8;
@@ -191,10 +191,10 @@ namespace ir {
       }
     }
 
-    INLINE uint64_t getUnsignedIntegerValue(void) const {
+    INLINE uint64_t getUnsignedIntegerValue() const {
       switch (type) {
         default:
-          GBE_ASSERT(0 && "Invalid immediate type.\n");
+          GBE_ASSERTM(false, "Invalid immediate type.\n");
         case TYPE_BOOL: return *data.b;
         case TYPE_S8:   return *data.s8;
         case TYPE_U8:   return *data.u8;
@@ -207,34 +207,34 @@ namespace ir {
       }
     }
 
-    INLINE float getFloatValue(void) const {
+    INLINE float getFloatValue() const {
       // we allow bitcast from u32/s32 immediate to float
       GBE_ASSERT(type == IMM_TYPE_FLOAT || type == IMM_TYPE_U32 || type == IMM_TYPE_S32);
       return *data.f32;
     }
 
-    INLINE float asFloatValue(void) const {
+    INLINE float asFloatValue() const {
       GBE_ASSERT(type == IMM_TYPE_FLOAT || type == IMM_TYPE_U32 || type == IMM_TYPE_S32);
       return *data.f32;
     }
 
-    INLINE half getHalfValue(void) const {
+    INLINE half getHalfValue() const {
       GBE_ASSERT(type == IMM_TYPE_HALF);
       return *data.f16;
     }
 
-    INLINE half asHalfValue(void) const {
+    INLINE half asHalfValue() const {
       // we allow bitcast from u32/s32 immediate to float
       GBE_ASSERT(type == IMM_TYPE_HALF || type == IMM_TYPE_U16 || type == IMM_TYPE_S16);
       return *data.f16;
     }
 
-    INLINE int64_t asIntegerValue(void) const {
+    INLINE int64_t asIntegerValue() const {
       GBE_ASSERT(elemNum == 1);
       return *data.s64;
     }
 
-    INLINE double getDoubleValue(void) const {
+    INLINE double getDoubleValue() const {
       GBE_ASSERT(type == IMM_TYPE_DOUBLE);
       return *data.f64;
     }
@@ -267,8 +267,8 @@ namespace ir {
         case IMM_SITOFP: *this = Immediate((float)*other.data.s32); break;
         case IMM_HFTOUS: *this = Immediate((uint16_t)*other.data.f16); break;
         case IMM_HFTOSS: *this = Immediate((int16_t)*other.data.f16); break;
-        case IMM_USTOHF: *this = Immediate(half::convToHalf(*other.data.u16)); break;
-        case IMM_SSTOHF: *this = Immediate(half::convToHalf(*other.data.s16)); break;
+        case IMM_USTOHF: *this = Immediate(half::toHalf(*other.data.u16)); break;
+        case IMM_SSTOHF: *this = Immediate(half::toHalf(*other.data.s16)); break;
         case IMM_SEXT:
         {
           int64_t value = other.getIntegerValue();
@@ -276,7 +276,7 @@ namespace ir {
             value = -value;
           switch (dstType) {
             default:
-              GBE_ASSERT(0 && "Illegal sext constant expression");
+              GBE_ASSERTM(false, "Illegal sext constant expression");
             case TYPE_S8:     *this = Immediate((int8_t)value); break;
             case TYPE_S16:    *this = Immediate((int16_t)value); break;
             case TYPE_S32:    *this = Immediate((int32_t)value); break;
@@ -288,7 +288,7 @@ namespace ir {
           uint64_t value = other.getUnsignedIntegerValue();
           switch (dstType) {
             default:
-              GBE_ASSERT(0 && "Illegal sext constant expression");
+              GBE_ASSERTM(false, "Illegal sext constant expression");
             case TYPE_U8:     *this = Immediate((uint8_t)value); break;
             case TYPE_U16:    *this = Immediate((uint16_t)value); break;
             case TYPE_U32:    *this = Immediate((uint32_t)value); break;
@@ -322,7 +322,7 @@ namespace ir {
     ~Immediate() {
       if (data.p != &defaultData) {
         free(data.p);
-        data.p = NULL;
+        data.p = nullptr;
       }
     }
 

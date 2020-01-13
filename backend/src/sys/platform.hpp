@@ -175,8 +175,10 @@
 #define CACHE_LINE_ALIGNED ALIGNED(CACHE_LINE)
 
 #ifdef __GNUC__
-  #define MAYBE_UNUSED __attribute__((used))
+  #define KEEP_USED __attribute__((used))
+  #define MAYBE_UNUSED __attribute__((unused))
 #else
+  #define KEEP_USED
   #define MAYBE_UNUSED
 #endif
 

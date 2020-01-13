@@ -180,7 +180,7 @@ using namespace ir;
     Immediate::Immediate(ImmOpCode op, const Immediate &left, const Immediate &right, Type dstType) {
       switch (op) {
         default:
-          GBE_ASSERT(0 && "unsupported imm op\n");
+          GBE_ASSERTM(false, "unsupported imm op\n");
         case IMM_ADD: *this = left + right; break;
         case IMM_SUB: *this = left - right; break;
         case IMM_MUL: *this = left * right; break;
@@ -220,7 +220,7 @@ using namespace ir;
           if (left.getElemNum() == 1)
             *this = left >> right;
           else {
-            GBE_ASSERT(0 && "Doesn't support ashr on array constant.");
+            GBE_ASSERTM(false, "Doesn't support ashr on array constant.");
             copy(left, right.getIntegerValue() / (left.getTypeSize() * 8), left.getElemNum());
           }
           break;

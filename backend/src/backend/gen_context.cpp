@@ -93,7 +93,7 @@ namespace gbe
     return i;
   }
 
-  extern bool OCL_DEBUGINFO; // first defined by calling BVAR in program.cpp
+  extern int32_t OCL_DEBUGINFO; // first defined by calling BVAR in program.cpp
 #define SET_GENINSN_DBGINFO(I) \
   if(OCL_DEBUGINFO) p->DBGInfo = I.DBGInfo;
       
@@ -2024,7 +2024,7 @@ namespace gbe
     else { //size == 8
       payload.type = GEN_TYPE_UD;
       GBE_ASSERT(payload.hstride == GEN_HORIZONTAL_STRIDE_1);
-      loadBottomHalf(payload, src.isdf()? GenRegister::retype(src, GEN_TYPE_UL) : src );
+      loadBottomHalf(payload, src.isdf() ? GenRegister::retype(src, GEN_TYPE_UL) : src );
       uint32_t regNum = (regSize/2*simdWidth) > 32 ? 2 : 1;
       this->scratchWrite(msg, scratchOffset, regNum, GEN_TYPE_UD, GEN_SCRATCH_CHANNEL_MODE_DWORD);
       loadTopHalf(payload, src.isdf() ? GenRegister::retype(src, GEN_TYPE_UL) : src);

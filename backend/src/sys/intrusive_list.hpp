@@ -144,7 +144,7 @@ namespace gbe
     INLINE const value_type* front() const { return upcast(m_root.next); }
     INLINE const value_type* back() const  { return upcast(m_root.prev); }
 
-    value_type* MAYBE_UNUSED operator[](size_type n) {
+    value_type* operator[](size_type n) {
       intrusive_list_node* iter = m_root.next;
       while(n) {
         iter = iter->next;
@@ -154,7 +154,7 @@ namespace gbe
       return upcast(iter);
     }
 
-    value_type* MAYBE_UNUSED at(size_type n) {
+    value_type* at(size_type n) {
       intrusive_list_node* iter = m_root.next;
       while(n && iter != &m_root) {
         iter = iter->next;
@@ -167,7 +167,7 @@ namespace gbe
       return upcast(iter);
     }
 
-    std::vector<T*> MAYBE_UNUSED to_vector() {
+    std::vector<T*> KEEP_USED to_vector() {
       std::vector<T*> v;
       for(auto iter = m_root.next; iter != &m_root; iter = iter->next) {
         v.emplace_back(upcast(iter));

@@ -36,15 +36,14 @@ namespace ir {
     private:
       uint16_t val;
     public:
-      half(uint16_t v) : val(v) {};
-      static half convToHalf(uint16_t u16);
-      static half convToHalf(int16_t v16);
-      half(const half& other) { this->val = other.val; };
-      uint16_t getVal(void) { return val; };
-      operator float (void) const;
-      operator double (void) const;
-      operator uint16_t (void) const;
-      operator int16_t (void) const;
+      explicit half(uint16_t v) : val(v) {};
+      static half toHalf(uint16_t u16);
+      static half toHalf(int16_t v16);
+      uint16_t getVal() { return val; };
+      operator float () const;
+      operator double () const;
+      explicit operator uint16_t () const;
+      explicit operator int16_t () const;
       half operator+ (const half &) const;
       half operator- (const half &) const;
       half operator* (const half &) const;

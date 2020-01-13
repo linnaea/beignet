@@ -103,7 +103,7 @@ using namespace llvm;
 
 namespace gbe
 {
-  extern bool OCL_DEBUGINFO; // first defined by calling BVAR in program.cpp
+  extern int32_t OCL_DEBUGINFO; // first defined by calling BVAR in program.cpp
   /*! Gen IR manipulates only scalar types */
   static bool isScalarType(const Type *type)
   {
@@ -272,7 +272,7 @@ namespace gbe
 
   static Constant *extractConstantElem(Constant *CPV, uint32_t index) {
     ConstantVector *CV = dyn_cast<ConstantVector>(CPV);
-    GBE_ASSERT(CV != NULL);
+    GBE_ASSERT(CV != nullptr);
 #if GBE_DEBUG
     const uint32_t elemNum = CV->getNumOperands();
     GBE_ASSERTM(index < elemNum, "Out-of-bound constant vector access");
@@ -350,7 +350,7 @@ namespace gbe
       scalarMap[key] = reg;
     }
     /*! Allocate a new scalar register */
-    ir::Register newScalar(Value *value, Value *key = NULL, uint32_t index = 0u, bool uniform = false)
+    ir::Register newScalar(Value *value, Value *key = nullptr, uint32_t index = 0u, bool uniform = false)
     {
       // we don't allow normal constant, but GlobalValue is a special case,
       // it needs a register to store its address
@@ -460,7 +460,7 @@ namespace gbe
     ir::Register _newScalar(Value *value, Value *key, Type *type, uint32_t index, bool uniform) {
       const ir::RegisterFamily family = getFamily(ctx, type);
       const ir::Register reg = ctx.reg(family, uniform);
-      key = key == NULL ? value : key;
+      key = key == nullptr ? value : key;
       this->insertRegister(reg, key, index);
       return reg;
     }
@@ -677,7 +677,7 @@ namespace gbe
     /*! Each block end may require to emit MOVs for further PHIs */
     void emitMovForPHI(BasicBlock *curr, BasicBlock *succ);
     /*! Alocate one or several registers (if vector) for the value */
-    INLINE void newRegister(Value *value, Value *key = NULL, bool uniform = false);
+    INLINE void newRegister(Value *value, Value *key = nullptr, bool uniform = false);
     /*! get the register for a llvm::Constant */
     ir::Register getConstantRegister(Constant *c, uint32_t index = 0);
     /*! Return a valid register from an operand (can use LOADI to make one) */
@@ -780,7 +780,7 @@ namespace gbe
     void visitInstruction(Instruction &I) {NOT_SUPPORTED;}
     ir::PrintfSet::PrintfFmt* getPrintfInfo(CallInst* inst) {
       if (unit.printfs.find((void *)inst) == unit.printfs.end())
-        return NULL;
+        return nullptr;
       return unit.printfs[inst];
     }
     void emitAtomicInstHelper(const ir::AtomicOps opcode,const ir::Type type, const ir::Register dst, llvm::Value* llvmPtr, const ir::Tuple payloadTuple);
@@ -817,15 +817,15 @@ namespace gbe
   }
 
   bool isMixedPoint(Value *val, SmallVector<Value *, 4> &pointers) {
-    Value *validSrc = NULL;
+    Value *validSrc = nullptr;
     unsigned i = 0;
     if (pointers.size() < 2) return false;
     while(i < pointers.size()) {
-      if (pointers[i] != NULL && validSrc != NULL && pointers[i] != validSrc)
+      if (pointers[i] != nullptr && validSrc != nullptr && pointers[i] != validSrc)
         return true;
       // when source is same as itself, we don't treat it as a new source
       // this often occurs for PHINode
-      if (pointers[i] != NULL && validSrc == NULL && pointers[i] != val) {
+      if (pointers[i] != nullptr && validSrc == nullptr && pointers[i] != val) {
         validSrc = pointers[i];
       }
       i++;
@@ -892,7 +892,7 @@ namespace gbe
 
             unsigned k = 0;
             while (k++ < capacity) {
-              pointers.push_back(NULL);
+              pointers.push_back(nullptr);
             }
 
             updatePointerSource(work, theUser, ptr, pointers);
@@ -958,7 +958,7 @@ namespace gbe
             Function *F = dyn_cast<CallInst>(theUser)->getCalledFunction();
             if (!F || F->getIntrinsicID() != 0) continue;
           }
-          Value *pointer = NULL;
+          Value *pointer = nullptr;
           if (isa<LoadInst>(theUser)) {
             ptrCandidate.insert(cast<LoadInst>(theUser));
             pointer = dyn_cast<LoadInst>(theUser)->getPointerOperand();
@@ -972,10 +972,10 @@ namespace gbe
           } else if (isa<CallInst>(theUser)) {
             // atomic/read(write)image
             CallInst *ci = dyn_cast<CallInst>(theUser);
-            pointer = ci ? ci->getArgOperand(0) : NULL;
+            pointer = ci ? ci->getArgOperand(0) : nullptr;
           } else {
             //theUser->dump();
-            GBE_ASSERT(0 && "Unknown instruction operating on pointers\n");
+            GBE_ASSERTM(false, "Unknown instruction operating on pointers\n");
           }
 
           // the pointer operand is same as pointer origin, don't add to pointerOrigMap
@@ -1018,12 +1018,12 @@ namespace gbe
       PtrOrigMapIter iter = pointerOrigMap.find(Val);
       SmallVector<Value *, 4> &pointers = (*iter).second;
       unsigned srcNum = pointers.size();
-      Value *source = NULL;
+      Value *source = nullptr;
       for (unsigned x = 0; x < srcNum; x++) {
         // often happend in phiNode where one source is same as PHINode itself, skip it
         if (pointers[x] == Val) continue;
 
-        if (source == NULL) source = pointers[x];
+        if (source == nullptr) source = pointers[x];
         else {
           if (source != pointers[x])
             return false;
@@ -1094,7 +1094,7 @@ namespace gbe
           pointerBaseMap.insert(std::make_pair(ptr, basePhi));
           unsigned srcNum = pointers.size();
           for (unsigned x = 0; x < srcNum; x++) {
-            Value *base = NULL;
+            Value *base = nullptr;
             if (pointers[x] != ptr) {
               base = getPointerBase(pointers[x]);
             } else {
@@ -1123,7 +1123,7 @@ namespace gbe
           return basePhi;
       } else {
         //ptr->dump();
-        GBE_ASSERT(0 && "Unhandled instruction in getPointerBase\n");
+        GBE_ASSERTM(false, "Unhandled instruction in getPointerBase\n");
         return ptr;
       }
     }
@@ -1194,7 +1194,7 @@ namespace gbe
           SmallVector<Value *, 4> &pointers = (*iter).second;
           unsigned srcNum = pointers.size();
           for (unsigned x = 0; x < srcNum; x++) {
-            Value *bti = NULL;
+            Value *bti = nullptr;
             if (pointers[x] != Val) {
               bti = getBtiRegister(pointers[x]);
             } else {
@@ -1205,7 +1205,7 @@ namespace gbe
           return btiPhi;
         } else {
           //Val->dump();
-          GBE_ASSERT(0 && "Unhandled instruction in getBtiRegister\n");
+          GBE_ASSERTM(false, "Unhandled instruction in getBtiRegister\n");
           return Val;
         }
       }
@@ -1268,26 +1268,26 @@ namespace gbe
         Value * op = node->getOperand(0);
 #else
         auto *V = cast<ValueAsMetadata>(node->getOperand(0));
-        Value *op = V ? V->getValue() : NULL;
+        Value *op = V ? V->getValue() : nullptr;
 #endif
         if(op == F) {
           return node;
         }
       }
-    return NULL;
+    return nullptr;
   }
 
   void GenWriter::assignBti(Function &F) {
-    Module::GlobalListType &globalList = const_cast<Module::GlobalListType &> (TheModule->getGlobalList());
+    auto &globalList = const_cast<Module::GlobalListType &> (TheModule->getGlobalList());
     for(auto i = globalList.begin(); i != globalList.end(); i ++) {
       GlobalVariable &v = *i;
       if(!v.isConstantUsed()) continue;
 
       BtiMap.insert(std::make_pair(&v, getNewBti(&v, false)));
     }
-    MDNode *typeNameNode = NULL;
-    MDNode *typeBaseNameNode = NULL;
-    MDNode *typeQualNode = NULL;
+    MDNode *typeNameNode = nullptr;
+    MDNode *typeBaseNameNode = nullptr;
+    MDNode *typeQualNode = nullptr;
 #if LLVM_VERSION_MAJOR * 10 + LLVM_VERSION_MINOR >= 39
     typeNameNode = F.getMetadata("kernel_arg_type");
     typeBaseNameNode = F.getMetadata("kernel_arg_base_type");
@@ -1295,9 +1295,9 @@ namespace gbe
 #else
     MDNode *node = getKernelFunctionMetadata(&F);
     for(uint j = 0;node && j < node->getNumOperands() - 1; j++) {
-      MDNode *attrNode = dyn_cast_or_null<MDNode>(node->getOperand(1 + j));
-      if (attrNode == NULL) break;
-      MDString *attrName = dyn_cast_or_null<MDString>(attrNode->getOperand(0));
+      auto *attrNode = dyn_cast_or_null<MDNode>(node->getOperand(1 + j));
+      if (attrNode == nullptr) break;
+      auto *attrName = dyn_cast_or_null<MDString>(attrNode->getOperand(0));
       if (!attrName) continue;
       if (attrName->getString() == "kernel_arg_type") {
         typeNameNode = attrNode;
@@ -1335,7 +1335,7 @@ namespace gbe
 
     BasicBlock &bb = F.getEntryBlock();
     for (BasicBlock::iterator iter = bb.begin(), iterE = bb.end(); iter != iterE; ++iter) {
-      if (AllocaInst *ai = dyn_cast<AllocaInst>(iter)) {
+      if (auto *ai = dyn_cast<AllocaInst>(iter)) {
         BtiMap.insert(std::make_pair(ai, BTI_PRIVATE));
       }
     }
@@ -1449,7 +1449,7 @@ namespace gbe
     // alloca
     BasicBlock &bb = F.getEntryBlock();
     for (BasicBlock::iterator iter = bb.begin(), iterE = bb.end(); iter != iterE; ++iter) {
-      if (AllocaInst *ai = dyn_cast<AllocaInst>(iter)) {
+      if (auto *ai = dyn_cast<AllocaInst>(iter)) {
         findPointerEscape(ai, mixedPtr, true, revisit);
       }
     }
@@ -1463,19 +1463,19 @@ namespace gbe
       findPointerEscape(*iter, mixedPtr, false, revisit);
     }
 
-    for (std::set<Value *>::iterator iter = mixedPtr.begin(); iter != mixedPtr.end(); ++iter) {
-      getBtiRegister(*iter);
+    for (auto iter : mixedPtr) {
+      getBtiRegister(iter);
     }
 
-    for (std::set<Value *>::iterator iter = mixedPtr.begin(); iter != mixedPtr.end(); ++iter) {
-      getPointerBase(*iter);
+    for (auto iter : mixedPtr) {
+      getPointerBase(iter);
     }
     handleStoreLoadAddress(F);
   }
   void GenWriter::handleStoreLoadAddress(Function &F) {
     std::set<Value *> processed;
-    for (std::set<Value *>::iterator iter = addrStoreInst.begin(); iter != addrStoreInst.end(); ++iter) {
-      StoreInst *store = cast<StoreInst>(*iter);
+    for (auto iter : addrStoreInst) {
+      StoreInst *store = cast<StoreInst>(iter);
       Value *pointerOp = store->getPointerOperand();
       Value *base = getSinglePointerOrigin(pointerOp);
       if (processed.find(base) != processed.end()) {
@@ -1506,7 +1506,6 @@ namespace gbe
     StringRef data = cda->getRawDataValues();
     memcpy((char*)ptr+offset, data.data(), data.size());
     offset += data.size();
-    return;
   }
 
   void GenWriter::getConstantData(const Constant * c, void* mem, uint32_t& offset, vector<ir::RelocEntry> &relocs) const {
@@ -1515,15 +1514,15 @@ namespace gbe
 
     GBE_ASSERT(c);
     if (isa<ConstantExpr>(c)) {
-      const ConstantExpr *expr = dyn_cast<ConstantExpr>(c);
+      const auto *expr = dyn_cast<ConstantExpr>(c);
       Value *pointer = expr->getOperand(0);
       if (expr->getOpcode() == Instruction::GetElementPtr) {
         uint32_t constantOffset = 0;
         Type* EltTy = pointer->getType();
         for(uint32_t op=1; op<expr->getNumOperands(); ++op) {
             int32_t TypeIndex;
-            ConstantInt* ConstOP = dyn_cast<ConstantInt>(expr->getOperand(op));
-            GBE_ASSERTM(ConstOP != NULL, "must be constant index");
+            auto* ConstOP = dyn_cast<ConstantInt>(expr->getOperand(op));
+            GBE_ASSERTM(ConstOP != nullptr, "must be constant index");
             TypeIndex = ConstOP->getZExtValue();
             GBE_ASSERT(TypeIndex >= 0);
             constantOffset += getGEPConstOffset(unit, pointer->getType(), TypeIndex);
@@ -1538,7 +1537,7 @@ namespace gbe
         memset((char*)mem+offset, 0, size);
         offset += size;
       } else if (expr->isCast()) {
-        Constant *constPtr = cast<Constant>(pointer);
+        auto *constPtr = cast<Constant>(pointer);
         getConstantData(constPtr, mem, offset, relocs);
         offset += getTypeByteSize(unit, type);
       }
@@ -1587,11 +1586,11 @@ namespace gbe
         }
       case Type::TypeID::ArrayTyID:
         {
-          const ConstantDataSequential *cds = dyn_cast<ConstantDataSequential>(c);
+          const auto *cds = dyn_cast<ConstantDataSequential>(c);
           if(cds)
             getSequentialData(cds, mem, offset);
           else {
-            const ConstantArray *ca = dyn_cast<ConstantArray>(c);
+            const auto *ca = dyn_cast<ConstantArray>(c);
             if(!ca)
               return;
             const ArrayType *arrTy = ca->getType();
@@ -1601,7 +1600,7 @@ namespace gbe
             padding /= 8;
             uint32_t ops = c->getNumOperands();
             for(uint32_t op = 0; op < ops; ++op) {
-              Constant * ca = dyn_cast<Constant>(c->getOperand(op));
+              auto * ca = dyn_cast<Constant>(c->getOperand(op));
               getConstantData(ca, mem, offset, relocs);
               offset += padding;
             }
@@ -1610,8 +1609,8 @@ namespace gbe
         }
       case Type::TypeID::VectorTyID:
         {
-          const ConstantDataSequential *cds = dyn_cast<ConstantDataSequential>(c);
-          const VectorType *vecTy = cast<VectorType>(type);
+          const auto *cds = dyn_cast<ConstantDataSequential>(c);
+          const auto *vecTy = cast<VectorType>(type);
           GBE_ASSERT(cds);
           getSequentialData(cds, mem, offset);
           if(vecTy->getNumElements() == 3) // OCL spec require align to vec4
@@ -1620,7 +1619,7 @@ namespace gbe
         }
       case Type::TypeID::IntegerTyID:
         {
-          const ConstantInt *ci = dyn_cast<ConstantInt>(c);
+          const auto *ci = dyn_cast<ConstantInt>(c);
           uint32_t size = ci->getBitWidth() / 8;
           uint64_t data = ci->isNegative() ? ci->getSExtValue() : ci->getZExtValue();
           memcpy((char*)mem+offset, &data, size);
@@ -1629,25 +1628,25 @@ namespace gbe
         }
       case Type::TypeID::FloatTyID:
         {
-          const ConstantFP *cf = dyn_cast<ConstantFP>(c);
+          const auto *cf = dyn_cast<ConstantFP>(c);
           *(float *)((char*)mem + offset) = cf->getValueAPF().convertToFloat();
           offset += sizeof(float);
           break;
         }
       case Type::TypeID::DoubleTyID:
         {
-          const ConstantFP *cf = dyn_cast<ConstantFP>(c);
+          const auto *cf = dyn_cast<ConstantFP>(c);
           *(double *)((char*)mem + offset) = cf->getValueAPF().convertToDouble();
           offset += sizeof(double);
           break;
         }
       case Type::TypeID::HalfTyID:
         {
-          const ConstantFP *cf = dyn_cast<ConstantFP>(c);
+          const auto *cf = dyn_cast<ConstantFP>(c);
           llvm::APFloat apf = cf->getValueAPF();
           llvm::APInt api = apf.bitcastToAPInt();
           uint64_t v64 = api.getZExtValue();
-          uint16_t v16 = static_cast<uint16_t>(v64);
+          auto v16 = static_cast<uint16_t>(v64);
           *(unsigned short *)((char*)mem+offset) = v16;
           offset += sizeof(short);
           break;
@@ -1671,8 +1670,7 @@ namespace gbe
   void GenWriter::collectGlobalConstant() const {
     const Module::GlobalListType &globalList = TheModule->getGlobalList();
     // The first pass just create the global variable constants
-    for(auto i = globalList.begin(); i != globalList.end(); i ++) {
-      const GlobalVariable &v = *i;
+    for(const auto & v : globalList) {
       const char *name = v.getName().data();
 
       vector<ir::RelocEntry> relocs;
@@ -1685,8 +1683,7 @@ namespace gbe
       }
     }
     // the second pass to initialize the data
-    for(auto i = globalList.begin(); i != globalList.end(); i ++) {
-      const GlobalVariable &v = *i;
+    for(const auto & v : globalList) {
       const char *name = v.getName().data();
 
       if(isProgramGlobal(v)) {
@@ -1720,7 +1717,7 @@ namespace gbe
     // Initialize
     TheModule = &M;
     uint32_t oclVersion = getModuleOclVersion(TheModule);
-    legacyMode = oclVersion >= 200 ? false : true;
+    legacyMode = oclVersion < 200;
     unit.setOclVersion(oclVersion);
     collectGlobalConstant();
     return false;
@@ -1761,9 +1758,9 @@ namespace gbe
 
   ir::ImmediateIndex GenWriter::processConstantImmIndexImpl(Constant *CPV, int32_t index)
   {
-    GBE_ASSERT(dyn_cast<ConstantExpr>(CPV) == NULL);
+    GBE_ASSERT(dyn_cast<ConstantExpr>(CPV) == nullptr);
 
-    ConstantDataSequential *seq = dyn_cast<ConstantDataSequential>(CPV);
+    auto *seq = dyn_cast<ConstantDataSequential>(CPV);
 
     if (seq) {
       Type *Ty = seq->getElementType();
@@ -1791,7 +1788,7 @@ namespace gbe
       if(Ty->isVectorTy())
         Ty = (cast<VectorType>(Ty))->getElementType();
       if (Ty == Type::getInt1Ty(CPV->getContext())) {
-        const bool b = 0;
+        const bool b = false;
         return ctx.newImmediate(b);
       } else if (Ty == Type::getInt8Ty(CPV->getContext())) {
         const uint8_t u8 = 0;
@@ -1809,7 +1806,7 @@ namespace gbe
         const float f32 = 0;
         return ctx.newImmediate(f32);
       } else if (Ty == Type::getHalfTy(CPV->getContext())) {
-        const ir::half f16 = 0;
+        const ir::half f16(0);
         return ctx.newImmediate(f16);
       } else if (Ty == Type::getDoubleTy(CPV->getContext())) {
         const double f64 = 0;
@@ -1821,10 +1818,10 @@ namespace gbe
     } else {
       if (dyn_cast<ConstantVector>(CPV))
         return processConstantVector(dyn_cast<ConstantVector>(CPV), index);
-      GBE_ASSERTM(dyn_cast<ConstantExpr>(CPV) == NULL, "Unsupported constant expression");
+      GBE_ASSERTM(dyn_cast<ConstantExpr>(CPV) == nullptr, "Unsupported constant expression");
 
       // Integers
-      if (ConstantInt *CI = dyn_cast<ConstantInt>(CPV)) {
+      if (auto *CI = dyn_cast<ConstantInt>(CPV)) {
         Type* Ty = CI->getType();
         if (Ty == Type::getInt1Ty(CPV->getContext())) {
           const bool b = CI->getZExtValue();
@@ -1869,7 +1866,7 @@ namespace gbe
         if (Ty == Type::getFloatTy(CPV->getContext())) return ctx.newImmediate((float)0);
         if (Ty == Type::getHalfTy(CPV->getContext())) return ctx.newImmediate((ir::half)0);
         if (Ty == Type::getDoubleTy(CPV->getContext())) return ctx.newImmediate((double)0);
-        GBE_ASSERT(0 && "Unsupported undef value type.\n");
+        GBE_ASSERTM(false, "Unsupported undef value type.\n");
       }
 
       // Floats and doubles
@@ -1878,8 +1875,8 @@ namespace gbe
         case Type::HalfTyID:
         case Type::DoubleTyID:
         {
-          ConstantFP *FPC = cast<ConstantFP>(CPV);
-          GBE_ASSERT(isa<UndefValue>(CPV) == false);
+          auto *FPC = cast<ConstantFP>(CPV);
+          GBE_ASSERT(!isa<UndefValue>(CPV));
 
           if (FPC->getType() == Type::getFloatTy(CPV->getContext())) {
             const float f32 = FPC->getValueAPF().convertToFloat();
@@ -1888,10 +1885,10 @@ namespace gbe
             const double f64 = FPC->getValueAPF().convertToDouble();
             return ctx.newImmediate(f64);
           } else {
-            llvm::APFloat apf = FPC->getValueAPF();
+            const llvm::APFloat& apf = FPC->getValueAPF();
             llvm::APInt api = apf.bitcastToAPInt();
             uint64_t v64 = api.getZExtValue();
-            uint16_t v16 = static_cast<uint16_t>(v64);
+            auto v16 = static_cast<uint16_t>(v64);
             const ir::half f16(v16);
             return ctx.newImmediate(f16);
           }
@@ -1908,10 +1905,10 @@ namespace gbe
   }
 
   ir::ImmediateIndex GenWriter::processConstantImmIndex(Constant *CPV, int32_t index) {
-    if (dyn_cast<ConstantExpr>(CPV) == NULL)
+    if (dyn_cast<ConstantExpr>(CPV) == nullptr)
       return processConstantImmIndexImpl(CPV, index);
     //CPV->dump();
-    GBE_ASSERT(0 && "unsupported constant.\n");
+    GBE_ASSERTM(false, "unsupported constant.\n");
     return ctx.newImmediate((uint32_t)0);
   }
 
@@ -1956,7 +1953,7 @@ namespace gbe
   }
 
   ir::Register GenWriter::getConstantRegister(Constant *c, uint32_t elemID) {
-    GBE_ASSERT(c != NULL);
+    GBE_ASSERT(c != nullptr);
     if(isa<GlobalValue>(c)) {
       return regTranslator.getScalar(c, elemID);
     }
@@ -1965,7 +1962,7 @@ namespace gbe
       ir::Type dstType = getType(ctx, llvmType);
       ir::Register reg = ctx.reg(getFamily(dstType));
 
-      ir::ImmediateIndex immIndex;
+      ir::ImmediateIndex immIndex{};
       if(llvmType->isIntegerTy())
         immIndex = ctx.newIntegerImmediate(0, dstType);
       else if(llvmType->isFloatTy()) {
@@ -1988,14 +1985,14 @@ namespace gbe
     //the real value may be constant, so get real value before constant check
     regTranslator.getRealValue(value, elemID);
     if(isa<Constant>(value)) {
-      Constant *c = dyn_cast<Constant>(value);
+      auto *c = dyn_cast<Constant>(value);
       return getConstantRegister(c, elemID);
     } else
       return regTranslator.getScalar(value, elemID);
   }
 
   INLINE Value *GenWriter::getPHICopy(Value *PHI) {
-    const uintptr_t ptr = (uintptr_t) PHI;
+    const auto ptr = (uintptr_t) PHI;
     return (Value*) (ptr+1);
   }
 
@@ -2008,9 +2005,9 @@ namespace gbe
 
   void GenWriter::simplifyTerminator(BasicBlock *bb) {
     Value *value = bb->getTerminator();
-    BranchInst *I = NULL;
-    if ((I = dyn_cast<BranchInst>(value)) != NULL) {
-      if (I->isConditional() == false)
+    BranchInst *I = nullptr;
+    if ((I = dyn_cast<BranchInst>(value)) != nullptr) {
+      if (!I->isConditional())
         return;
       // If the "taken" successor is the next block, we try to invert the
       // branch.
@@ -2020,12 +2017,12 @@ namespace gbe
 
       // More than one use is too complicated: we skip it
       Value *condition = I->getCondition();
-      if (condition->hasOneUse() == false)
+      if (!condition->hasOneUse())
         return;
 
       // Right now, we only invert comparison instruction
-      ICmpInst *CI = dyn_cast<ICmpInst>(condition);
-      if (CI != NULL) {
+      auto *CI = dyn_cast<ICmpInst>(condition);
+      if (CI != nullptr) {
         GBE_ASSERT(conditionSet.find(CI) == conditionSet.end());
         conditionSet.insert(CI);
         return;
@@ -2038,7 +2035,7 @@ namespace gbe
     ctx.LABEL(labelMap[BB]);
     for (auto II = BB->begin(), E = BB->end(); II != E; ++II) {
       if(OCL_DEBUGINFO) {
-        llvm::Instruction * It = dyn_cast<llvm::Instruction>(II);
+        auto * It = dyn_cast<llvm::Instruction>(II);
         setDebugInfo_CTX(It);
       }
       visit(*II);
@@ -2047,7 +2044,7 @@ namespace gbe
 
   void GenWriter::emitMovForPHI(BasicBlock *curr, BasicBlock *succ) {
     for (BasicBlock::iterator I = succ->begin(); isa<PHINode>(I); ++I) {
-      PHINode *PN = cast<PHINode>(I);
+      auto *PN = cast<PHINode>(I);
       Value *IV = PN->getIncomingValueForBlock(curr);
       Type *llvmType = PN->getType();
       const ir::Type type = getType(ctx, llvmType);
@@ -2058,10 +2055,10 @@ namespace gbe
         // Emit the MOV required by the PHI function. We do it simple and do not
         // try to optimize them. A next data flow analysis pass on the Gen IR
         // will remove them
-        Constant *CP = dyn_cast<Constant>(IV);
+        auto *CP = dyn_cast<Constant>(IV);
         if (CP) {
-          GBE_ASSERT(isa<GlobalValue>(CP) == false);
-          ConstantVector *CPV = dyn_cast<ConstantVector>(CP);
+          GBE_ASSERT(!isa<GlobalValue>(CP));
+          auto *CPV = dyn_cast<ConstantVector>(CP);
           if (CPV && dyn_cast<ConstantVector>(CPV) &&
               isa<UndefValue>(extractConstantElem(CPV, 0)))
             continue;
@@ -2111,7 +2108,7 @@ namespace gbe
 
   void GenWriter::setDebugInfo_CTX(llvm::Instruction * insn)
   {
-    llvm::DebugLoc dg = insn->getDebugLoc();
+    const llvm::DebugLoc& dg = insn->getDebugLoc();
     DebugInfo dbginfo;
     dbginfo.line = dg.getLine();
     dbginfo.col = dg.getCol();
@@ -2120,7 +2117,7 @@ namespace gbe
 
   void GenWriter::emitFunctionPrototype(Function &F)
   {
-    GBE_ASSERTM(F.hasStructRetAttr() == false,
+    GBE_ASSERTM(!F.hasStructRetAttr(),
                 "Returned value for kernel functions is forbidden");
 
     // Loop over the kernel metadatas to set the required work group size.
@@ -2128,12 +2125,12 @@ namespace gbe
     size_t hint_wg_sz[3] = {0, 0, 0};
     size_t reqd_sg_sz = 0;
     ir::FunctionArgument::InfoFromLLVM llvmInfo;
-    MDNode *addrSpaceNode = NULL;
-    MDNode *typeNameNode = NULL;
-    MDNode *typeBaseNameNode = NULL;
-    MDNode *accessQualNode = NULL;
-    MDNode *typeQualNode = NULL;
-    MDNode *argNameNode = NULL;
+    MDNode *addrSpaceNode = nullptr;
+    MDNode *typeNameNode = nullptr;
+    MDNode *typeBaseNameNode = nullptr;
+    MDNode *accessQualNode = nullptr;
+    MDNode *typeQualNode = nullptr;
+    MDNode *argNameNode = nullptr;
 
     std::string functionAttributes;
 
@@ -2150,7 +2147,7 @@ namespace gbe
       GBE_ASSERT(attrNode->getNumOperands() == 2);
       functionAttributes += "vec_type_hint";
       auto *Op1 = cast<ValueAsMetadata>(attrNode->getOperand(0));
-      Value *V = Op1 ? Op1->getValue() : NULL;
+      Value *V = Op1 ? Op1->getValue() : nullptr;
       ConstantInt *sign =
           mdconst::extract<ConstantInt>(attrNode->getOperand(1));
       size_t signValue = sign->getZExtValue();
@@ -2158,7 +2155,7 @@ namespace gbe
       Type *stype = vtype;
       uint32_t elemNum = 0;
       if (vtype->isVectorTy()) {
-        VectorType *vectorType = cast<VectorType>(vtype);
+        auto *vectorType = cast<VectorType>(vtype);
         stype = vectorType->getElementType();
         elemNum = vectorType->getNumElements();
       }
@@ -2178,9 +2175,9 @@ namespace gbe
     }
     if ((attrNode = F.getMetadata("reqd_work_group_size"))) {
       GBE_ASSERT(attrNode->getNumOperands() == 3);
-      ConstantInt *x = mdconst::extract<ConstantInt>(attrNode->getOperand(0));
-      ConstantInt *y = mdconst::extract<ConstantInt>(attrNode->getOperand(1));
-      ConstantInt *z = mdconst::extract<ConstantInt>(attrNode->getOperand(2));
+      auto *x = mdconst::extract<ConstantInt>(attrNode->getOperand(0));
+      auto *y = mdconst::extract<ConstantInt>(attrNode->getOperand(1));
+      auto *z = mdconst::extract<ConstantInt>(attrNode->getOperand(2));
       GBE_ASSERT(x && y && z);
       reqd_wg_sz[0] = x->getZExtValue();
       reqd_wg_sz[1] = y->getZExtValue();
@@ -2201,9 +2198,9 @@ namespace gbe
     }
     if ((attrNode = F.getMetadata("work_group_size_hint"))) {
       GBE_ASSERT(attrNode->getNumOperands() == 3);
-      ConstantInt *x = mdconst::extract<ConstantInt>(attrNode->getOperand(0));
-      ConstantInt *y = mdconst::extract<ConstantInt>(attrNode->getOperand(1));
-      ConstantInt *z = mdconst::extract<ConstantInt>(attrNode->getOperand(2));
+      auto *x = mdconst::extract<ConstantInt>(attrNode->getOperand(0));
+      auto *y = mdconst::extract<ConstantInt>(attrNode->getOperand(1));
+      auto *z = mdconst::extract<ConstantInt>(attrNode->getOperand(2));
       GBE_ASSERT(x && y && z);
       hint_wg_sz[0] = x->getZExtValue();
       hint_wg_sz[1] = y->getZExtValue();
@@ -2224,7 +2221,7 @@ namespace gbe
     }
     if ((attrNode = F.getMetadata("intel_reqd_sub_group_size"))) {
       GBE_ASSERT(attrNode->getNumOperands() == 1);
-      ConstantInt *sz = mdconst::extract<ConstantInt>(attrNode->getOperand(0));
+      auto *sz = mdconst::extract<ConstantInt>(attrNode->getOperand(0));
       GBE_ASSERT(sz);
       reqd_sg_sz = sz->getZExtValue();
       if(!(reqd_sg_sz == 8 || reqd_sg_sz == 16)){
@@ -2253,21 +2250,21 @@ namespace gbe
 
 
     for(uint j = 0; node && j < node->getNumOperands() - 1; j++) {
-      MDNode *attrNode = dyn_cast_or_null<MDNode>(node->getOperand(1 + j));
-      if (attrNode == NULL) break;
-      MDString *attrName = dyn_cast_or_null<MDString>(attrNode->getOperand(0));
+      auto *attrNode = dyn_cast_or_null<MDNode>(node->getOperand(1 + j));
+      if (attrNode == nullptr) break;
+      auto *attrName = dyn_cast_or_null<MDString>(attrNode->getOperand(0));
       if (!attrName) continue;
 
       if (attrName->getString() == "reqd_work_group_size") {
         GBE_ASSERT(attrNode->getNumOperands() == 4);
 #if LLVM_VERSION_MAJOR * 10 + LLVM_VERSION_MINOR <= 35
-        ConstantInt *x = dyn_cast<ConstantInt>(attrNode->getOperand(1));
-        ConstantInt *y = dyn_cast<ConstantInt>(attrNode->getOperand(2));
-        ConstantInt *z = dyn_cast<ConstantInt>(attrNode->getOperand(3));
+        auto *x = dyn_cast<ConstantInt>(attrNode->getOperand(1));
+        auto *y = dyn_cast<ConstantInt>(attrNode->getOperand(2));
+        auto *z = dyn_cast<ConstantInt>(attrNode->getOperand(3));
 #else
-        ConstantInt *x = mdconst::extract<ConstantInt>(attrNode->getOperand(1));
-        ConstantInt *y = mdconst::extract<ConstantInt>(attrNode->getOperand(2));
-        ConstantInt *z = mdconst::extract<ConstantInt>(attrNode->getOperand(3));
+        auto *x = mdconst::extract<ConstantInt>(attrNode->getOperand(1));
+        auto *y = mdconst::extract<ConstantInt>(attrNode->getOperand(2));
+        auto *z = mdconst::extract<ConstantInt>(attrNode->getOperand(3));
 #endif
         GBE_ASSERT(x && y && z);
         reqd_wg_sz[0] = x->getZExtValue();
@@ -2306,19 +2303,19 @@ namespace gbe
         Value* V = attrNode->getOperand(1);
 #else
         auto *Op1 = cast<ValueAsMetadata>(attrNode->getOperand(1));
-        Value *V = Op1 ? Op1->getValue() : NULL;
+        Value *V = Op1 ? Op1->getValue() : nullptr;
 #endif
 #if LLVM_VERSION_MAJOR * 10 + LLVM_VERSION_MINOR <= 35
-        ConstantInt *sign = dyn_cast<ConstantInt>(attrNode->getOperand(2));
+        auto *sign = dyn_cast<ConstantInt>(attrNode->getOperand(2));
 #else
-        ConstantInt *sign = mdconst::extract<ConstantInt>(attrNode->getOperand(2));
+        auto *sign = mdconst::extract<ConstantInt>(attrNode->getOperand(2));
 #endif
         size_t signValue = sign->getZExtValue();
         Type* vtype = V->getType();
         Type* stype = vtype;
         uint32_t elemNum = 0;
         if(vtype->isVectorTy()) {
-          VectorType *vectorType = cast<VectorType>(vtype);
+          auto *vectorType = cast<VectorType>(vtype);
           stype = vectorType->getElementType();
           elemNum = vectorType->getNumElements();
         }
@@ -2338,13 +2335,13 @@ namespace gbe
       } else if (attrName->getString() == "work_group_size_hint") {
         GBE_ASSERT(attrNode->getNumOperands() == 4);
 #if LLVM_VERSION_MAJOR * 10 + LLVM_VERSION_MINOR <= 35
-        ConstantInt *x = dyn_cast<ConstantInt>(attrNode->getOperand(1));
-        ConstantInt *y = dyn_cast<ConstantInt>(attrNode->getOperand(2));
-        ConstantInt *z = dyn_cast<ConstantInt>(attrNode->getOperand(3));
+        auto *x = dyn_cast<ConstantInt>(attrNode->getOperand(1));
+        auto *y = dyn_cast<ConstantInt>(attrNode->getOperand(2));
+        auto *z = dyn_cast<ConstantInt>(attrNode->getOperand(3));
 #else
-        ConstantInt *x = mdconst::extract<ConstantInt>(attrNode->getOperand(1));
-        ConstantInt *y = mdconst::extract<ConstantInt>(attrNode->getOperand(2));
-        ConstantInt *z = mdconst::extract<ConstantInt>(attrNode->getOperand(3));
+        auto *x = mdconst::extract<ConstantInt>(attrNode->getOperand(1));
+        auto *y = mdconst::extract<ConstantInt>(attrNode->getOperand(2));
+        auto *z = mdconst::extract<ConstantInt>(attrNode->getOperand(3));
 #endif
         GBE_ASSERT(x && y && z);
         hint_wg_sz[0] = x->getZExtValue();
@@ -2397,10 +2394,10 @@ namespace gbe
           llvmInfo.typeName = (cast<MDString>(typeNameNode->getOperand(opID)))->getString();
           //LLVM 3.9 image's type name include access qual, don't match OpenCL spec, erase them.
           std::vector<std::string> filters = {"__read_only ", "__write_only "};
-          for (uint32_t i = 0; i < filters.size(); i++) {
-            size_t pos = llvmInfo.typeName.find(filters[i]);
+          for (auto & filter : filters) {
+            size_t pos = llvmInfo.typeName.find(filter);
             if (pos != std::string::npos) {
-              llvmInfo.typeName = llvmInfo.typeName.erase(pos, filters[i].length());
+              llvmInfo.typeName = llvmInfo.typeName.erase(pos, filter.length());
             }
           }
         }
@@ -2418,11 +2415,11 @@ namespace gbe
         }
 
         // function arguments are uniform values.
-        this->newRegister(&*I, NULL, true);
+        this->newRegister(&*I, nullptr, true);
 
         // add support for vector argument.
         if(type->isVectorTy()) {
-          VectorType *vectorType = cast<VectorType>(type);
+          auto *vectorType = cast<VectorType>(type);
           ir::Register reg = getRegister(&*I, 0);
           Type *elemType = vectorType->getElementType();
           const uint32_t elemSize = getTypeByteSize(unit, elemType);
@@ -2461,10 +2458,10 @@ namespace gbe
           continue;
         }
 
-        if (type->isPointerTy() == false)
+        if (!type->isPointerTy())
           ctx.input(argName, ir::FunctionArgument::VALUE, reg, llvmInfo, getTypeByteSize(unit, type), getAlignmentByte(unit, type), 0);
         else {
-          PointerType *pointerType = dyn_cast<PointerType>(type);
+          auto *pointerType = dyn_cast<PointerType>(type);
           if(!pointerType)
             continue;
           Type *pointed = pointerType->getElementType();
@@ -2505,8 +2502,8 @@ namespace gbe
                 "Returned value for kernel functions is forbidden");
 
     // Variable number of arguments is not supported
-    FunctionType *FT = cast<FunctionType>(F.getFunctionType());
-    GBE_ASSERT(FT->isVarArg() == false);
+    auto *FT = cast<FunctionType>(F.getFunctionType());
+    GBE_ASSERT(!FT->isVarArg());
 #endif /* GBE_DEBUG */
   }
 
@@ -2551,7 +2548,7 @@ namespace gbe
     // Clear the register usages
     for (auto &x : lastUse) {
       x.lastWrite = x.lastRead = 0;
-      x.lastWriteInsn = x.lastReadInsn = NULL;
+      x.lastWriteInsn = x.lastReadInsn = nullptr;
     }
 
     // Find use intervals for all registers (distinguish sources and
@@ -2591,7 +2588,7 @@ namespace gbe
     // aggressive coaleasing for the moves added during phi elimination.
 
     using namespace ir;
-    ir::FunctionDAG *dag = new ir::FunctionDAG(liveness);
+    auto *dag = new ir::FunctionDAG(liveness);
     for (auto &it : phiMap) {
       const Register phi = it.first;
       const Register phiCopy = it.second;
@@ -2738,7 +2735,7 @@ namespace gbe
 
     // Firstly, validate all possible redundant phi copy map and update liveness information
     // accordingly.
-    if (replaceMap.size() != 0) {
+    if (!replaceMap.empty()) {
       for (auto pair : replaceMap) {
         if (redundantPhiCopyMap.find(pair.first) != redundantPhiCopyMap.end()) {
           auto it = redundantPhiCopyMap.find(pair.first);
@@ -2751,7 +2748,7 @@ namespace gbe
       liveness.replaceRegs(replaceMap);
       replaceMap.clear();
     }
-    if (redundantPhiCopyMap.size() == 0)
+    if (redundantPhiCopyMap.empty())
       return;
     auto dag = new FunctionDAG(liveness);
 
@@ -2761,7 +2758,7 @@ namespace gbe
     map<Register, Register> replacedRegs, revReplacedRegs;
     // Do multi pass redundant phi copy elimination based on the global interfering information.
     // FIXME, we don't need to re-compute the whole DAG for each pass.
-    while (curRedundant->size() > 0) {
+    while (!curRedundant->empty()) {
       //for (auto &pair = *curRedundant) {
       for (auto pair = curRedundant->begin(); pair != curRedundant->end(); ) {
         auto phiCopySrc = pair->first;
@@ -2792,7 +2789,7 @@ namespace gbe
           pair++;
       }
 
-      if (replacedRegs.size() != 0) {
+      if (!replacedRegs.empty()) {
         liveness.replaceRegs(replacedRegs);
         for (auto &pair : *curRedundant) {
           auto from = pair.first;
@@ -2861,7 +2858,7 @@ namespace gbe
           // We are good. We first patch the destination then all the sources
           replaceDst(srcInfo.lastWriteInsn, src, dst);
           // Then we patch all subsequent uses of the source
-          ir::Instruction *next = static_cast<ir::Instruction*>(srcInfo.lastWriteInsn->next);
+          auto *next = static_cast<ir::Instruction*>(srcInfo.lastWriteInsn->next);
           while (next != insn) {
             replaceSrc(next, src, dst);
             next = static_cast<ir::Instruction*>(next->next);
@@ -2905,7 +2902,7 @@ namespace gbe
         // We either try to remove the LOADI or we will try to use it as a
         // replacement for the next same LOADIs
         if (insn.isMemberOf<ir::LoadImmInstruction>()) {
-          ir::LoadImmInstruction &loadImm = cast<ir::LoadImmInstruction>(insn);
+          auto &loadImm = cast<ir::LoadImmInstruction>(insn);
           const ir::Immediate imm = loadImm.getImmediate();
           const ir::Register dst = loadImm.getDst(0);
 
@@ -2918,7 +2915,7 @@ namespace gbe
             loadedImm.insert(std::make_pair(imm, dst));
           // We already pushed the same immediate and we do not outlive the
           // block. We are good to replace this immediate by the previous one
-          else if (it != end && info.inLiveOut(dst) == false) {
+          else if (it != end && !info.inLiveOut(dst)) {
             immTranslate.insert(std::make_pair(dst, it->second));
             insn.remove();
           }
@@ -2952,7 +2949,7 @@ namespace gbe
   static const Instruction *getInstructionUseLocal(const Value *v) {
     // Local variable can only be used in one kernel function. So, if we find
     // one instruction that use the local variable, simply return.
-    const Instruction *insn = NULL;
+    const Instruction *insn = nullptr;
     for(Value::const_use_iterator iter = v->use_begin(); iter != v->use_end(); ++iter) {
     // After LLVM 3.5, use_iterator points to 'Use' instead of 'User', which is more straightforward.
 #if LLVM_VERSION_MAJOR * 10 + LLVM_VERSION_MINOR < 35
@@ -2962,7 +2959,7 @@ namespace gbe
 #endif
       if(isa<Instruction>(theUser)) return cast<const Instruction>(theUser);
       insn = getInstructionUseLocal(theUser);
-      if(insn != NULL) break;
+      if(insn != nullptr) break;
     }
     return insn;
   }
@@ -2971,13 +2968,12 @@ namespace gbe
   {
     // Allocate a address register for each global variable
     const Module::GlobalListType &globalList = TheModule->getGlobalList();
-    for(auto i = globalList.begin(); i != globalList.end(); i ++) {
-      const GlobalVariable &v = *i;
+    for(const auto & v : globalList) {
       if(!v.isConstantUsed()) continue;
 
       ir::AddressSpace addrSpace = addressSpaceLLVMToGen(v.getType()->getAddressSpace());
       if(addrSpace == ir::MEM_LOCAL) {
-        const Value * val = cast<Value>(&v);
+        const auto * val = cast<Value>(&v);
         const Instruction *insn = getInstructionUseLocal(val);
         GBE_ASSERT(insn && "Can't find a valid reference instruction for local variable.");
 
@@ -3025,16 +3021,16 @@ namespace gbe
 
   static INLINE void findAllLoops(LoopInfo * LI, std::vector<std::pair<Loop*, int>> &lp)
   {
-      for (Loop::reverse_iterator I = LI->rbegin(), E = LI->rend(); I != E; ++I) {
-        lp.push_back(std::make_pair(*I, -1));
+      for (auto I = LI->rbegin(), E = LI->rend(); I != E; ++I) {
+        lp.emplace_back(*I, -1);
       }
-      if (lp.size() == 0) return;
+      if (lp.empty()) return;
 
       uint32_t i = 0;
       do {
         const std::vector<Loop*> subLoops = lp[i].first->getSubLoops();
         for(auto sub : subLoops)
-          lp.push_back(std::make_pair(sub, i));
+          lp.emplace_back(sub, i);
         i++;
       } while(i < lp.size());
   }
@@ -3082,7 +3078,7 @@ namespace gbe
     return term->getNumSuccessors();
   }
 
-  // return NULL if index out-range of children number
+  // return nullptr if index out-range of children number
   static BasicBlock *getChildPossible(BasicBlock *bb, unsigned index) {
 
 #if LLVM_VERSION_MAJOR >= 8
@@ -3091,7 +3087,7 @@ namespace gbe
     TerminatorInst *term = bb->getTerminator();
 #endif
     unsigned childNo = term->getNumSuccessors();
-    BasicBlock *child = NULL;
+    BasicBlock *child = nullptr;
     if(index < childNo) {
       child = term->getSuccessor(index);
     }
@@ -3178,10 +3174,10 @@ namespace gbe
         }
       }
 
-      if (child0 != NULL && visited.find(child0) == visited.end()) {
+      if (child0 != nullptr && visited.find(child0) == visited.end()) {
         visitStack.push_back(child0);
         visited.insert(child0);
-      } else if (child1 != NULL && visited.find(child1) == visited.end()) {
+      } else if (child1 != nullptr && visited.find(child1) == visited.end()) {
         visitStack.push_back(child1);
         visited.insert(child1);
       } else {
@@ -3191,11 +3187,11 @@ namespace gbe
     }
 
     Function::BasicBlockListType &bbList = F.getBasicBlockList();
-    for (std::vector<BasicBlock *>::iterator iter = sorted.begin(); iter != sorted.end(); ++iter) {
-      (*iter)->removeFromParent();
+    for (auto & iter : sorted) {
+      iter->removeFromParent();
     }
 
-    for (std::vector<BasicBlock *>::reverse_iterator iter = sorted.rbegin(); iter != sorted.rend(); ++iter) {
+    for (auto iter = sorted.rbegin(); iter != sorted.rend(); ++iter) {
       bbList.push_back(*iter);
     }
   }
@@ -3231,21 +3227,21 @@ namespace gbe
     if(has_errors){return;}
 
     // First create all the labels (one per block) ...
-    for (Function::iterator BB = F.begin(), E = F.end(); BB != E; ++BB)
-      this->newLabelIndex(&*BB);
+    for (auto & BB : F)
+      this->newLabelIndex(&BB);
 
     // Then, for all branch instructions that have conditions, see if we can
     // simplify the code by inverting condition code
-    for (Function::iterator BB = F.begin(), E = F.end(); BB != E; ++BB)
-      this->simplifyTerminator(&*BB);
+    for (auto & BB : F)
+      this->simplifyTerminator(&BB);
 
     // gather loop info, which is useful for liveness analysis
     gatherLoopInfo(fn);
 
     // ... then, emit the instructions for all basic blocks
     pass = PASS_EMIT_INSTRUCTIONS;
-    for (Function::iterator BB = F.begin(), E = F.end(); BB != E; ++BB)
-      emitBasicBlock(&*BB);
+    for (auto & BB : F)
+      emitBasicBlock(&BB);
     ctx.endFunction();
 
     // Liveness can be shared when we optimized the immediates and the MOVs
@@ -3280,7 +3276,7 @@ namespace gbe
 
   void GenWriter::emitBinaryOperator(Instruction &I) {
 #if GBE_DEBUG
-    GBE_ASSERT(I.getType()->isPointerTy() == false);
+    GBE_ASSERT(!I.getType()->isPointerTy());
     // We accept logical operations on booleans
     switch (I.getOpcode()) {
       case Instruction::And:
@@ -3308,13 +3304,13 @@ namespace gbe
       case Instruction::Mul:
       {
         //LLVM always put constant to src1, but also add the src0 constant check.
-        ConstantInt *c = dyn_cast<ConstantInt>(I.getOperand(0));
+        auto *c = dyn_cast<ConstantInt>(I.getOperand(0));
         int index = 0;
-        if (c == NULL) {
+        if (c == nullptr) {
           c = dyn_cast<ConstantInt>(I.getOperand(0));
           index = 1;
         }
-        if (c != NULL && isPowerOf<2>(c->getSExtValue())) {
+        if (c != nullptr && isPowerOf<2>(c->getSExtValue())) {
           c = ConstantInt::get(c->getType(), logi2(c->getZExtValue()));
           if(index == 0)
             ctx.SHL(type, dst, src1, this->getRegister(c));
@@ -3332,8 +3328,8 @@ namespace gbe
       case Instruction::UDiv:
       {
         //Only check divisor for DIV
-        ConstantInt *c = dyn_cast<ConstantInt>(I.getOperand(1));
-        if (c != NULL && isPowerOf<2>(c->getZExtValue())) {
+        auto *c = dyn_cast<ConstantInt>(I.getOperand(1));
+        if (c != nullptr && isPowerOf<2>(c->getZExtValue())) {
           c = ConstantInt::get(c->getType(), logi2(c->getZExtValue()));
           ctx.SHR(getUnsignedType(ctx, I.getType()), dst, src0, this->getRegister(c));
         } else {
@@ -3590,13 +3586,11 @@ namespace gbe
           vector<ir::Register> dstTupleData;
           uint32_t elemID = 0;
           for (elemID = 0; elemID < srcElemNum; ++elemID) {
-            ir::Register reg;
-            reg = this->getRegister(srcValue, elemID);
+            ir::Register reg = this->getRegister(srcValue, elemID);
             srcTupleData.push_back(reg);
           }
           for (elemID = 0; elemID < dstElemNum; ++elemID) {
-            ir::Register reg;
-            reg = this->getRegister(dstValue, elemID);
+            ir::Register reg = this->getRegister(dstValue, elemID);
             dstTupleData.push_back(reg);
           }
 
@@ -3640,7 +3634,7 @@ namespace gbe
             zero = ctx.newFloatImmediate(0);
           else if(dstType == ir::TYPE_DOUBLE)
             zero = ctx.newDoubleImmediate(0);
-	  else
+          else
             zero = ctx.newIntegerImmediate(0, dstType);
           ir::ImmediateIndex one;
           if (I.getOpcode() == Instruction::SExt
@@ -3682,14 +3676,14 @@ namespace gbe
    *  load/store, so keep empty function here */
   void GenWriter::regAllocateInsertElement(InsertElementInst &I) {}
   void GenWriter::emitInsertElement(InsertElementInst &I) {
-    const VectorType *type = dyn_cast<VectorType>(I.getType());
+    const auto *type = dyn_cast<VectorType>(I.getType());
     GBE_ASSERT(type);
     const int elemNum = type->getNumElements();
 
     Value *vec = I.getOperand(0);
     Value *value = I.getOperand(1);
     const Value *index = I.getOperand(2);
-    const ConstantInt *c = dyn_cast<ConstantInt>(index);
+    const auto *c = dyn_cast<ConstantInt>(index);
     int i = c->getValue().getSExtValue();
 
     for(int j=0; j<elemNum; j++) {
@@ -3703,7 +3697,7 @@ namespace gbe
   void GenWriter::regAllocateExtractElement(ExtractElementInst &I) {
     Value *vec = I.getVectorOperand();
     const Value *index = I.getIndexOperand();
-    const ConstantInt *c = dyn_cast<ConstantInt>(index);
+    const auto *c = dyn_cast<ConstantInt>(index);
     GBE_ASSERT(c);
     int i = c->getValue().getSExtValue();
     regTranslator.newValueProxy(vec, &I, i, 0);
@@ -3769,7 +3763,7 @@ namespace gbe
 
     // Inconditional branch. Just check that we jump to a block which is not our
     // successor
-    if (I.isConditional() == false) {
+    if (!I.isConditional()) {
       BasicBlock *target = I.getSuccessor(0);
       if (std::next(Function::iterator(bb)) != Function::iterator(target)) {
         GBE_ASSERT(labelMap.find(target) != labelMap.end());
@@ -3779,7 +3773,7 @@ namespace gbe
     }
     // The LLVM branch has two targets
     else {
-      BasicBlock *taken = NULL, *nonTaken = NULL;
+      BasicBlock *taken = nullptr, *nonTaken = nullptr;
       Value *condition = I.getCondition();
 
       // We may inverted the branch condition to simplify the branching code
@@ -3811,62 +3805,52 @@ namespace gbe
     Value *dst = &I;
     Value *Callee = I.getCalledValue();
     GBE_ASSERT(ctx.getFunction().getProfile() == ir::PROFILE_OCL);
-    GBE_ASSERT(isa<InlineAsm>(I.getCalledValue()) == false);
-    if(I.getNumArgOperands()) GBE_ASSERT(I.hasStructRetAttr() == false);
+    GBE_ASSERT(!isa<InlineAsm>(I.getCalledValue()));
+    if(I.getNumArgOperands()) GBE_ASSERT(!I.hasStructRetAttr());
 
     // We only support a small number of intrinsics right now
     if (Function *F = I.getCalledFunction()) {
-      const Intrinsic::ID intrinsicID = (Intrinsic::ID) F->getIntrinsicID();
+      const auto intrinsicID = (Intrinsic::ID) F->getIntrinsicID();
       if (intrinsicID != 0) {
         switch (F->getIntrinsicID()) {
-          case Intrinsic::stacksave:
-            this->newRegister(&I);
+        case Intrinsic::lifetime_start:
+        case Intrinsic::lifetime_end:
+        case Intrinsic::debugtrap:
+        case Intrinsic::trap:
+        case Intrinsic::dbg_value:
+        case Intrinsic::dbg_declare:
+        case Intrinsic::stackrestore:
           break;
-          case Intrinsic::stackrestore:
-          break;
-          case Intrinsic::lifetime_start:
-          case Intrinsic::lifetime_end:
-          break;
-          case Intrinsic::fmuladd:
-            this->newRegister(&I);
-          break;
-          case Intrinsic::debugtrap:
-          case Intrinsic::trap:
-          case Intrinsic::dbg_value:
-          case Intrinsic::dbg_declare:
-          break;
-          case Intrinsic::sadd_with_overflow:
-          case Intrinsic::uadd_with_overflow:
-          case Intrinsic::ssub_with_overflow:
-          case Intrinsic::usub_with_overflow:
-          case Intrinsic::smul_with_overflow:
-          case Intrinsic::umul_with_overflow:
+        case Intrinsic::stacksave:
+        case Intrinsic::fmuladd:
+        case Intrinsic::sadd_with_overflow:
+        case Intrinsic::uadd_with_overflow:
+        case Intrinsic::ssub_with_overflow:
+        case Intrinsic::usub_with_overflow:
+        case Intrinsic::smul_with_overflow:
+        case Intrinsic::umul_with_overflow:
 #if LLVM_VERSION_MAJOR >= 9
-          case Intrinsic::ssub_sat:
-          case Intrinsic::usub_sat:
+        case Intrinsic::ssub_sat:
+        case Intrinsic::usub_sat:
 #endif
-            this->newRegister(&I);
+        case Intrinsic::ctlz:
+        case Intrinsic::cttz:
+        case Intrinsic::bswap:
+        case Intrinsic::fabs:
+        case Intrinsic::sqrt:
+        case Intrinsic::ceil:
+        case Intrinsic::fma:
+        case Intrinsic::trunc:
+        case Intrinsic::rint:
+        case Intrinsic::floor:
+        case Intrinsic::sin:
+        case Intrinsic::cos:
+        case Intrinsic::log2:
+        case Intrinsic::exp2:
+        case Intrinsic::pow:
+          this->newRegister(&I);
           break;
-          case Intrinsic::ctlz:
-          case Intrinsic::cttz:
-          case Intrinsic::bswap:
-            this->newRegister(&I);
-          break;
-          case Intrinsic::fabs:
-          case Intrinsic::sqrt:
-          case Intrinsic::ceil:
-          case Intrinsic::fma:
-          case Intrinsic::trunc:
-          case Intrinsic::rint:
-          case Intrinsic::floor:
-          case Intrinsic::sin:
-          case Intrinsic::cos:
-          case Intrinsic::log2:
-          case Intrinsic::exp2:
-          case Intrinsic::pow:
-            this->newRegister(&I);
-          break;
-          default:
+        default:
           GBE_ASSERTM(false, "Unsupported intrinsics");
         }
         return;
@@ -4567,12 +4551,12 @@ namespace gbe
   uint8_t GenWriter::appendSampler(CallSite::arg_iterator AI) {
 #if LLVM_VERSION_MAJOR * 10 + LLVM_VERSION_MINOR >= 40
     CallInst *TC = dyn_cast<CallInst>(*AI);
-    Constant *CPV = TC ? dyn_cast<Constant>(TC->getOperand(0)) : NULL;
+    Constant *CPV = TC ? dyn_cast<Constant>(TC->getOperand(0)) : nullptr;
 #else
     Constant *CPV = dyn_cast<Constant>(*AI);
 #endif
     uint8_t index;
-    if (CPV != NULL)
+    if (CPV != nullptr)
     {
 #if LLVM_VERSION_MAJOR * 10 + LLVM_VERSION_MINOR >= 40
       // Check if the Callee is sampler convert function
@@ -4603,9 +4587,9 @@ namespace gbe
 
         // Get the function arguments
         CallSite CS(&I);
-        CallSite::arg_iterator AI = CS.arg_begin();
+        auto AI = CS.arg_begin();
 #if GBE_DEBUG
-        CallSite::arg_iterator AE = CS.arg_end();
+        auto MAYBE_UNUSED AE = CS.arg_end();
 #endif /* GBE_DEBUG */
         switch (F->getIntrinsicID()) {
           case Intrinsic::stacksave:
@@ -4626,7 +4610,6 @@ namespace gbe
           break;
           case Intrinsic::lifetime_start:
           case Intrinsic::lifetime_end:
-          break;
           case Intrinsic::debugtrap:
           case Intrinsic::trap:
           case Intrinsic::dbg_value:
@@ -4688,7 +4671,7 @@ namespace gbe
             }
 
             if(srcType == ir::TYPE_U16 || srcType == ir::TYPE_U8) {
-              ir::ImmediateIndex imm;
+              ir::ImmediateIndex imm{};
               ir::Type tmpType = ir::TYPE_S32;
               imm = ctx.newIntegerImmediate(imm_value, tmpType);
               const ir::RegisterFamily family = getFamily(tmpType);
@@ -5336,7 +5319,7 @@ namespace gbe
           case GEN_OCL_PRINTF:
           {
             ir::PrintfSet::PrintfFmt* fmt = getPrintfInfo(&I);
-            if (fmt == NULL)
+            if (fmt == nullptr)
               break;
 
             ctx.getFunction().getPrintfSet()->append(printfNum, fmt);
@@ -5344,18 +5327,18 @@ namespace gbe
             vector<ir::Register> tupleData;
             vector<ir::Type> tupleTypeData;
             int argNum = static_cast<int>(I.getNumOperands());
-            argNum -= 2; // no fmt and last NULL.
+            argNum -= 2; // no fmt and last nullptr.
             int realArgNum = argNum;
 
             for (int n = 0; n < argNum; n++) {
               /* First, ignore %s, the strings are recorded and not passed to GPU. */
               llvm::Constant* args = dyn_cast<llvm::ConstantExpr>(I.getOperand(n + 1));
-              llvm::Constant* args_ptr = NULL;
+              llvm::Constant* args_ptr = nullptr;
               if (args)
                 args_ptr = dyn_cast<llvm::Constant>(args->getOperand(0));
 
               if (args_ptr) {
-                ConstantDataSequential* fmt_arg = dyn_cast<ConstantDataSequential>(args_ptr->getOperand(0));
+                auto* fmt_arg = dyn_cast<ConstantDataSequential>(args_ptr->getOperand(0));
                 if (fmt_arg && fmt_arg->isCString()) {
                   realArgNum--;
                   continue;
@@ -5383,8 +5366,8 @@ namespace gbe
               }
             }
 
-            ir::Tuple tuple;
-            ir::Tuple typeTuple;
+            ir::Tuple tuple{};
+            ir::Tuple typeTuple{};
             if (realArgNum > 0) {
               tuple = ctx.arrayTuple(&tupleData[0], realArgNum);
               typeTuple = ctx.arrayTypeTuple(&tupleTypeData[0], realArgNum);
@@ -5396,7 +5379,7 @@ namespace gbe
           case GEN_OCL_CALC_TIMESTAMP:
           {
             GBE_ASSERT(AI != AE);
-            ConstantInt *CI = dyn_cast<ConstantInt>(*AI);
+            auto *CI = dyn_cast<ConstantInt>(*AI);
             GBE_ASSERT(CI);
             uint32_t pointNum = CI->getZExtValue();
             AI++;
@@ -5421,7 +5404,7 @@ namespace gbe
             GBE_ASSERT(btiToGen(index) == ir::MEM_GLOBAL);
             ++AI;
             GBE_ASSERT(AI != AE);
-            ConstantInt *CI = dyn_cast<ConstantInt>(*AI);
+            auto *CI = dyn_cast<ConstantInt>(*AI);
             GBE_ASSERT(CI);
             uint32_t ptype = CI->getZExtValue();
             ctx.getUnit().getProfilingInfo()->setProfilingType(ptype);
@@ -5628,7 +5611,7 @@ namespace gbe
 
     // OK, we try to see if we know compile time the size we need to allocate
     if (I.isArrayAllocation()) {
-      Constant *CPV = dyn_cast<Constant>(src);
+      auto *CPV = dyn_cast<Constant>(src);
       GBE_ASSERT(CPV);
       const ir::Immediate &imm = processConstantImm(CPV);
       const uint64_t elemNum = imm.getIntegerValue();
@@ -5654,7 +5637,7 @@ namespace gbe
       uint32_t prevStackPtr = ctx.getFunction().getStackSize();
       uint32_t step = ((prevStackPtr + (align - 1)) & ~(align - 1)) - prevStackPtr;
       if (step != 0) {
-        ir::ImmediateIndex stepImm;
+        ir::ImmediateIndex stepImm{};
         ir::Type pointerTy = getType(pointerFamily);
         if (ctx.getPointerSize() == ir::POINTER_32_BITS)
           stepImm = ctx.newImmediate(uint32_t(step));
@@ -5688,13 +5671,13 @@ namespace gbe
   }
   void GenWriter::regAllocateStoreInst(StoreInst &I) {}
   void GenWriter::emitLoadInst(LoadInst &I) {
-    MemoryInstHelper *h = new MemoryInstHelper(ctx, unit, this, legacyMode);
+    auto *h = new MemoryInstHelper(ctx, unit, this, legacyMode);
     h->emitLoadOrStore<true>(I);
     delete h;
   }
 
   void GenWriter::emitStoreInst(StoreInst &I) {
-    MemoryInstHelper *h = new MemoryInstHelper(ctx, unit, this, legacyMode);
+    auto *h = new MemoryInstHelper(ctx, unit, this, legacyMode);
     h->emitLoadOrStore<false>(I);
     delete h;
   }
@@ -5706,7 +5689,7 @@ namespace gbe
   ir::Tuple MemoryInstHelper::getValueTuple(llvm::Value *llvmValues, llvm::Type *elemType, unsigned start, unsigned elemNum) {
       vector<ir::Register> tupleData; // put registers here
       for (uint32_t elemID = 0; elemID < elemNum; ++elemID) {
-        ir::Register reg;
+        ir::Register reg{};
         if(writer->regTranslator.isUndefConst(llvmValues, elemID)) {
           Value *v = Constant::getNullValue(elemType);
           reg = writer->getRegister(v);
@@ -5738,12 +5721,12 @@ namespace gbe
 
   ir::Register MemoryInstHelper::getOffsetAddress(ir::Register basePtr, unsigned offset) {
     const ir::RegisterFamily pointerFamily = ctx.getPointerFamily();
-    ir::Register addr;
+    ir::Register addr{};
     if (offset == 0)
       addr = basePtr;
     else {
       const ir::Register offsetReg = ctx.reg(pointerFamily);
-      ir::ImmediateIndex immIndex;
+      ir::ImmediateIndex immIndex{};
       ir::Type immType;
 
       if (pointerFamily == ir::FAMILY_DWORD) {
@@ -5770,7 +5753,7 @@ namespace gbe
     Type *elemType = llvmType;
     unsigned elemNum = 1;
     if (!isScalarType(llvmType)) {
-      VectorType *vectorType = cast<VectorType>(llvmType);
+      auto *vectorType = cast<VectorType>(llvmType);
       elemType = vectorType->getElementType();
       elemNum = vectorType->getNumElements();
     }
@@ -5812,7 +5795,7 @@ namespace gbe
     this->isLoad = IsLoad;
     Type *scalarType = llvmType;
     if (!isScalarType(llvmType)) {
-      VectorType *vectorType = cast<VectorType>(llvmType);
+      auto *vectorType = cast<VectorType>(llvmType);
       scalarType = vectorType->getElementType();
     }
 
@@ -5821,7 +5804,7 @@ namespace gbe
       Value *bti = writer->getBtiRegister(llvmPtr);
       Value *ptrBase = writer->getPointerBase(llvmPtr);
       ir::Register baseReg = writer->getRegister(ptrBase);
-      bool zeroBase = isa<ConstantPointerNull>(ptrBase) ? true : false;
+      bool zeroBase = isa<ConstantPointerNull>(ptrBase);
 
       if (isa<ConstantInt>(bti)) {
         SurfaceIndex = cast<ConstantInt>(bti)->getZExtValue();

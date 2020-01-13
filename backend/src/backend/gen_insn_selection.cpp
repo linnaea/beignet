@@ -2634,7 +2634,7 @@ namespace gbe
     return insnNum;
   }
 
-extern bool OCL_DEBUGINFO; // first defined by calling BVAR in program.cpp
+extern int32_t OCL_DEBUGINFO; // first defined by calling BVAR in program.cpp
 #define SET_SEL_DBGINFO(I)  \
 	if(OCL_DEBUGINFO)	 \
 	  this->setDBGInfo_SEL(I.DBGInfo)
@@ -2989,7 +2989,7 @@ extern bool OCL_DEBUGINFO; // first defined by calling BVAR in program.cpp
       case TYPE_HALF: {
         ir::half hf = imm.getHalfValue();
         int16_t _sign = negate ? -1 : 1;
-        ir::half hfSign = ir::half::convToHalf(_sign);
+        ir::half hfSign = ir::half::toHalf(_sign);
         hf = hf * hfSign;
         return GenRegister::immh(hf.getVal());
       }
