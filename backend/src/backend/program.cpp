@@ -78,9 +78,9 @@
 namespace gbe {
 
   Kernel::Kernel(const std::string &name) :
-    name(name), args(NULL), argNum(0), curbeSize(0), stackSize(0), useSLM(false),
-        slmSize(0), ctx(NULL), samplerSet(NULL), imageSet(NULL), printfSet(NULL),
-        profilingInfo(NULL), useDeviceEnqueue(false) {}
+    name(name), args(nullptr), argNum(0), curbeSize(0), stackSize(0), useSLM(false),
+        slmSize(0), ctx(nullptr), samplerSet(nullptr), imageSet(nullptr), printfSet(nullptr),
+        profilingInfo(nullptr), useDeviceEnqueue(false) {}
 
   Kernel::~Kernel(void) {
     if(ctx) GBE_DELETE(ctx);
@@ -99,8 +99,8 @@ namespace gbe {
   }
 
   Program::Program(uint32_t fast_relaxed_math) : fast_relaxed_math(fast_relaxed_math), 
-                               constantSet(NULL),
-                               relocTable(NULL) {}
+                               constantSet(nullptr),
+                               relocTable(nullptr) {}
   Program::~Program(void) {
     for (map<std::string, Kernel*>::iterator it = kernels.begin(); it != kernels.end(); ++it)
       GBE_DELETE(it->second);
@@ -117,29 +117,29 @@ namespace gbe {
   bool Program::buildFromLLVMModule(const void* module,
                                               std::string &error,
                                               int optLevel) {
-    ir::Unit *unit = new ir::Unit();
+    auto *unit = new ir::Unit();
     bool ret = false;
 
     bool strictMath = true;
     if (fast_relaxed_math || !OCL_STRICT_CONFORMANCE)
       strictMath = false;
 
-    if (llvmToGen(*unit, module, optLevel, strictMath, OCL_PROFILING_LOG, error) == false) {
+    if (!llvmToGen(*unit, module, optLevel, strictMath, OCL_PROFILING_LOG, error)) {
       delete unit;
       return false;
     }
     //If unit is not valid, maybe some thing don't support by backend, introduce by some passes
     //use optLevel 0 to try again.
-    if(!unit->getValid()) {
+    if(!unit->getValid() && optLevel > 0) {
       delete unit;   //clear unit
-      unit = new ir::Unit();
-      //suppose file exists and llvmToGen will not return false.
-      llvmToGen(*unit, module, 0, strictMath, OCL_PROFILING_LOG, error);
+      return buildFromLLVMModule(module, error, 0);
     }
     if(unit->getValid()){
       std::string error2;
-      if (this->buildFromUnit(*unit, error2)){
-        ret = true;
+      ret = this->buildFromUnit(*unit, error2);
+      if (!ret && optLevel > 0){
+        delete unit;   //clear unit
+        return buildFromLLVMModule(module, error, 0);
       }
       error = error + error2;
     }
@@ -218,8 +218,8 @@ namespace gbe {
     }
 
     OUT_UPDATE_SZ(ker_num);
-    for (map<std::string, Kernel*>::iterator it = kernels.begin(); it != kernels.end(); ++it) {
-      uint32_t sz = it->second->serializeToBin(outs);
+    for (auto & kernel : kernels) {
+      uint32_t sz = kernel.second->serializeToBin(outs);
       if (!sz)
         return 0;
 
@@ -433,7 +433,7 @@ namespace gbe {
       IN_UPDATE_SZ(arg.info.addrSpace);
 
       uint32_t len;
-      char* a_name = NULL;
+      char* a_name = nullptr;
 
       IN_UPDATE_SZ(len);
       a_name = new char[len+1];
@@ -503,7 +503,7 @@ namespace gbe {
       total_size += sz;
     }
     else
-      samplerSet = NULL;
+      samplerSet = nullptr;
 
     IN_UPDATE_SZ(has_imageset);
     if (has_imageset) {
@@ -516,7 +516,7 @@ namespace gbe {
       total_size += sz;
     }
     else
-      imageSet = NULL;
+      imageSet = nullptr;
 
     IN_UPDATE_SZ(code_size);
     if (code_size) {
@@ -734,12 +734,12 @@ namespace gbe {
     
     auto retVal = Clang.ExecuteAction(*Act);
 
-    if (err != NULL) {
-      GBE_ASSERT(errSize != NULL);
+    if (err != nullptr) {
+      GBE_ASSERT(errSize != nullptr);
       *errSize = ErrorString.copy(err, stringSize - 1, 0);
     }
   
-    if (err == NULL || OCL_OUTPUT_BUILD_LOG) {
+    if (err == nullptr || OCL_OUTPUT_BUILD_LOG) {
       // flush the error messages to the errs() if there is no
       // error string buffer.
       llvm::errs() << ErrorString;
@@ -864,7 +864,7 @@ namespace gbe {
 
     if (options) {
       char *c_str = (char *)malloc(sizeof(char) * (strlen(options) + 1));
-      if (c_str == NULL)
+      if (c_str == nullptr)
         return false;
       memcpy(c_str, options, strlen(options) + 1);
       std::string optionStr(c_str);
@@ -1068,16 +1068,16 @@ EXTEND_QUOTE:
     std::string dumpLLVMFileName, dumpASMFileName;
     std::string dumpSPIRBinaryName;
     uint32_t oclVersion = MAX_OCLVERSION(deviceID);
-    if (!processSourceAndOption(source, options, NULL, clOpt,
+    if (!processSourceAndOption(source, options, nullptr, clOpt,
                                 dumpLLVMFileName, dumpASMFileName, dumpSPIRBinaryName,
                                 optLevel,
                                 stringSize, err, errSize, deviceID, oclVersion))
-      return NULL;
+      return nullptr;
 
     gbe_program p;
     // will delete the module and act in GenProgram::CleanLlvmResource().
     llvm::Module * out_module;
-    llvm::LLVMContext* llvm_ctx = new llvm::LLVMContext;
+    auto* llvm_ctx = new llvm::LLVMContext;
     static std::mutex llvm_mutex;
     if (!llvm::llvm_is_multithreaded())
       llvm_mutex.lock();
@@ -1086,8 +1086,8 @@ EXTEND_QUOTE:
                               stringSize, err, errSize, oclVersion)) {
     // Now build the program from llvm
       size_t clangErrSize = 0;
-      if (err != NULL && *errSize != 0) {
-        GBE_ASSERT(errSize != NULL);
+      if (err != nullptr && *errSize != 0) {
+        GBE_ASSERT(errSize != nullptr);
         stringSize = stringSize - *errSize;
         err = err + *errSize;
         clangErrSize = *errSize;
@@ -1100,16 +1100,16 @@ EXTEND_QUOTE:
       }
 
       p = gbe_program_new_from_llvm(deviceID, out_module, llvm_ctx,
-                                    dumpASMFileName.empty() ? NULL : dumpASMFileName.c_str(),
+                                    dumpASMFileName.empty() ? nullptr : dumpASMFileName.c_str(),
                                     stringSize, err, errSize, optLevel, options);
-      if (err != NULL)
+      if (err != nullptr)
         *errSize += clangErrSize;
       if (OCL_OUTPUT_BUILD_LOG && options)
         llvm::errs() << "options:" << options << "\n";
       if (OCL_OUTPUT_BUILD_LOG && err && *errSize)
         llvm::errs() << err << "\n";
     } else
-      p = NULL;
+      p = nullptr;
 
     if (!llvm::llvm_is_multithreaded())
       llvm_mutex.unlock();
@@ -1126,9 +1126,9 @@ EXTEND_QUOTE:
                                             char *err,
                                             size_t *err_size)
   {
-    gbe_program p = NULL;
-    if (fileName == NULL)
-      return NULL;
+    gbe_program p = nullptr;
+    if (fileName == nullptr)
+      return nullptr;
 
 #if LLVM_VERSION_MAJOR * 10 + LLVM_VERSION_MINOR >= 39
     llvm::LLVMContext *c = new llvm::LLVMContext;
@@ -1146,8 +1146,8 @@ EXTEND_QUOTE:
     int optLevel = 1;
 
     //module will be delete in programCleanLlvmResource
-    p = gbe_program_new_from_llvm(deviceID, module, c, NULL,
-                                  string_size, err, err_size, optLevel, NULL);
+    p = gbe_program_new_from_llvm(deviceID, module, c, nullptr,
+                                  string_size, err, err_size, optLevel, nullptr);
     if (OCL_OUTPUT_BUILD_LOG && err && *err_size)
       llvm::errs() << err << "\n";
 
@@ -1175,7 +1175,7 @@ EXTEND_QUOTE:
     if (!processSourceAndOption(source, options, temp_header_path, clOpt,
                                 dumpLLVMFileName, dumpASMFileName, dumpSPIRBinaryName,
                                 optLevel, stringSize, err, errSize, deviceID, oclVersion))
-      return NULL;
+      return nullptr;
 
     gbe_program p;
     acquireLLVMContextLock();
@@ -1190,20 +1190,20 @@ EXTEND_QUOTE:
     if (buildModuleFromSource(source, &out_module, llvm_ctx, dumpLLVMFileName, dumpSPIRBinaryName, clOpt,
                               stringSize, err, errSize, oclVersion)) {
     // Now build the program from llvm
-      if (err != NULL) {
-        GBE_ASSERT(errSize != NULL);
+      if (err != nullptr) {
+        GBE_ASSERT(errSize != nullptr);
         stringSize -= *errSize;
         err += *errSize;
       }
 
-      p = gbe_program_new_gen_program(deviceID, out_module, NULL, NULL);
+      p = gbe_program_new_gen_program(deviceID, out_module, nullptr, nullptr);
 
       if (OCL_OUTPUT_BUILD_LOG && options)
         llvm::errs() << "options:" << options << "\n";
       if (OCL_OUTPUT_BUILD_LOG && err && *errSize)
         llvm::errs() << err << "\n";
     } else
-      p = NULL;
+      p = nullptr;
     releaseLLVMContextLock();
     return p;
   }
@@ -1233,7 +1233,7 @@ EXTEND_QUOTE:
     static bool programCheckOption(const char * option)
     {
       vector<const char *> args;
-      if (option == NULL) return 1;   //if NULL, return ok
+      if (option == nullptr) return 1;   //if nullptr, return ok
       std::string s(option);
       size_t pos = s.find("-create-library");
       //clang don't accept -create-library and -enable-link-options, erase them
@@ -1273,85 +1273,85 @@ EXTEND_QUOTE:
 
 
   static size_t programGetGlobalConstantSize(gbe_program gbeProgram) {
-    if (gbeProgram == NULL) return 0;
+    if (gbeProgram == nullptr) return 0;
     const gbe::Program *program = (const gbe::Program*) gbeProgram;
     return program->getGlobalConstantSize();
   }
 
   static void programGetGlobalConstantData(gbe_program gbeProgram, char *mem) {
-    if (gbeProgram == NULL) return;
+    if (gbeProgram == nullptr) return;
     const gbe::Program *program = (const gbe::Program*) gbeProgram;
     program->getGlobalConstantData(mem);
   }
 
   static size_t programGetGlobalRelocCount(gbe_program gbeProgram) {
-    if (gbeProgram == NULL) return 0;
+    if (gbeProgram == nullptr) return 0;
     const gbe::Program *program = (const gbe::Program*) gbeProgram;
     return program->getGlobalRelocCount();
   }
 
   static void programGetGlobalRelocTable(gbe_program gbeProgram, char *mem) {
-    if (gbeProgram == NULL) return;
+    if (gbeProgram == nullptr) return;
     const gbe::Program *program = (const gbe::Program*) gbeProgram;
     program->getGlobalRelocTable(mem);
   }
 
   static uint32_t programGetKernelNum(gbe_program gbeProgram) {
-    if (gbeProgram == NULL) return 0;
+    if (gbeProgram == nullptr) return 0;
     const gbe::Program *program = (const gbe::Program*) gbeProgram;
     return program->getKernelNum();
   }
 
   const static char* programGetDeviceEnqueueKernelName(gbe_program gbeProgram, uint32_t index) {
-    if (gbeProgram == NULL) return 0;
+    if (gbeProgram == nullptr) return 0;
     const gbe::Program *program = (const gbe::Program*) gbeProgram;
     return program->getDeviceEnqueueKernelName(index);
   }
 
   static gbe_kernel programGetKernelByName(gbe_program gbeProgram, const char *name) {
-    if (gbeProgram == NULL) return NULL;
+    if (gbeProgram == nullptr) return nullptr;
     const gbe::Program *program = (gbe::Program*) gbeProgram;
     return (gbe_kernel) program->getKernel(std::string(name));
   }
 
   static gbe_kernel programGetKernel(const gbe_program gbeProgram, uint32_t ID) {
-    if (gbeProgram == NULL) return NULL;
+    if (gbeProgram == nullptr) return nullptr;
     const gbe::Program *program = (gbe::Program*) gbeProgram;
     return (gbe_kernel) program->getKernel(ID);
   }
 
   static const char *kernelGetName(gbe_kernel genKernel) {
-    if (genKernel == NULL) return NULL;
+    if (genKernel == nullptr) return nullptr;
     const gbe::Kernel *kernel = (const gbe::Kernel*) genKernel;
     return kernel->getName();
   }
 
   static const char *kernelGetAttributes(gbe_kernel genKernel) {
-    if (genKernel == NULL) return NULL;
+    if (genKernel == nullptr) return nullptr;
     const gbe::Kernel *kernel = (const gbe::Kernel*) genKernel;
     return kernel->getFunctionAttributes();
   }
 
   static const char *kernelGetCode(gbe_kernel genKernel) {
-    if (genKernel == NULL) return NULL;
+    if (genKernel == nullptr) return nullptr;
     const gbe::Kernel *kernel = (const gbe::Kernel*) genKernel;
     return kernel->getCode();
   }
 
   static size_t kernelGetCodeSize(gbe_kernel genKernel) {
-    if (genKernel == NULL) return 0u;
+    if (genKernel == nullptr) return 0u;
     const gbe::Kernel *kernel = (const gbe::Kernel*) genKernel;
     return kernel->getCodeSize();
   }
 
   static uint32_t kernelGetArgNum(gbe_kernel genKernel) {
-    if (genKernel == NULL) return 0u;
+    if (genKernel == nullptr) return 0u;
     const gbe::Kernel *kernel = (const gbe::Kernel*) genKernel;
     return kernel->getArgNum();
   }
 
   static void *kernelGetArgInfo(gbe_kernel genKernel, uint32_t argID, uint32_t value) {
-    if (genKernel == NULL) return NULL;
+    if (genKernel == nullptr) return nullptr;
     const gbe::Kernel *kernel = (const gbe::Kernel*) genKernel;
     KernelArgument::ArgInfo* info = kernel->getArgInfo(argID);
 
@@ -1372,158 +1372,158 @@ EXTEND_QUOTE:
         assert(0);
     }
 
-    return NULL;
+    return nullptr;
   }
 
   static uint32_t kernelGetArgSize(gbe_kernel genKernel, uint32_t argID) {
-    if (genKernel == NULL) return 0u;
+    if (genKernel == nullptr) return 0u;
     const gbe::Kernel *kernel = (const gbe::Kernel*) genKernel;
     return kernel->getArgSize(argID);
   }
 
   static uint8_t kernelGetArgBTI(gbe_kernel genKernel, uint32_t argID) {
-    if (genKernel == NULL) return 0u;
+    if (genKernel == nullptr) return 0u;
     const gbe::Kernel *kernel = (const gbe::Kernel*) genKernel;
     return kernel->getArgBTI(argID);
   }
 
   static uint32_t kernelGetArgAlign(gbe_kernel genKernel, uint32_t argID) {
-    if (genKernel == NULL) return 0u;
+    if (genKernel == nullptr) return 0u;
     const gbe::Kernel *kernel = (const gbe::Kernel*) genKernel;
     return kernel->getArgAlign(argID);
   }
   static gbe_arg_type kernelGetArgType(gbe_kernel genKernel, uint32_t argID) {
-    if (genKernel == NULL) return GBE_ARG_INVALID;
+    if (genKernel == nullptr) return GBE_ARG_INVALID;
     const gbe::Kernel *kernel = (const gbe::Kernel*) genKernel;
     return kernel->getArgType(argID);
   }
 
   static uint32_t kernelGetSIMDWidth(gbe_kernel genKernel) {
-    if (genKernel == NULL) return GBE_ARG_INVALID;
+    if (genKernel == nullptr) return GBE_ARG_INVALID;
     const gbe::Kernel *kernel = (const gbe::Kernel*) genKernel;
     return kernel->getSIMDWidth();
   }
 
   static int32_t kernelGetCurbeOffset(gbe_kernel genKernel, gbe_curbe_type type, uint32_t subType) {
-    if (genKernel == NULL) return 0;
+    if (genKernel == nullptr) return 0;
     const gbe::Kernel *kernel = (const gbe::Kernel*) genKernel;
     return kernel->getCurbeOffset(type, subType);
   }
 
   static int32_t kernelGetCurbeSize(gbe_kernel genKernel) {
-    if (genKernel == NULL) return 0;
+    if (genKernel == nullptr) return 0;
     const gbe::Kernel *kernel = (const gbe::Kernel*) genKernel;
     return kernel->getCurbeSize();
   }
 
   static int32_t kernelGetStackSize(gbe_kernel genKernel) {
-    if (genKernel == NULL) return 0;
+    if (genKernel == nullptr) return 0;
     const gbe::Kernel *kernel = (const gbe::Kernel*) genKernel;
     return kernel->getStackSize();
   }
 
   static int32_t kernelGetScratchSize(gbe_kernel genKernel) {
-    if (genKernel == NULL) return 0;
+    if (genKernel == nullptr) return 0;
     const gbe::Kernel *kernel = (const gbe::Kernel*) genKernel;
     return kernel->getScratchSize();
   }
 
   static int32_t kernelUseSLM(gbe_kernel genKernel) {
-    if (genKernel == NULL) return 0;
+    if (genKernel == nullptr) return 0;
     const gbe::Kernel *kernel = (const gbe::Kernel*) genKernel;
     return kernel->getUseSLM() ? 1 : 0;
   }
 
   static int32_t kernelGetSLMSize(gbe_kernel genKernel) {
-    if (genKernel == NULL) return 0;
+    if (genKernel == nullptr) return 0;
     const gbe::Kernel *kernel = (const gbe::Kernel*) genKernel;
     return kernel->getSLMSize();
   }
 
   static size_t kernelGetSamplerSize(gbe_kernel gbeKernel) {
-    if (gbeKernel == NULL) return 0;
+    if (gbeKernel == nullptr) return 0;
     const gbe::Kernel *kernel = (const gbe::Kernel*) gbeKernel;
     return kernel->getSamplerSize();
   }
 
   static void kernelGetSamplerData(gbe_kernel gbeKernel, uint32_t *samplers) {
-    if (gbeKernel == NULL) return;
+    if (gbeKernel == nullptr) return;
     const gbe::Kernel *kernel = (const gbe::Kernel*) gbeKernel;
     kernel->getSamplerData(samplers);
   }
 
   static void* kernelDupProfiling(gbe_kernel gbeKernel) {
-    if (gbeKernel == NULL) return NULL;
+    if (gbeKernel == nullptr) return nullptr;
     const gbe::Kernel *kernel = (const gbe::Kernel*) gbeKernel;
     return kernel->dupProfilingInfo();
   }
   static uint32_t kernelGetProfilingBTI(gbe_kernel gbeKernel) {
-    if (gbeKernel == NULL) return 0;
+    if (gbeKernel == nullptr) return 0;
     const gbe::Kernel *kernel = (const gbe::Kernel*) gbeKernel;
     return kernel->getProfilingBTI();
   }
   static void kernelOutputProfiling(void *profiling_info, void* buf) {
-    if (profiling_info == NULL) return;
+    if (profiling_info == nullptr) return;
     ir::ProfilingInfo *pi = (ir::ProfilingInfo *)profiling_info;
     return pi->outputProfilingInfo(buf);
   }
   static uint32_t kernelGetPrintfNum(void * printf_info) {
-    if (printf_info == NULL) return 0;
+    if (printf_info == nullptr) return 0;
     const ir::PrintfSet *ps = (ir::PrintfSet *)printf_info;
     return ps->getPrintfNum();
   }
 
   static uint32_t kernelUseDeviceEnqueue(gbe_kernel gbeKernel) {
-    if (gbeKernel == NULL) return 0;
+    if (gbeKernel == nullptr) return 0;
     const gbe::Kernel *kernel = (const gbe::Kernel*) gbeKernel;
     return kernel->getUseDeviceEnqueue();
   }
 
   static void* kernelDupPrintfSet(gbe_kernel gbeKernel) {
-    if (gbeKernel == NULL) return NULL;
+    if (gbeKernel == nullptr) return nullptr;
     const gbe::Kernel *kernel = (const gbe::Kernel*) gbeKernel;
     return kernel->dupPrintfSet();
   }
 
   static uint8_t kernelGetPrintfBufBTI(void * printf_info) {
-    if (printf_info == NULL) return 0;
+    if (printf_info == nullptr) return 0;
     const ir::PrintfSet *ps = (ir::PrintfSet *)printf_info;
     return ps->getBufBTI();
   }
 
   static void kernelReleasePrintfSet(void * printf_info) {
-    if (printf_info == NULL) return;
+    if (printf_info == nullptr) return;
     ir::PrintfSet *ps = (ir::PrintfSet *)printf_info;
     delete ps;
   }
 
   static void kernelOutputPrintf(void * printf_info, void* buf_addr)
   {
-    if (printf_info == NULL) return;
+    if (printf_info == nullptr) return;
     ir::PrintfSet *ps = (ir::PrintfSet *)printf_info;
     ps->outputPrintf(buf_addr);
   }
 
   static void kernelGetCompileWorkGroupSize(gbe_kernel gbeKernel, size_t wg_size[3]) {
-    if (gbeKernel == NULL) return;
+    if (gbeKernel == nullptr) return;
     const gbe::Kernel *kernel = (const gbe::Kernel*) gbeKernel;
     kernel->getCompileWorkGroupSize(wg_size);
   }
 
   static size_t kernelGetImageSize(gbe_kernel gbeKernel) {
-    if (gbeKernel == NULL) return 0;
+    if (gbeKernel == nullptr) return 0;
     const gbe::Kernel *kernel = (const gbe::Kernel*) gbeKernel;
     return kernel->getImageSize();
   }
 
   static void kernelGetImageData(gbe_kernel gbeKernel, ImageInfo *images) {
-    if (gbeKernel == NULL) return;
+    if (gbeKernel == nullptr) return;
     const gbe::Kernel *kernel = (const gbe::Kernel*) gbeKernel;
     kernel->getImageData(images);
   }
 
   static uint32_t kernelGetOclVersion(gbe_kernel gbeKernel) {
-    if (gbeKernel == NULL) return 0;
+    if (gbeKernel == nullptr) return 0;
     const gbe::Kernel *kernel = (const gbe::Kernel*) gbeKernel;
     return kernel->getOclVersion();
   }
@@ -1544,61 +1544,61 @@ void releaseLLVMContextLock()
   llvm_ctx_mutex.unlock();
 }
 
-GBE_EXPORT_SYMBOL gbe_program_new_from_source_cb *gbe_program_new_from_source = NULL;
-GBE_EXPORT_SYMBOL gbe_program_new_from_llvm_file_cb *gbe_program_new_from_llvm_file = NULL;
-GBE_EXPORT_SYMBOL gbe_program_compile_from_source_cb *gbe_program_compile_from_source = NULL;
-GBE_EXPORT_SYMBOL gbe_program_link_program_cb *gbe_program_link_program = NULL;
-GBE_EXPORT_SYMBOL gbe_program_check_opt_cb *gbe_program_check_opt = NULL;
-GBE_EXPORT_SYMBOL gbe_program_new_from_binary_cb *gbe_program_new_from_binary = NULL;
-GBE_EXPORT_SYMBOL gbe_program_new_from_llvm_binary_cb *gbe_program_new_from_llvm_binary = NULL;
-GBE_EXPORT_SYMBOL gbe_program_serialize_to_binary_cb *gbe_program_serialize_to_binary = NULL;
-GBE_EXPORT_SYMBOL gbe_program_new_from_llvm_cb *gbe_program_new_from_llvm = NULL;
-GBE_EXPORT_SYMBOL gbe_program_new_gen_program_cb *gbe_program_new_gen_program = NULL;
-GBE_EXPORT_SYMBOL gbe_program_link_from_llvm_cb *gbe_program_link_from_llvm = NULL;
-GBE_EXPORT_SYMBOL gbe_program_build_from_llvm_cb *gbe_program_build_from_llvm = NULL;
-GBE_EXPORT_SYMBOL gbe_program_get_global_constant_size_cb *gbe_program_get_global_constant_size = NULL;
-GBE_EXPORT_SYMBOL gbe_program_get_global_constant_data_cb *gbe_program_get_global_constant_data = NULL;
-GBE_EXPORT_SYMBOL gbe_program_get_global_reloc_count_cb *gbe_program_get_global_reloc_count = NULL;
-GBE_EXPORT_SYMBOL gbe_program_get_global_reloc_table_cb *gbe_program_get_global_reloc_table = NULL;
-GBE_EXPORT_SYMBOL gbe_program_clean_llvm_resource_cb *gbe_program_clean_llvm_resource = NULL;
-GBE_EXPORT_SYMBOL gbe_program_delete_cb *gbe_program_delete = NULL;
-GBE_EXPORT_SYMBOL gbe_program_get_kernel_num_cb *gbe_program_get_kernel_num = NULL;
-GBE_EXPORT_SYMBOL gbe_program_get_kernel_by_name_cb *gbe_program_get_kernel_by_name = NULL;
-GBE_EXPORT_SYMBOL gbe_program_get_kernel_cb *gbe_program_get_kernel = NULL;
-GBE_EXPORT_SYMBOL gbe_program_get_device_enqueue_kernel_name_cb *gbe_program_get_device_enqueue_kernel_name = NULL;
-GBE_EXPORT_SYMBOL gbe_kernel_get_name_cb *gbe_kernel_get_name = NULL;
-GBE_EXPORT_SYMBOL gbe_kernel_get_attributes_cb *gbe_kernel_get_attributes = NULL;
-GBE_EXPORT_SYMBOL gbe_kernel_get_code_cb *gbe_kernel_get_code = NULL;
-GBE_EXPORT_SYMBOL gbe_kernel_get_code_size_cb *gbe_kernel_get_code_size = NULL;
-GBE_EXPORT_SYMBOL gbe_kernel_get_arg_num_cb *gbe_kernel_get_arg_num = NULL;
-GBE_EXPORT_SYMBOL gbe_kernel_get_arg_info_cb *gbe_kernel_get_arg_info = NULL;
-GBE_EXPORT_SYMBOL gbe_kernel_get_arg_size_cb *gbe_kernel_get_arg_size = NULL;
-GBE_EXPORT_SYMBOL gbe_kernel_get_arg_bti_cb *gbe_kernel_get_arg_bti = NULL;
-GBE_EXPORT_SYMBOL gbe_kernel_get_arg_type_cb *gbe_kernel_get_arg_type = NULL;
-GBE_EXPORT_SYMBOL gbe_kernel_get_arg_align_cb *gbe_kernel_get_arg_align = NULL;
-GBE_EXPORT_SYMBOL gbe_kernel_get_simd_width_cb *gbe_kernel_get_simd_width = NULL;
-GBE_EXPORT_SYMBOL gbe_kernel_get_curbe_offset_cb *gbe_kernel_get_curbe_offset = NULL;
-GBE_EXPORT_SYMBOL gbe_kernel_get_curbe_size_cb *gbe_kernel_get_curbe_size = NULL;
-GBE_EXPORT_SYMBOL gbe_kernel_get_stack_size_cb *gbe_kernel_get_stack_size = NULL;
-GBE_EXPORT_SYMBOL gbe_kernel_get_scratch_size_cb *gbe_kernel_get_scratch_size = NULL;
-GBE_EXPORT_SYMBOL gbe_kernel_get_required_work_group_size_cb *gbe_kernel_get_required_work_group_size = NULL;
-GBE_EXPORT_SYMBOL gbe_kernel_use_slm_cb *gbe_kernel_use_slm = NULL;
-GBE_EXPORT_SYMBOL gbe_kernel_get_slm_size_cb *gbe_kernel_get_slm_size = NULL;
-GBE_EXPORT_SYMBOL gbe_kernel_get_sampler_size_cb *gbe_kernel_get_sampler_size = NULL;
-GBE_EXPORT_SYMBOL gbe_kernel_get_sampler_data_cb *gbe_kernel_get_sampler_data = NULL;
-GBE_EXPORT_SYMBOL gbe_kernel_get_compile_wg_size_cb *gbe_kernel_get_compile_wg_size = NULL;
-GBE_EXPORT_SYMBOL gbe_kernel_get_image_size_cb *gbe_kernel_get_image_size = NULL;
-GBE_EXPORT_SYMBOL gbe_kernel_get_image_data_cb *gbe_kernel_get_image_data = NULL;
-GBE_EXPORT_SYMBOL gbe_kernel_get_ocl_version_cb *gbe_kernel_get_ocl_version = NULL;
-GBE_EXPORT_SYMBOL gbe_output_profiling_cb *gbe_output_profiling = NULL;
-GBE_EXPORT_SYMBOL gbe_dup_profiling_cb *gbe_dup_profiling = NULL;
-GBE_EXPORT_SYMBOL gbe_get_profiling_bti_cb *gbe_get_profiling_bti = NULL;
-GBE_EXPORT_SYMBOL gbe_get_printf_num_cb *gbe_get_printf_num = NULL;
-GBE_EXPORT_SYMBOL gbe_dup_printfset_cb *gbe_dup_printfset = NULL;
-GBE_EXPORT_SYMBOL gbe_get_printf_buf_bti_cb *gbe_get_printf_buf_bti = NULL;
-GBE_EXPORT_SYMBOL gbe_release_printf_info_cb *gbe_release_printf_info = NULL;
-GBE_EXPORT_SYMBOL gbe_output_printf_cb *gbe_output_printf = NULL;
-GBE_EXPORT_SYMBOL gbe_kernel_use_device_enqueue_cb *gbe_kernel_use_device_enqueue = NULL;
+GBE_EXPORT_SYMBOL gbe_program_new_from_source_cb *gbe_program_new_from_source = nullptr;
+GBE_EXPORT_SYMBOL gbe_program_new_from_llvm_file_cb *gbe_program_new_from_llvm_file = nullptr;
+GBE_EXPORT_SYMBOL gbe_program_compile_from_source_cb *gbe_program_compile_from_source = nullptr;
+GBE_EXPORT_SYMBOL gbe_program_link_program_cb *gbe_program_link_program = nullptr;
+GBE_EXPORT_SYMBOL gbe_program_check_opt_cb *gbe_program_check_opt = nullptr;
+GBE_EXPORT_SYMBOL gbe_program_new_from_binary_cb *gbe_program_new_from_binary = nullptr;
+GBE_EXPORT_SYMBOL gbe_program_new_from_llvm_binary_cb *gbe_program_new_from_llvm_binary = nullptr;
+GBE_EXPORT_SYMBOL gbe_program_serialize_to_binary_cb *gbe_program_serialize_to_binary = nullptr;
+GBE_EXPORT_SYMBOL gbe_program_new_from_llvm_cb *gbe_program_new_from_llvm = nullptr;
+GBE_EXPORT_SYMBOL gbe_program_new_gen_program_cb *gbe_program_new_gen_program = nullptr;
+GBE_EXPORT_SYMBOL gbe_program_link_from_llvm_cb *gbe_program_link_from_llvm = nullptr;
+GBE_EXPORT_SYMBOL gbe_program_build_from_llvm_cb *gbe_program_build_from_llvm = nullptr;
+GBE_EXPORT_SYMBOL gbe_program_get_global_constant_size_cb *gbe_program_get_global_constant_size = nullptr;
+GBE_EXPORT_SYMBOL gbe_program_get_global_constant_data_cb *gbe_program_get_global_constant_data = nullptr;
+GBE_EXPORT_SYMBOL gbe_program_get_global_reloc_count_cb *gbe_program_get_global_reloc_count = nullptr;
+GBE_EXPORT_SYMBOL gbe_program_get_global_reloc_table_cb *gbe_program_get_global_reloc_table = nullptr;
+GBE_EXPORT_SYMBOL gbe_program_clean_llvm_resource_cb *gbe_program_clean_llvm_resource = nullptr;
+GBE_EXPORT_SYMBOL gbe_program_delete_cb *gbe_program_delete = nullptr;
+GBE_EXPORT_SYMBOL gbe_program_get_kernel_num_cb *gbe_program_get_kernel_num = nullptr;
+GBE_EXPORT_SYMBOL gbe_program_get_kernel_by_name_cb *gbe_program_get_kernel_by_name = nullptr;
+GBE_EXPORT_SYMBOL gbe_program_get_kernel_cb *gbe_program_get_kernel = nullptr;
+GBE_EXPORT_SYMBOL gbe_program_get_device_enqueue_kernel_name_cb *gbe_program_get_device_enqueue_kernel_name = nullptr;
+GBE_EXPORT_SYMBOL gbe_kernel_get_name_cb *gbe_kernel_get_name = nullptr;
+GBE_EXPORT_SYMBOL gbe_kernel_get_attributes_cb *gbe_kernel_get_attributes = nullptr;
+GBE_EXPORT_SYMBOL gbe_kernel_get_code_cb *gbe_kernel_get_code = nullptr;
+GBE_EXPORT_SYMBOL gbe_kernel_get_code_size_cb *gbe_kernel_get_code_size = nullptr;
+GBE_EXPORT_SYMBOL gbe_kernel_get_arg_num_cb *gbe_kernel_get_arg_num = nullptr;
+GBE_EXPORT_SYMBOL gbe_kernel_get_arg_info_cb *gbe_kernel_get_arg_info = nullptr;
+GBE_EXPORT_SYMBOL gbe_kernel_get_arg_size_cb *gbe_kernel_get_arg_size = nullptr;
+GBE_EXPORT_SYMBOL gbe_kernel_get_arg_bti_cb *gbe_kernel_get_arg_bti = nullptr;
+GBE_EXPORT_SYMBOL gbe_kernel_get_arg_type_cb *gbe_kernel_get_arg_type = nullptr;
+GBE_EXPORT_SYMBOL gbe_kernel_get_arg_align_cb *gbe_kernel_get_arg_align = nullptr;
+GBE_EXPORT_SYMBOL gbe_kernel_get_simd_width_cb *gbe_kernel_get_simd_width = nullptr;
+GBE_EXPORT_SYMBOL gbe_kernel_get_curbe_offset_cb *gbe_kernel_get_curbe_offset = nullptr;
+GBE_EXPORT_SYMBOL gbe_kernel_get_curbe_size_cb *gbe_kernel_get_curbe_size = nullptr;
+GBE_EXPORT_SYMBOL gbe_kernel_get_stack_size_cb *gbe_kernel_get_stack_size = nullptr;
+GBE_EXPORT_SYMBOL gbe_kernel_get_scratch_size_cb *gbe_kernel_get_scratch_size = nullptr;
+GBE_EXPORT_SYMBOL gbe_kernel_get_required_work_group_size_cb *gbe_kernel_get_required_work_group_size = nullptr;
+GBE_EXPORT_SYMBOL gbe_kernel_use_slm_cb *gbe_kernel_use_slm = nullptr;
+GBE_EXPORT_SYMBOL gbe_kernel_get_slm_size_cb *gbe_kernel_get_slm_size = nullptr;
+GBE_EXPORT_SYMBOL gbe_kernel_get_sampler_size_cb *gbe_kernel_get_sampler_size = nullptr;
+GBE_EXPORT_SYMBOL gbe_kernel_get_sampler_data_cb *gbe_kernel_get_sampler_data = nullptr;
+GBE_EXPORT_SYMBOL gbe_kernel_get_compile_wg_size_cb *gbe_kernel_get_compile_wg_size = nullptr;
+GBE_EXPORT_SYMBOL gbe_kernel_get_image_size_cb *gbe_kernel_get_image_size = nullptr;
+GBE_EXPORT_SYMBOL gbe_kernel_get_image_data_cb *gbe_kernel_get_image_data = nullptr;
+GBE_EXPORT_SYMBOL gbe_kernel_get_ocl_version_cb *gbe_kernel_get_ocl_version = nullptr;
+GBE_EXPORT_SYMBOL gbe_output_profiling_cb *gbe_output_profiling = nullptr;
+GBE_EXPORT_SYMBOL gbe_dup_profiling_cb *gbe_dup_profiling = nullptr;
+GBE_EXPORT_SYMBOL gbe_get_profiling_bti_cb *gbe_get_profiling_bti = nullptr;
+GBE_EXPORT_SYMBOL gbe_get_printf_num_cb *gbe_get_printf_num = nullptr;
+GBE_EXPORT_SYMBOL gbe_dup_printfset_cb *gbe_dup_printfset = nullptr;
+GBE_EXPORT_SYMBOL gbe_get_printf_buf_bti_cb *gbe_get_printf_buf_bti = nullptr;
+GBE_EXPORT_SYMBOL gbe_release_printf_info_cb *gbe_release_printf_info = nullptr;
+GBE_EXPORT_SYMBOL gbe_output_printf_cb *gbe_output_printf = nullptr;
+GBE_EXPORT_SYMBOL gbe_kernel_use_device_enqueue_cb *gbe_kernel_use_device_enqueue = nullptr;
 
 #ifdef GBE_COMPILER_AVAILABLE
 namespace gbe
@@ -1606,7 +1606,7 @@ namespace gbe
   /* Use pre-main to setup the call backs */
   struct CallBackInitializer
   {
-    CallBackInitializer(void) {
+    CallBackInitializer() {
       gbe_program_new_from_source = gbe::programNewFromSource;
       gbe_program_new_from_llvm_file = gbe::programNewFromLLVMFile;
       gbe_program_compile_from_source = gbe::programCompileFromSource;

@@ -129,8 +129,7 @@ namespace gbe
 #endif
     MPM.add(createGenIntrinsicLoweringPass());
     MPM.add(createBarrierNodupPass(false));   // remove noduplicate fnAttr before inlining.
-    if(optLevel > 0)
-      MPM.add(createFunctionInliningPass(512));
+    MPM.add(createFunctionInliningPass(optLevel > 0 ? 512 : 8));
     MPM.add(createBarrierNodupPass(true));    // restore noduplicate fnAttr after inlining.
     MPM.add(createStripAttributesPass(false));     // Strip unsupported attributes and calling conventions.
     MPM.add(createSamplerFixPass());
@@ -335,8 +334,7 @@ namespace gbe
     // Print the code before further optimizations
     passes.add(createGenIntrinsicLoweringPass());
     passes.add(createStripAttributesPass(true));     // Strip unsupported attributes and calling conventions.
-    if(optLevel > 0)
-      passes.add(createFunctionInliningPass(512));
+    passes.add(createFunctionInliningPass(optLevel > 0 ? 512 : 8));
 #if LLVM_VERSION_MAJOR * 10 + LLVM_VERSION_MINOR >= 37
     passes.add(createSROAPass());
 #else
