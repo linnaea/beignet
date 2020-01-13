@@ -92,14 +92,13 @@ namespace gbe
     FPM.add(createLowerExpectIntrinsicPass());
 
     FPM.doInitialization();
-    for (Module::iterator I = mod.begin(),
-           E = mod.end(); I != E; ++I)
-      if (!I->isDeclaration())
-        FPM.run(*I);
+    for (auto & I : mod)
+      if (!I.isDeclaration())
+        FPM.run(I);
     FPM.doFinalization();
   }
 
-  void runModulePass(Module &mod, TARGETLIBRARY *libraryInfo, const DataLayout &DL, int optLevel, bool strictMath)
+  void runModulePass(Module &mod, TARGETLIBRARY *libraryInfo, const DataLayout &DL, int optLevel)
   {
 #if LLVM_VERSION_MAJOR * 10 + LLVM_VERSION_MINOR >= 37
     legacy::PassManager MPM;
@@ -130,7 +129,8 @@ namespace gbe
 #endif
     MPM.add(createGenIntrinsicLoweringPass());
     MPM.add(createBarrierNodupPass(false));   // remove noduplicate fnAttr before inlining.
-    MPM.add(createFunctionInliningPass(512));
+    if(optLevel > 0)
+      MPM.add(createFunctionInliningPass(512));
     MPM.add(createBarrierNodupPass(true));    // restore noduplicate fnAttr after inlining.
     MPM.add(createStripAttributesPass(false));     // Strip unsupported attributes and calling conventions.
     MPM.add(createSamplerFixPass());
@@ -150,7 +150,6 @@ namespace gbe
     MPM.add(createFunctionAttrsPass());       // Set readonly/readnone attrs
 #endif
 
-    //MPM.add(createScalarReplAggregatesPass(64, true, -1, -1, 64))
     if(optLevel > 0)
 #if LLVM_VERSION_MAJOR * 10 + LLVM_VERSION_MINOR >= 38
       MPM.add(createSROAPass());
@@ -173,8 +172,8 @@ namespace gbe
     MPM.add(createIndVarSimplifyPass());        // Canonicalize indvars
     MPM.add(createLoopIdiomPass());             // Recognize idioms like memset.
     MPM.add(createLoopDeletionPass());          // Delete dead loops
-    MPM.add(createLoopUnrollPass());            //Unroll loops
     if(optLevel > 0) {
+      MPM.add(createLoopUnrollPass());            //Unroll loops
 #if LLVM_VERSION_MAJOR * 10 + LLVM_VERSION_MINOR >= 38
       MPM.add(createSROAPass());
 #else
@@ -258,7 +257,7 @@ namespace gbe
   
   void gbeDiagnosticHandler(const llvm::DiagnosticInfo &diagnostic, void *context)
   {
-    gbeDiagnosticContext *dc = reinterpret_cast<gbeDiagnosticContext*>(context);
+    auto *dc = reinterpret_cast<gbeDiagnosticContext*>(context);
     dc->process(diagnostic);
   }
 
@@ -266,11 +265,11 @@ namespace gbe
                  int optLevel, bool strictMath, int profiling, std::string &errors)
   {
     std::string errInfo;
-    std::unique_ptr<llvm::raw_fd_ostream> o = NULL;
+    std::unique_ptr<llvm::raw_fd_ostream> o = nullptr;
     if (OCL_OUTPUT_LLVM_BEFORE_LINK || OCL_OUTPUT_LLVM_AFTER_LINK || OCL_OUTPUT_LLVM_AFTER_GEN)
       o = std::unique_ptr<llvm::raw_fd_ostream>(new llvm::raw_fd_ostream(fileno(stdout), false));
 
-    Module* cl_mod = NULL;
+    Module* cl_mod = nullptr;
     if (module) {
       cl_mod = reinterpret_cast<Module*>(const_cast<void*>(module));
     }
@@ -296,12 +295,12 @@ namespace gbe
     /* Also set unit's pointer size in runBitCodeLinker */
     M.reset(runBitCodeLinker(cl_mod, strictMath, unit));
 
-    if (M.get() == 0)
+    if (M == nullptr)
       return true;
 
-    Module &mod = *M.get();
+    Module &mod = *M;
     DataLayout DL(&mod);
-    
+
     gbeDiagnosticContext dc;
 #if LLVM_VERSION_MAJOR >= 6
     mod.getContext().setDiagnosticHandlerCallBack(&gbeDiagnosticHandler,&dc);
@@ -313,13 +312,13 @@ namespace gbe
     mod.setDataLayout(DL);
 #endif
     Triple TargetTriple(mod.getTargetTriple());
-    TARGETLIBRARY *libraryInfo = new TARGETLIBRARY(TargetTriple);
+    auto *libraryInfo = new TARGETLIBRARY(TargetTriple);
     libraryInfo->disableAllFunctions();
 
     OUTPUT_BITCODE(AFTER_LINK, mod);
 
     runFuntionPass(mod, libraryInfo, DL);
-    runModulePass(mod, libraryInfo, DL, optLevel, strictMath);
+    runModulePass(mod, libraryInfo, DL, optLevel);
 #if LLVM_VERSION_MAJOR * 10 + LLVM_VERSION_MINOR >= 37
     legacy::PassManager passes;
 #else
@@ -336,7 +335,8 @@ namespace gbe
     // Print the code before further optimizations
     passes.add(createGenIntrinsicLoweringPass());
     passes.add(createStripAttributesPass(true));     // Strip unsupported attributes and calling conventions.
-    passes.add(createFunctionInliningPass(512));
+    if(optLevel > 0)
+      passes.add(createFunctionInliningPass(512));
 #if LLVM_VERSION_MAJOR * 10 + LLVM_VERSION_MINOR >= 37
     passes.add(createSROAPass());
 #else
@@ -390,10 +390,10 @@ namespace gbe
     OUTPUT_BITCODE(AFTER_GEN, mod);
 
     const ir::Unit::FunctionSet& fs = unit.getFunctionSet();
-    ir::Unit::FunctionSet::const_iterator iter = fs.begin();
+    auto iter = fs.begin();
     while(iter != fs.end())
     {
-      ir::CFGStructurizer *structurizer = new ir::CFGStructurizer(iter->second);
+      auto *structurizer = new ir::CFGStructurizer(iter->second);
       structurizer->StructurizeBlocks();
       delete structurizer;
       if (OCL_OUTPUT_CFG_GEN_IR)
