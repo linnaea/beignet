@@ -194,21 +194,6 @@ namespace gbe {
               }
 #endif
 #if LLVM_VERSION_MAJOR >= 9
-              case Intrinsic::usub_sat: {
-                // %res = call T @llvm.usub.sat.T(T %a, T %b)
-                // -> max(a, b) - b
-                //
-                // %pred = icmp ugt T %a %b
-                // %op0 = select i1 %pred, T %a, T %b
-                // %res = sub T %op0, %b
-                auto pred = Builder.CreateICmpUGT(CI->getOperand(0), CI->getOperand(1));
-                auto op0 = Builder.CreateSelect(pred, CI->getOperand(0), CI->getOperand(1));
-                auto res = Builder.CreateSub(op0, CI->getOperand(1));
-
-                CI->replaceAllUsesWith(res);
-                CI->eraseFromParent();
-                break;
-              }
               case Intrinsic::ssub_sat: {
                 // %res = call T @llvm.ssub.sat.T(T %a, T %b)
                 // ->
@@ -229,6 +214,10 @@ namespace gbe {
                 auto type = CI->getType();
                 auto scalarType = dyn_cast<IntegerType>(type->getScalarType());
                 GBE_ASSERT(scalarType);
+                if(scalarType->getBitWidth() < 32) {
+                  break;
+                }
+
                 auto scalarMax = scalarType->getMask();
                 scalarMax.lshrInPlace(1);
 

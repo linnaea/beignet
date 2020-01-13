@@ -103,11 +103,9 @@ bool StripAttributes::runOnFunction(Function &Func) {
       Func.setLinkage(GlobalValue::LinkOnceAnyLinkage);
   }
 
-  for (Function::iterator BB = Func.begin(), E = Func.end();
-       BB != E; ++BB) {
-    for (BasicBlock::iterator Inst = BB->begin(), E = BB->end();
-         Inst != E; ++Inst) {
-      CallSite Call(&*Inst);
+  for (auto & BB : Func) {
+    for (auto & Inst : BB) {
+      CallSite Call(&Inst);
       if (Call)
         Call.setCallingConv(CallingConv::C);
     }

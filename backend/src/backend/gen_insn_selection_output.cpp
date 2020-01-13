@@ -117,7 +117,7 @@ namespace gbe
       if (insn.state.physicalFlag == 0)
         cout << insn.state.flagIndex << ")";
       else
-        cout << insn.state.flag << "." << insn.state.subFlag << ")";
+        cout << (unsigned)insn.state.flag << "." << (unsigned)insn.state.subFlag << ")";
     }
 
     cout << "\t";
@@ -196,12 +196,12 @@ namespace gbe
       opName << ".sat";
     }
 
-    opName << "(" << insn.state.execWidth << ")";
+    opName << "(" << (unsigned)insn.state.execWidth << ")";
     if(insn.opcode == SEL_OP_CMP || insn.opcode == SEL_OP_I64CMP || insn.state.modFlag) {
       if(!insn.state.physicalFlag) {
         opName << "[" << insn.state.flagIndex << "]";
       } else if(insn.opcode == SEL_OP_I64CMP || insn.opcode == SEL_OP_CMP) {
-        opName << "[" << insn.state.flag << "." << insn.state.subFlag << "]";
+        opName << "[" << (unsigned)insn.state.flag << "." << (unsigned)insn.state.subFlag << "]";
       }
     }
 
