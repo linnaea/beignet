@@ -272,9 +272,11 @@ namespace gbe {
           case Intrinsic::ceil:
           case Intrinsic::trunc:
           case Intrinsic::fmuladd:
-#if LLVM_VERSION_MAJOR >= 9
+#if LLVM_VERSION_MAJOR >= 8
           case Intrinsic::ssub_sat:
           case Intrinsic::usub_sat:
+          case Intrinsic::sadd_sat:
+          case Intrinsic::uadd_sat:
 #endif
               return true;
         }

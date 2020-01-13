@@ -3829,9 +3829,11 @@ namespace gbe
         case Intrinsic::usub_with_overflow:
         case Intrinsic::smul_with_overflow:
         case Intrinsic::umul_with_overflow:
-#if LLVM_VERSION_MAJOR >= 9
+#if LLVM_VERSION_MAJOR >= 8
         case Intrinsic::ssub_sat:
         case Intrinsic::usub_sat:
+        case Intrinsic::sadd_sat:
+        case Intrinsic::uadd_sat:
 #endif
         case Intrinsic::ctlz:
         case Intrinsic::cttz:
@@ -4780,11 +4782,19 @@ namespace gbe
             ctx.ALU1(ir::OP_ABS, getType(ctx, (*AI)->getType()), dst, src);
             break;
           }
-#if LLVM_VERSION_MAJOR >= 9
+#if LLVM_VERSION_MAJOR >= 8
           case Intrinsic::ssub_sat:
           case Intrinsic::usub_sat:
             ctx.SUBSAT(
                 F->getIntrinsicID() == Intrinsic::usub_sat ? getUnsignedType(ctx, I.getType()) : getType(ctx, I.getType()),
+                this->getRegister(&I),
+                this->getRegister(I.getOperand(0)),
+                this->getRegister(I.getOperand(1)));
+            break;
+          case Intrinsic::sadd_sat:
+          case Intrinsic::uadd_sat:
+            ctx.ADDSAT(
+                F->getIntrinsicID() == Intrinsic::uadd_sat ? getUnsignedType(ctx, I.getType()) : getType(ctx, I.getType()),
                 this->getRegister(&I),
                 this->getRegister(I.getOperand(0)),
                 this->getRegister(I.getOperand(1)));
@@ -4868,11 +4878,11 @@ namespace gbe
             }
             const ir::Tuple dstTuple = ctx.arrayTuple(&dstTupleData[0], dst_length);
             ++AI;
-            Constant *vme_search_path_lut_cpv = dyn_cast<Constant>(*AI);
+            auto *vme_search_path_lut_cpv = dyn_cast<Constant>(*AI);
             assert(vme_search_path_lut_cpv);
             const ir::Immediate &vme_search_path_lut_x = processConstantImm(vme_search_path_lut_cpv);
             ++AI;
-            Constant *lut_sub_cpv = dyn_cast<Constant>(*AI);
+            auto *lut_sub_cpv = dyn_cast<Constant>(*AI);
             assert(lut_sub_cpv);
             const ir::Immediate &lut_sub_x = processConstantImm(lut_sub_cpv);
 
@@ -4886,7 +4896,7 @@ namespace gbe
             const ir::Register dst = this->getRegister(&I);
             uint32_t stackSize = ctx.getFunction().getStackSize();
             if (stackSize == 0) {
-              ir::ImmediateIndex imm = ctx.newImmediate((bool)0);
+              ir::ImmediateIndex imm = ctx.newImmediate(false);
               ctx.LOADI(ir::TYPE_BOOL, dst, imm);
             } else {
               ir::Register cmp0 = ctx.reg(ir::FAMILY_BOOL);

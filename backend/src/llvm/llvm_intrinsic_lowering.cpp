@@ -93,7 +93,7 @@ namespace gbe {
         CI->eraseFromParent();
         return NewCI;
       }
-      virtual bool runOnBasicBlock(BasicBlock &BB)
+      bool runOnBasicBlock(BasicBlock &BB) override
       {
         bool changedBlock = false;
         Module *M = BB.getParent()->getParent();
@@ -154,7 +154,7 @@ namespace gbe {
                 replaceCallWith(name, CI, Ops, Ops+3, Type::getVoidTy(Context));
                 break;
               }
-#if LLVM_VERSION_MAJOR >= 8
+#if LLVM_VERSION_MAJOR >= 7
               case Intrinsic::fshl:
               case Intrinsic::fshr: {
                 // %result = call T @llvm.fsh{l,r}.T(T %a, T %b, T %c)
@@ -193,61 +193,51 @@ namespace gbe {
                 break;
               }
 #endif
-#if LLVM_VERSION_MAJOR >= 9
+#if LLVM_VERSION_MAJOR >= 8
               case Intrinsic::ssub_sat: {
-                // %res = call T @llvm.ssub.sat.T(T %a, T %b)
+                static const auto WorkaroundMdKind = "beignet.ssub.sat.workaround";
+                // Gen needs a workaround when %b == i32 0x80000000
+                // %res = call i32 @llvm.ssub.sat.i32(i32 %a, i32 %b)
                 // ->
-                // s = a - b
-                // overflow = (a ^ b) & (a ^ s)
-                // bound = (Tmask >>> 1) + (a >>> (Tbits - 1))
-                // res = overflow ? bound : s
+                // r = b == 0x80000000 ? sadd_sat(sadd_sat(a, 0x40000000), 0x40000000) : ssub_sat(a, b)
                 //
-                // %sub = sub T %a, %b
-                // %asign = lshr T %a, Sub(Tbits, 1)
-                // %bound = add T %asign, LShr(Tmask, 1)
-                // %ovf1 = xor T %a, %b
-                // %ovf2 = xor T %a, %sub
-                // %ovf3 = and T %ovf1, %ovf2
-                // %ovf4 = lshr T %ovf3, Sub(Tbits, 1)
-                // %ovf = trunc %ovf4 to i1
-                // %res = select i1 %ovf, T %bound, T %sub
+                // %r0 = call i32 @llvm.ssub.sat.i32(i32 %a, i32 %b)
+                // %r1 = call i32 @llvm.sadd.sat.i32(i32 %a, i32 0x40000000)
+                // %r2 = call i32 @llvm.sadd.sat.i32(i32 %r1, i32 0x40000000)
+                // %p = icmp eq i32 %b, 0x80000000
+                // %res = select i1 %p, i32 %r2, %r0
                 auto type = CI->getType();
                 auto scalarType = dyn_cast<IntegerType>(type->getScalarType());
                 GBE_ASSERT(scalarType);
-                if(scalarType->getBitWidth() < 32) {
+                if(scalarType->getBitWidth() != 32) {
+                  break;
+                }
+                if(CI->getMetadata(WorkaroundMdKind) != nullptr) {
                   break;
                 }
 
-                auto scalarMax = scalarType->getMask();
-                scalarMax.lshrInPlace(1);
+                Constant *i32Mid = Builder.getInt32(0x40000000);
+                Constant *i32Min = Builder.getInt32(0x80000000);
 
-                Constant *tMaxPos = Builder.getInt(scalarMax);
-                Constant *tBitsM1 = Builder.getIntN(scalarType->getBitWidth(), scalarType->getBitWidth() - 1);
-                Type *tyI1 = Builder.getInt1Ty();
                 if(type->isVectorTy()) {
-                  tMaxPos = ConstantVector::getSplat(type->getVectorNumElements(), tMaxPos);
-                  tBitsM1 = ConstantVector::getSplat(type->getVectorNumElements(), tBitsM1);
-                  tyI1 = VectorType::get(tyI1, type->getVectorNumElements());
+                  i32Mid = ConstantVector::getSplat(type->getVectorNumElements(), i32Mid);
+                  i32Min = ConstantVector::getSplat(type->getVectorNumElements(), i32Min);
                 }
 
-                auto sub = Builder.CreateSub(CI->getOperand(0), CI->getOperand(1));
-                auto aSign = Builder.CreateLShr(CI->getOperand(0), tBitsM1);
-                auto aBound = Builder.CreateAdd(aSign, tMaxPos);
-
-                auto canOverflow = Builder.CreateXor(CI->getOperand(0), CI->getOperand(1));
-                auto mayOverflow = Builder.CreateXor(CI->getOperand(0), sub);
-                auto didOverflow = Builder.CreateAnd(canOverflow, mayOverflow);
-                didOverflow = Builder.CreateLShr(didOverflow, tBitsM1);
-                didOverflow = Builder.CreateTrunc(didOverflow, tyI1);
-                auto result = Builder.CreateSelect(didOverflow, aBound, sub);
+                auto hwBroken = Builder.CreateICmpEQ(CI->getOperand(1), i32Min);
+                auto hwResult = Builder.CreateBinaryIntrinsic(Intrinsic::ssub_sat, CI->getOperand(0), CI->getOperand(1));
+                auto waCompute1 = Builder.CreateBinaryIntrinsic(Intrinsic::sadd_sat, i32Mid, CI->getOperand(0));
+                auto waCompute = Builder.CreateBinaryIntrinsic(Intrinsic::sadd_sat, i32Mid, waCompute1);
+                auto result = Builder.CreateSelect(hwBroken, waCompute, hwResult);
+                hwResult->setMetadata(WorkaroundMdKind, MDNode::get(Context, {}));
 
                 CI->replaceAllUsesWith(result);
                 CI->eraseFromParent();
                 break;
               }
 #endif
-              default:
-                continue;
+            default:
+              break;
             }
           }
         }
