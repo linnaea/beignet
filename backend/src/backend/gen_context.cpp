@@ -36,7 +36,6 @@
 #include "sys/cvar.hpp"
 #include <cstring>
 #include <iostream>
-#include <iomanip>
 
 namespace gbe
 {
@@ -45,18 +44,18 @@ namespace gbe
   ///////////////////////////////////////////////////////////////////////////
   GenContext::GenContext(const ir::Unit &unit, const std::string &name, uint32_t deviceID,
 	     bool relaxMath) :
-    Context(unit, name), deviceID(deviceID), relaxMath(relaxMath)
+    Context(unit, name), deviceID(deviceID), relaxMath(relaxMath), errCode(NO_ERROR)
   {
-    this->p = NULL;
-    this->sel = NULL;
-    this->ra = NULL;
-    this->asmFileName = NULL;
+    this->p = nullptr;
+    this->sel = nullptr;
+    this->ra = nullptr;
+    this->asmFileName = nullptr;
     this->ifEndifFix = false;
     this->regSpillTick = 0;
     this->inProfilingMode = false;
   }
 
-  GenContext::~GenContext(void) {
+  GenContext::~GenContext() {
     GBE_DELETE(this->ra);
     GBE_DELETE(this->sel);
     GBE_DELETE(this->p);
@@ -83,7 +82,7 @@ namespace gbe
     this->asmFileName = asmFname;
   }
 
-  void GenContext::newSelection(void) {
+  void GenContext::newSelection() {
     this->sel = GBE_NEW(Selection, *this);
   }
 
@@ -94,9 +93,6 @@ namespace gbe
   }
 
   extern int32_t OCL_DEBUGINFO; // first defined by calling BVAR in program.cpp
-#define SET_GENINSN_DBGINFO(I) \
-  if(OCL_DEBUGINFO) p->DBGInfo = I.DBGInfo;
-      
   void GenContext::emitInstructionStream() {
     // Emit Gen ISA
     for (auto &block : *sel->blockList)
@@ -106,10 +102,11 @@ namespace gbe
       // no more virtual register here in that part of the code generation
       GBE_ASSERT(insn.state.physicalFlag);
       p->curr = insn.state;
-      SET_GENINSN_DBGINFO(insn);
+      if(OCL_DEBUGINFO)
+        p->DBGInfo = insn.DBGInfo;
       switch (opcode) {
 #define DECL_SELECTION_IR(OPCODE, FAMILY) \
-  case SEL_OP_##OPCODE: this->emit##FAMILY(insn); break;
+        case SEL_OP_##OPCODE: this->emit##FAMILY(insn); break;
 #include "backend/gen_insn_selection.hxx"
 #undef DECL_INSN
       }
@@ -120,7 +117,6 @@ namespace gbe
     for(int i = 0; i < 8; i++)
 	p->NOP();
   }
-#undef SET_GENINSN_DBGINFO
 
   bool GenContext::patchBranches() {
     using namespace ir;
@@ -147,8 +143,8 @@ namespace gbe
   }
 
   /* Get proper block ip register according to current label width. */
-  GenRegister GenContext::getBlockIP(void) {
-    GenRegister blockip;
+  GenRegister GenContext::getBlockIP() {
+    GenRegister blockip{};
     if (!isDWLabel())
       blockip = ra->genReg(GenRegister::uw8grf(ir::ocl::blockip));
     else
@@ -164,7 +160,7 @@ namespace gbe
       p->MOV(blockip, GenRegister::immud(label));
   }
 
-  void GenContext::clearFlagRegister(void) {
+  void GenContext::clearFlagRegister() {
     // when group size not aligned to simdWidth, flag register need clear to
     // make prediction(any8/16h) work correctly
     const GenRegister blockip = getBlockIP();
@@ -184,7 +180,7 @@ namespace gbe
 
   void GenContext::loadLaneID(GenRegister dst) {
     const GenRegister laneID = GenRegister::immv(0x76543210);
-    GenRegister dst_;
+    GenRegister dst_{};
     if (dst.type == GEN_TYPE_UW)
       dst_ = dst;
     else if (dst.type == GEN_TYPE_UD)
@@ -209,7 +205,7 @@ namespace gbe
     p->pop();
   }
 
-  void GenContext::emitStackPointer(void) {
+  void GenContext::emitStackPointer() {
     using namespace ir;
 
     // Only emit stack pointer computation if we use a stack
@@ -1932,7 +1928,7 @@ namespace gbe
     GenRegister tmp = ra->genReg(insn.dst(1));
     const GenRegister a0 = GenRegister::addr8(0);
     uint32_t simdWidth = p->curr.execWidth;
-    GenRegister indirect_src;
+    GenRegister indirect_src{};
 
     if(sel->isScalarReg(offset.reg()))
       offset = GenRegister::retype(offset, GEN_TYPE_UW);
@@ -2346,7 +2342,7 @@ namespace gbe
     const unsigned int msg_type = insn.extra.msg_type;
 
     GBE_ASSERT(msg_type == 1);
-    int rsp_len;
+    int rsp_len = 0;
     if(msg_type == 1)
       rsp_len = 6;
     uint32_t execWidth_org = p->curr.execWidth;
@@ -2552,7 +2548,7 @@ namespace gbe
     } p->pop();
   }
 
-  void GenContext::profilingProlog(void) {
+  void GenContext::profilingProlog() {
     // record the prolog, globalXYZ and lasttimestamp at the very beginning.
     GenRegister profilingReg2, profilingReg3, profilingReg4;
     GenRegister tmArf = GenRegister::tm0();
@@ -2661,7 +2657,6 @@ namespace gbe
     uint32_t tsType = insn.extra.timestampType;
     GenRegister flagReg = GenRegister::flag(insn.state.flag, insn.state.subFlag);
 
-    (void) tsType;
     GBE_ASSERT(tsType == 1);
     GenRegister tmArf = GenRegister::tm0();
     GenRegister profilingReg[5];
@@ -2787,7 +2782,6 @@ namespace gbe
     GenRegister tmp = ra->genReg(insn.dst(0));
     uint32_t profilingType = insn.extra.profilingType;
     uint32_t bti = insn.extra.profilingBTI;
-    (void) profilingType;
     GBE_ASSERT(profilingType == 1);
     GenRegister flagReg = GenRegister::flag(insn.state.flag, insn.state.subFlag);
     GenRegister lastTsReg = GenRegister::toUniform(profilingReg[3], GEN_TYPE_UL);
@@ -3685,7 +3679,7 @@ namespace gbe
     return true;
   }
 
-  Kernel *GenContext::allocateKernel(void) {
+  Kernel *GenContext::allocateKernel() {
     return GBE_NEW(GenKernel, name, deviceID);
   }
 
@@ -3698,7 +3692,7 @@ namespace gbe
       insn_version = 8;
     fprintf(file, "%s's disassemble begin:\n", genKernel->getName());
     ir::LabelIndex curLabel = (ir::LabelIndex)0;
-    GenCompactInstruction * pCom = NULL;
+    GenCompactInstruction * pCom = nullptr;
     GenInstruction insn[2];
     fprintf(file, "  L0:\n");
     for (uint32_t insnID = 0; insnID < genKernel->insnNum; ) {

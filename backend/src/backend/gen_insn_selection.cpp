@@ -2967,9 +2967,7 @@ extern int32_t OCL_DEBUGINFO; // first defined by calling BVAR in program.cpp
     using namespace ir;
     const auto &childInsn = cast<LoadImmInstruction>(insn);
     const auto &imm = childInsn.getImmediate();
-    if(imm.getType() != TYPE_DOUBLE && imm.getType() != TYPE_S64 && imm.getType() != TYPE_U64)
-      return true;
-    return false;
+    return imm.getType() != TYPE_DOUBLE && imm.getType() != TYPE_S64 && imm.getType() != TYPE_U64;
   }
 
   GenRegister getRegisterFromImmediate(ir::Immediate imm, ir::Type type, bool negate = false)

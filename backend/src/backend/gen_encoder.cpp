@@ -124,73 +124,73 @@ namespace gbe
 
   INLINE bool needToSplitAlu1(GenEncoder *p, GenRegister dst, GenRegister src) {
     if (p->curr.execWidth != 16) return false;
-    if (isVectorOfLongs(dst) == true) return true;
-    if (isCrossMoreThan2(dst) == true) return true;
+    if (isVectorOfLongs(dst)) return true;
+    if (isCrossMoreThan2(dst)) return true;
 
     if (src.hstride == GEN_HORIZONTAL_STRIDE_0) return false;
 
-    if (isCrossMoreThan2(src) == true) return true;
-    if (isVectorOfLongs(src) == true) return true;
+    if (isCrossMoreThan2(src)) return true;
+    if (isVectorOfLongs(src)) return true;
 
-    if (isSrcDstDiffSpan(dst, src) == true) return true;
+    if (isSrcDstDiffSpan(dst, src)) return true;
 
-    if (isVectorOfBytes(dst) == true &&
-        ((isVectorOfBytes(src) == true && src.hstride == dst.hstride)
+    if (isVectorOfBytes(dst) &&
+        ((isVectorOfBytes(src) && src.hstride == dst.hstride)
           || src.hstride == GEN_HORIZONTAL_STRIDE_0))
       return false;
-    if (isVectorOfBytes(dst) == true) return true;
-    if (isVectorOfBytes(src) == true) return true;
+    if (isVectorOfBytes(dst)) return true;
+    if (isVectorOfBytes(src)) return true;
     return false;
   }
 
   INLINE bool needToSplitAlu2(GenEncoder *p, GenRegister dst, GenRegister src0, GenRegister src1) {
     if (p->curr.execWidth != 16) return false;
-    if (isVectorOfLongs(dst) == true) return true;
-    if (isCrossMoreThan2(dst) == true) return true;
+    if (isVectorOfLongs(dst)) return true;
+    if (isCrossMoreThan2(dst)) return true;
 
     if (src0.hstride == GEN_HORIZONTAL_STRIDE_0 &&
 		src1.hstride == GEN_HORIZONTAL_STRIDE_0)
       return false;
 
-    if (isVectorOfLongs(src0) == true) return true;
-    if (isVectorOfLongs(src1) == true) return true;
-    if (isCrossMoreThan2(src0) == true) return true;
-    if (isCrossMoreThan2(src1) == true) return true;
+    if (isVectorOfLongs(src0)) return true;
+    if (isVectorOfLongs(src1)) return true;
+    if (isCrossMoreThan2(src0)) return true;
+    if (isCrossMoreThan2(src1)) return true;
 
-    if (isSrcDstDiffSpan(dst, src0) == true) return true;
-    if (isSrcDstDiffSpan(dst, src1) == true) return true;
+    if (isSrcDstDiffSpan(dst, src0)) return true;
+    if (isSrcDstDiffSpan(dst, src1)) return true;
 
-    if (isVectorOfBytes(dst) == true &&
-        ((isVectorOfBytes(src0) == true && src0.hstride == dst.hstride) ||
+    if (isVectorOfBytes(dst) &&
+        ((isVectorOfBytes(src0) && src0.hstride == dst.hstride) ||
          src0.hstride == GEN_HORIZONTAL_STRIDE_0) &&
-        ((isVectorOfBytes(src1) == true && src1.hstride == dst.hstride) ||
+        ((isVectorOfBytes(src1) && src1.hstride == dst.hstride) ||
          src1.hstride == GEN_HORIZONTAL_STRIDE_0))
       return false;
-    if (isVectorOfBytes(dst) == true ) return true;
-    if (isVectorOfBytes(src0) == true) return true;
-    if (isVectorOfBytes(src1) == true) return true;
+    if (isVectorOfBytes(dst) ) return true;
+    if (isVectorOfBytes(src0)) return true;
+    if (isVectorOfBytes(src1)) return true;
     return false;
   }
 
   INLINE bool needToSplitCmp(GenEncoder *p, GenRegister src0, GenRegister src1, GenRegister dst) {
     if (p->curr.execWidth != 16) return false;
-    if (isVectorOfLongs(dst) == true) return true;
-    if (isCrossMoreThan2(dst) == true) return true;
+    if (isVectorOfLongs(dst)) return true;
+    if (isCrossMoreThan2(dst)) return true;
 
     if (src0.hstride == GEN_HORIZONTAL_STRIDE_0 &&
             src1.hstride == GEN_HORIZONTAL_STRIDE_0)
       return false;
 
-    if (isVectorOfBytes(src0) == true) return true;
-    if (isVectorOfBytes(src1) == true) return true;
+    if (isVectorOfBytes(src0)) return true;
+    if (isVectorOfBytes(src1)) return true;
 
-    if (isVectorOfLongs(src0) == true) return true;
-    if (isVectorOfLongs(src1) == true) return true;
-    if (isCrossMoreThan2(src0) == true) return true;
-    if (isCrossMoreThan2(src1) == true) return true;
+    if (isVectorOfLongs(src0)) return true;
+    if (isVectorOfLongs(src1)) return true;
+    if (isCrossMoreThan2(src0)) return true;
+    if (isCrossMoreThan2(src1)) return true;
 
-    if (isSrcDstDiffSpan(dst, src0) == true) return true;
-    if (isSrcDstDiffSpan(dst, src1) == true) return true;
+    if (isSrcDstDiffSpan(dst, src0)) return true;
+    if (isSrcDstDiffSpan(dst, src1)) return true;
 
     if (src0.type == GEN_TYPE_D || src0.type == GEN_TYPE_UD || src0.type == GEN_TYPE_F)
       return true;
@@ -1005,7 +1005,7 @@ namespace gbe
       case GEN_OPCODE_ENDIF: jip += 2; break;
       default: break;
       }
-       this->setSrc1(&insn, GenRegister::immd((jip & 0xffff) | uip<<16));
+      this->setSrc1(&insn, GenRegister::immd((jip & 0xffff) | uip<<16));
     } else if ( insn.header.predicate_control == GEN_PREDICATE_NONE ) {
       // For the conditional jump distance out of S15 range, we need to use an
       // inverted jmp followed by a add ip, ip, distance to implement.

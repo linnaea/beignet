@@ -56,23 +56,23 @@ namespace gbe
      */
     Context(const ir::Unit &unit, const std::string &name);
     /*! Release everything needed */
-    virtual ~Context(void);
+    virtual ~Context();
     /*! start new code generation with specific simd width. */
     void startNewCG(uint32_t simdWidth);
     /*! Compile the code */
-    Kernel *compileKernel(void);
+    Kernel *compileKernel();
     /*! Tells if the labels is used */
-    INLINE bool isLabelUsed(ir::LabelIndex index) const {
-      return usedLabels.contains(index);
-    }
+    // INLINE bool isLabelUsed(ir::LabelIndex index) const {
+    //   return usedLabels.contains(index);
+    // }
     /*! Get the function graph */
-    INLINE const ir::FunctionDAG &getFunctionDAG(void) const { return *dag; }
+    // INLINE const ir::FunctionDAG &getFunctionDAG() const { return *dag; }
     /*! Get the liveness information */
-    INLINE const ir::Liveness &getLiveness(void) const { return *liveness; }
+    INLINE const ir::Liveness &getLiveness() const { return *liveness; }
     /*! Tells if the register is used */
-    bool isRegUsed(const ir::Register &reg) const;
+    // bool isRegUsed(const ir::Register &reg) const;
     /*! Get the kernel we are currently compiling */
-    INLINE Kernel *getKernel(void) const { return this->kernel; }
+    // INLINE Kernel *getKernel() const { return this->kernel; }
     /*! Get the function we are currently compiling */
     INLINE const ir::Function &getFunction() const { return this->fn; }
     /*! Get the target label index for the given instruction */
@@ -97,12 +97,12 @@ namespace gbe
     void deallocateScratchMem(int32_t offset);
     /*! Preallocated curbe register set including special registers. */
     map<ir::Register, uint32_t> curbeRegs;
-    ir::Register getSurfaceBaseReg(unsigned char bti);
+    // ir::Register getSurfaceBaseReg(unsigned char bti);
     /* Indicate whether we should use DW label or W label in backend.*/
-    bool isDWLabel(void) const {
+    bool isDWLabel() const {
       return useDWLabel;
     }
-    uint32_t getMaxLabel(void) const {
+    uint32_t getMaxLabel() const {
       return this->isDWLabel() ? 0xffffffff : 0xffff;
     }
     /*! get register's payload type. */
@@ -122,25 +122,25 @@ namespace gbe
     }
   protected:
     /*! Build the instruction stream. Return false if failed */
-    virtual bool emitCode(void) = 0;
+    virtual bool emitCode() = 0;
     /*! Align the scratch size to the device's scratch unit size */
     virtual uint32_t alignScratchSize(uint32_t) = 0;
     /*! Get the device's max srcatch size */
-    virtual uint32_t getScratchSize(void) = 0;
+    virtual uint32_t getScratchSize() = 0;
     /*! Allocate a new empty kernel (to be implemented) */
-    virtual Kernel *allocateKernel(void) = 0;
+    virtual Kernel *allocateKernel() = 0;
     /*! Look if a stack is needed and allocate it */
-    void buildStack(void);
+    void buildStack();
     /*! Build the list of arguments to set to launch the kernel */
-    void buildArgList(void);
+    void buildArgList();
     /*! Build the sets of used labels */
-    void buildUsedLabels(void);
+    void buildUsedLabels();
     /*! Build JIPs for each branch and possibly labels. Can be different from
      *  the branch target due to unstructured branches
      */
-    void buildJIPs(void);
+    void buildJIPs();
     /*! Configure SLM use if needed */
-    void handleSLM(void);
+    void handleSLM();
     /*! Insert a new entry with the given size in the Curbe. Return the offset
      *  of the entry
      */
@@ -161,7 +161,7 @@ namespace gbe
     JIPMap JIPs;                          //!< Where to jump all labels/branches
     uint32_t simdWidth;                   //!< Number of lanes per HW threads
     bool useDWLabel;                      //!< false means using u16 label, true means using u32 label.
-    map<unsigned char, ir::Register> btiRegMap;
+    // map<unsigned char, ir::Register> btiRegMap;
     GBE_CLASS(Context);                   //!< Use custom allocators
   };
 

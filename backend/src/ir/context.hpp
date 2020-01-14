@@ -42,19 +42,19 @@ namespace ir {
   {
   public:
     /*! Create a new context for this unit */
-    Context(Unit &unit);
+    explicit Context(Unit &unit);
     /*! Free resources needed by context */
-    virtual ~Context(void);
+    virtual ~Context();
     /*! Create a new function "name" */
     void startFunction(const std::string &name);
     /*! Close the function */
-    void endFunction(void);
+    void endFunction();
     /*! Get the current processed unit */
-    INLINE Unit &getUnit(void) { return unit; }
+    INLINE Unit &getUnit() { return unit; }
     /*! Get the current processed function */
-    Function &getFunction(void);
+    Function &getFunction();
     /*! Get the current processed block */
-    BasicBlock *getBlock(void) { return bb; }
+    BasicBlock *getBlock() { return bb; }
     /*! Set the SIMD width of the function */
     void setSimdWidth(uint32_t width) const {
       GBE_ASSERT(width == 8 || width == 16);
@@ -95,7 +95,6 @@ namespace ir {
         case TYPE_U64: return this->newImmediate(uint64_t(x));
         default: NOT_SUPPORTED; return ImmediateIndex(0);
       }
-      return ImmediateIndex(0);
     }
     INLINE ImmediateIndex newFloatImmediate(float x) {
       return this->newImmediate(x);
@@ -104,23 +103,23 @@ namespace ir {
       return this->newImmediate(x);
     }
 
-    INLINE ImmediateIndex processImm(ImmOpCode op, ImmediateIndex src, Type type) {
-      const Immediate &imm = fn->getImmediate(src);
-      const Immediate &dstImm = Immediate(op, imm, type);
-      return fn->newImmediate(dstImm);
-    }
+    // INLINE ImmediateIndex processImm(ImmOpCode op, ImmediateIndex src, Type type) {
+    //   const Immediate &imm = fn->getImmediate(src);
+    //   const Immediate &dstImm = Immediate(op, imm, type);
+    //   return fn->newImmediate(dstImm);
+    // }
 
-    INLINE ImmediateIndex processImm(ImmOpCode op, ImmediateIndex src0,
-                                     ImmediateIndex src1, Type type) {
-      const Immediate &imm0 = fn->getImmediate(src0);
-      const Immediate &imm1 = fn->getImmediate(src1);
-      const Immediate &dstImm = Immediate(op, imm0, imm1, type);
-      return fn->newImmediate(dstImm);
-    }
+    // INLINE ImmediateIndex processImm(ImmOpCode op, ImmediateIndex src0,
+    //                                  ImmediateIndex src1, Type type) {
+    //   const Immediate &imm0 = fn->getImmediate(src0);
+    //   const Immediate &imm1 = fn->getImmediate(src1);
+    //   const Immediate &dstImm = Immediate(op, imm0, imm1, type);
+    //   return fn->newImmediate(dstImm);
+    // }
 
     /*! Create a new register holding the given value. A LOADI is pushed */
     template <typename T> INLINE Register immReg(T value) {
-      GBE_ASSERTM(fn != NULL, "No function currently defined");
+      GBE_ASSERTM(fn != nullptr, "No function currently defined");
       const Immediate imm(value);
       const ImmediateIndex index = fn->newImmediate(imm);
       const RegisterFamily family = getFamily(imm.getType());
@@ -129,7 +128,7 @@ namespace ir {
       return reg;
     }
     /*! Create a new label for the current function */
-    LabelIndex label(void);
+    LabelIndex label();
     /*! Append a new input register for the function */
     void input(const std::string &name, FunctionArgument::Type type, Register reg,
                FunctionArgument::InfoFromLLVM& info, uint32_t elemSz = 0u, uint32_t align = 0, uint8_t bti = 0);
@@ -141,17 +140,17 @@ namespace ir {
     }
     /*! Append a new tuple */
     template <typename... Args> INLINE Tuple tuple(Args...args) {
-      GBE_ASSERTM(fn != NULL, "No function currently defined");
+      GBE_ASSERTM(fn != nullptr, "No function currently defined");
       return fn->file.appendTuple(args...);
     }
     /*! Make a tuple from an array of register */
     INLINE Tuple arrayTuple(const Register *reg, uint32_t regNum) {
-      GBE_ASSERTM(fn != NULL, "No function currently defined");
+      GBE_ASSERTM(fn != nullptr, "No function currently defined");
       return fn->file.appendArrayTuple(reg, regNum);
     }
     /*! Make a tuple from an array of types */
     INLINE Tuple arrayTypeTuple(const ir::Type *type, uint32_t num) {
-      GBE_ASSERTM(fn != NULL, "No function currently defined");
+      GBE_ASSERTM(fn != nullptr, "No function currently defined");
       return fn->file.appendArrayTypeTuple((uint8_t*)type, num);
     }
     /*! We just use variadic templates to forward instruction functions */
@@ -160,11 +159,11 @@ namespace ir {
 #include "ir/instruction.hxx"
 #undef DECL_INSN
     /*! Return the pointer size handled by the unit */
-    INLINE PointerSize getPointerSize(void) const {
+    INLINE PointerSize getPointerSize() const {
       return unit.getPointerSize();
     }
     /*! Return the family of registers that contain pointer */
-    INLINE RegisterFamily getPointerFamily(void) const {
+    INLINE RegisterFamily getPointerFamily() const {
       return unit.getPointerFamily();
     }
 #define DECL_THREE_SRC_INSN(NAME) \
@@ -195,21 +194,21 @@ namespace ir {
       this->append(insn);
     }
 
-    void appendSurface(uint8_t bti, Register reg) { fn->appendSurface(bti, reg); }
+    // void appendSurface(uint8_t bti, Register reg) { fn->appendSurface(bti, reg); }
     void setDBGInfo(DebugInfo in) { DBGInfo = in; }
 
   protected:
     /*! A block must be started with a label */
-    void startBlock(void);
+    void startBlock();
     /*! A block must be ended with a branch */
-    void endBlock(void);
+    void endBlock();
     /*! Append the instruction in the current basic block */
     void append(const Instruction &insn);
     Unit &unit;                 //!< A unit is associated to a contect
     Function *fn;               //!< Current function we are processing
     BasicBlock *bb;             //!< Current basic block we are filling
-    static const uint8_t LABEL_IS_POINTED = 1 << 0; //!< Branch is using it
-    static const uint8_t LABEL_IS_DEFINED = 1 << 1; //!< Label is defining it
+    static const uint8_t LABEL_IS_POINTED = 1u << 0; //!< Branch is using it
+    static const uint8_t LABEL_IS_DEFINED = 1u << 1; //!< Label is defining it
     vector<uint8_t> *usedLabels;
     /*! Functions can be defined recursiely */
     struct StackElem {

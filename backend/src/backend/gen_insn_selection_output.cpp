@@ -225,11 +225,25 @@ namespace gbe
 
     cout << "= ";
 
-    for (int i = 0; i < insn.srcNum; ++i)
-    {
-      GenRegister src = insn.src(i);
-      outputGenReg(src, false);
-      cout << " ";
+    switch(insn.opcode) {
+    case SEL_OP_IF:
+    case SEL_OP_BRC:
+      cout << " uip=L" << insn.index1;
+    case SEL_OP_ELSE:
+    case SEL_OP_ENDIF:
+    case SEL_OP_BRD:
+    case SEL_OP_WHILE:
+    case SEL_OP_JMPI:
+      cout << " jip=L" << insn.index << " ";
+      break;
+    default:
+      for (int i = 0; i < insn.srcNum; ++i)
+      {
+        GenRegister src = insn.src(i);
+        outputGenReg(src, false);
+        cout << " ";
+      }
+      break;
     }
 
     if(insn.state.quarterControl || insn.state.noMask || insn.state.accWrEnable) {
@@ -241,22 +255,6 @@ namespace gbe
       OUTPUT_FLAG(insn.state.accWrEnable, "AccWr")
 #undef OUTPUT_FLAG
       cout << "}";
-    }
-
-    switch(insn.opcode) {
-    case SEL_OP_IF:
-    case SEL_OP_BRC:
-      cout << "; jip=L" << insn.index;
-      cout << " uip=L" << insn.index1;
-      break;
-    case SEL_OP_ELSE:
-    case SEL_OP_ENDIF:
-    case SEL_OP_BRD:
-    case SEL_OP_WHILE:
-    case SEL_OP_JMPI:
-      cout << "; jip=L" << insn.index;
-      break;
-    default:break;
     }
 
     cout << endl;

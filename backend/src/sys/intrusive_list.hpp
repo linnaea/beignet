@@ -104,7 +104,7 @@ namespace gbe
 
   protected:
     intrusive_list_base();
-    INLINE ~intrusive_list_base() {}
+    INLINE ~intrusive_list_base() = default;
 
     intrusive_list_node m_root;
 

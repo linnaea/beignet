@@ -24,7 +24,7 @@ namespace gbe {
 
   struct compact_table_entry {
     uint32_t bit_pattern;
-    uint32_t index;
+    uint8_t index;
   };
 
   static compact_table_entry control_table[] = {
@@ -337,13 +337,12 @@ namespace gbe {
   };
 
   void decompactInstruction(GenCompactInstruction * p, void *insn, uint32_t insn_version) {
-    GenNativeInstruction *pNative = (union GenNativeInstruction *) insn;
-    Gen7NativeInstruction *pOut = (union Gen7NativeInstruction *) insn;
+    auto *pNative = (GenNativeInstruction *) insn;
     /* src3 compact insn */
     if(p->bits1.opcode == GEN_OPCODE_MAD || p->bits1.opcode == GEN_OPCODE_LRP) {
 #define NO_SWIZZLE ((0<<0) | (1<<2) | (2<<4) | (3<<6))
       assert(insn_version == 8);
-      Gen8NativeInstruction *pOut = (union Gen8NativeInstruction *) insn;
+      auto *pOut = (Gen8NativeInstruction *) insn;
       memset(pOut, 0, sizeof(Gen8NativeInstruction));
       union Src3ControlBits control_bits;
       control_bits.data = src3_control_table[(uint32_t)p->src3Insn.bits1.control_index].bit_pattern;
@@ -391,6 +390,7 @@ namespace gbe {
 #undef NO_SWIZZLE
     } else {
       if (insn_version == 7) {
+        auto *pOut = (Gen7NativeInstruction *) insn;
         memset(pOut, 0, sizeof(Gen7NativeInstruction));
         union ControlBits control_bits;
         control_bits.data = control_table[(uint32_t)p->bits1.control_index].bit_pattern;
@@ -431,7 +431,7 @@ namespace gbe {
           pNative->high.high |= (src1_bits.data << 13);
         }
       } else if (insn_version == 8) {
-        Gen8NativeInstruction *pOut = (union Gen8NativeInstruction *) insn;
+        auto *pOut = (Gen8NativeInstruction *) insn;
         memset(pOut, 0, sizeof(Gen8NativeInstruction));
         union ControlBits control_bits;
         control_bits.data = control_table[(uint32_t)p->bits1.control_index].bit_pattern;
@@ -501,7 +501,7 @@ namespace gbe {
     if(s->flag == 1)
       return -1;
 
-    ControlBits b;
+    ControlBits b{};
     b.data = 0;
 
     if (execWidth == 8)
@@ -524,12 +524,12 @@ namespace gbe {
     b.flag_sub_reg_nr = s->subFlag;
     b.flag_reg_nr = s->flag;
 
-    compact_table_entry key;
+    compact_table_entry key{};
     key.bit_pattern = b.data;
 
-    compact_table_entry *r = (compact_table_entry *)bsearch(&key, control_table,
+    auto *r = (compact_table_entry *)bsearch(&key, control_table,
       sizeof(control_table)/sizeof(compact_table_entry), sizeof(compact_table_entry), cmp_key);
-    if (r == NULL)
+    if (r == nullptr)
       return -1;
     return r->index;
   }
@@ -549,7 +549,7 @@ namespace gbe {
     if(s->subFlag != 0)
       return -1;
 
-    Src3ControlBits b;
+    Src3ControlBits b{};
     b.data = 0;
 
     if (execWidth == 8)
@@ -567,12 +567,12 @@ namespace gbe {
     b.quarter_control = quarter;
     b.access_mode = 1;
 
-    compact_table_entry key;
+    compact_table_entry key{};
     key.bit_pattern = b.data;
 
-    compact_table_entry *r = (compact_table_entry *)bsearch(&key, src3_control_table,
+    auto *r = (compact_table_entry *)bsearch(&key, src3_control_table,
       sizeof(src3_control_table)/sizeof(compact_table_entry), sizeof(compact_table_entry), cmp_key);
-    if (r == NULL)
+    if (r == nullptr)
       return -1;
     return r->index;
   }
@@ -587,9 +587,9 @@ namespace gbe {
     if(src0->file == GEN_IMMEDIATE_VALUE)
       return -1;
 
-    compact_table_entry *r = NULL;
+    compact_table_entry *r = nullptr;
     if(p->getCompactVersion() == 7) {
-      DataTypeBits b;
+      DataTypeBits b{};
       b.data = 0;
 
       b.dest_horiz_stride = dst->hstride == GEN_HORIZONTAL_STRIDE_0 ? GEN_HORIZONTAL_STRIDE_1 : dst->hstride;
@@ -609,13 +609,13 @@ namespace gbe {
         b.src1_reg_file = 0;
       }
 
-      compact_table_entry key;
+      compact_table_entry key{};
       key.bit_pattern = b.data;
 
       r = (compact_table_entry *)bsearch(&key, data_type_table, sizeof(data_type_table)/sizeof(compact_table_entry),
                                          sizeof(compact_table_entry), cmp_key);
     } else if(p->getCompactVersion() == 8) {
-      Gen8DataTypeBits b;
+      Gen8DataTypeBits b{};
       b.data = 0;
 
       b.dest_horiz_stride = dst->hstride == GEN_HORIZONTAL_STRIDE_0 ? GEN_HORIZONTAL_STRIDE_1 : dst->hstride;
@@ -635,13 +635,13 @@ namespace gbe {
         b.src1_reg_file = 0;
       }
 
-      compact_table_entry key;
+      compact_table_entry key{};
       key.bit_pattern = b.data;
 
       r = (compact_table_entry *)bsearch(&key, gen8_data_type_table, sizeof(gen8_data_type_table)/sizeof(compact_table_entry),
                                          sizeof(compact_table_entry), cmp_key);
     }
-    if (r == NULL)
+    if (r == nullptr)
       return -1;
     return r->index;
   }
@@ -656,12 +656,12 @@ namespace gbe {
     else
       b.src1_subreg_nr = 0;
 
-    compact_table_entry key;
+    compact_table_entry key{};
     key.bit_pattern = b.data;
 
-    compact_table_entry *r = (compact_table_entry *)bsearch(&key, subreg_table,
+    auto *r = (compact_table_entry *)bsearch(&key, subreg_table,
                 sizeof(subreg_table)/sizeof(compact_table_entry), sizeof(compact_table_entry), cmp_key);
-    if (r == NULL)
+    if (r == nullptr)
       return -1;
     return r->index;
   }
@@ -688,12 +688,12 @@ namespace gbe {
       b.src_width = src->width;
       b.src_vert_stride = src->vstride;
     }
-    compact_table_entry key;
+    compact_table_entry key{};
     key.bit_pattern = b.data;
 
-    compact_table_entry *r = (compact_table_entry *)bsearch(&key, srcreg_table,
+    auto *r = (compact_table_entry *)bsearch(&key, srcreg_table,
                     sizeof(srcreg_table)/sizeof(compact_table_entry), sizeof(compact_table_entry), cmp_key);
-    if (r == NULL)
+    if (r == nullptr)
       return -1;
     return r->index;
   }
@@ -706,10 +706,10 @@ namespace gbe {
       int control_index = compactControlBits(p, p->curr.quarterControl, p->curr.execWidth);
       if(control_index == -1) return false;
 
-      int data_type_index = compactDataTypeBits(p, &dst, &src, NULL);
+      int data_type_index = compactDataTypeBits(p, &dst, &src, nullptr);
       if(data_type_index == -1) return false;
 
-      int sub_reg_index = compactSubRegBits(p, &dst, &src, NULL);
+      int sub_reg_index = compactSubRegBits(p, &dst, &src, nullptr);
       if(sub_reg_index == -1) return false;
 
       int src_reg_index = compactSrcRegBits(p, &src);

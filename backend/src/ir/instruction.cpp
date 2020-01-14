@@ -38,7 +38,7 @@ namespace ir {
     /*! Policy shared by all the internal instructions */
     struct BasePolicy {
       /*! Create an instruction from its internal representation */
-      Instruction convert(void) const {
+      Instruction convert() const {
         return Instruction(reinterpret_cast<const char *>(&this->opcode));
       }
       /*! Output the opcode in the given stream */
@@ -58,7 +58,7 @@ namespace ir {
     /*! For regular n source instructions */
     template <typename T, uint32_t srcNum>
     struct NSrcPolicy {
-      INLINE uint32_t getSrcNum(void) const { return srcNum; }
+      INLINE uint32_t getSrcNum() const { return srcNum; }
       INLINE Register getSrc(const Function &fn, uint32_t ID) const {
         GBE_ASSERTM((int) ID < (int) srcNum, "Out-of-bound source");
         return static_cast<const T*>(this)->src[ID];
@@ -72,7 +72,7 @@ namespace ir {
     /*! For regular n destinations instructions */
     template <typename T, uint32_t dstNum>
     struct NDstPolicy {
-      INLINE uint32_t getDstNum(void) const { return dstNum; }
+      INLINE uint32_t getDstNum() const { return dstNum; }
       INLINE Register getDst(const Function &fn, uint32_t ID) const {
         GBE_ASSERTM((int) ID < (int) dstNum, "Out-of-bound destination");
         return static_cast<const T*>(this)->dst[ID];
@@ -86,7 +86,7 @@ namespace ir {
     /*! For instructions that use a tuple for source */
     template <typename T>
     struct TupleSrcPolicy {
-      INLINE uint32_t getSrcNum(void) const {
+      INLINE uint32_t getSrcNum() const {
         return static_cast<const T*>(this)->srcNum;
       }
       INLINE Register getSrc(const Function &fn, uint32_t ID) const {
@@ -102,7 +102,7 @@ namespace ir {
     /*! For instructions that use a tuple for destination */
     template <typename T>
     struct TupleDstPolicy {
-      INLINE uint32_t getDstNum(void) const {
+      INLINE uint32_t getDstNum() const {
         return static_cast<const T*>(this)->dstNum;
       }
       INLINE Register getDst(const Function &fn, uint32_t ID) const {
@@ -123,7 +123,7 @@ namespace ir {
       public NDstPolicy<NaryInstruction<1>, 1>
     {
     public:
-      INLINE Type getType(void) const { return this->type; }
+      INLINE Type getType() const { return this->type; }
       INLINE bool wellFormed(const Function &fn, std::string &whyNot) const;
       INLINE void out(std::ostream &out, const Function &fn) const;
       Type type;            //!< Type of the instruction
@@ -169,7 +169,7 @@ namespace ir {
         this->src[0] = src0;
         this->src[1] = src1;
       }
-      INLINE bool commutes(void) const {
+      INLINE bool commutes() const {
         switch (opcode) {
           case OP_ADD:
           case OP_ADDSAT:
@@ -199,7 +199,7 @@ namespace ir {
         this->dst[0] = dst;
         this->src = src;
       }
-      Type getType(void) const { return type; }
+      Type getType() const { return type; }
       bool wellFormed(const Function &fn, std::string &whyNot) const;
       INLINE void out(std::ostream &out, const Function &fn) const;
       Type type;
@@ -221,7 +221,7 @@ namespace ir {
         this->dst[0] = dst;
         this->src = src;
       }
-      INLINE Type getType(void) const { return this->type; }
+      INLINE Type getType() const { return this->type; }
       INLINE bool wellFormed(const Function &fn, std::string &whyNot) const;
       INLINE void out(std::ostream &out, const Function &fn) const;
       Type type;       //!< Type of the instruction
@@ -276,8 +276,8 @@ namespace ir {
         this->dstNum = dstNum;
         this->srcNum = srcNum;
       }
-      INLINE Type getSrcType(void) const { return getType((RegisterFamily)srcFamily); }
-      INLINE Type getDstType(void) const { return getType((RegisterFamily)dstFamily); }
+      INLINE Type getSrcType() const { return getType((RegisterFamily)srcFamily); }
+      INLINE Type getDstType() const { return getType((RegisterFamily)dstFamily); }
       INLINE bool wellFormed(const Function &fn, std::string &whyNot) const;
       INLINE void out(std::ostream &out, const Function &fn) const;
       uint8_t dstFamily:4; //!< family to cast to
@@ -306,8 +306,8 @@ namespace ir {
         this->dstType = dstType;
         this->srcType = srcType;
       }
-      INLINE Type getSrcType(void) const { return this->srcType; }
-      INLINE Type getDstType(void) const { return this->dstType; }
+      INLINE Type getSrcType() const { return this->srcType; }
+      INLINE Type getDstType() const { return this->dstType; }
       INLINE bool wellFormed(const Function &fn, std::string &whyNot) const;
       INLINE void out(std::ostream &out, const Function &fn) const;
       Register dst[1];
@@ -335,12 +335,12 @@ namespace ir {
       AddressMode  getAddressMode()    const { return AM; }
       AddressSpace getAddressSpace()   const { return AS; }
       /*! MemInstruction may have one possible btiReg */
-      Register     getBtiReg()         const { assert(AM == AM_DynamicBti); return BtiReg; }
-      unsigned     getSurfaceIndex()   const { assert(AM != AM_DynamicBti); return SurfaceIndex; }
+      Register     getBtiReg()         const { GBE_ASSERT(AM == AM_DynamicBti); return BtiReg; }
+      unsigned     getSurfaceIndex()   const { GBE_ASSERT(AM != AM_DynamicBti); return SurfaceIndex; }
       Register     getAddressRegister()const { return offset; }
       unsigned     getAddressIndex()   const { return 0; }
       Type         getValueType()      const { return type; }
-      INLINE bool  isAligned(void)     const { return !!dwAligned; }
+      INLINE bool  isAligned()     const { return !!dwAligned; }
 
       void         setSurfaceIndex (unsigned id)  { SurfaceIndex = id; }
       void         setBtiReg(Register reg)        { BtiReg = reg;      }
@@ -407,9 +407,9 @@ namespace ir {
           fn.setRegister(payload, ID - 1, reg);
         }
       }
-      INLINE uint32_t getSrcNum(void) const { return srcNum; }
+      INLINE uint32_t getSrcNum() const { return srcNum; }
 
-      INLINE AtomicOps getAtomicOpcode(void) const { return this->atomicOp; }
+      INLINE AtomicOps getAtomicOpcode() const { return this->atomicOp; }
       INLINE bool wellFormed(const Function &fn, std::string &whyNot) const;
       INLINE void out(std::ostream &out, const Function &fn) const;
       Register dst[1];
@@ -445,11 +445,11 @@ namespace ir {
         this->hasPredicate = false;
         this->hasLabel = false;
       }
-      INLINE LabelIndex getLabelIndex(void) const {
+      INLINE LabelIndex getLabelIndex() const {
         GBE_ASSERTM(hasLabel, "No target label for this branch instruction");
         return labelIndex;
       }
-      INLINE uint32_t getSrcNum(void) const { return hasPredicate ? 1 : 0; }
+      INLINE uint32_t getSrcNum() const { return hasPredicate ? 1 : 0; }
       INLINE Register getSrc(const Function &fn, uint32_t ID) const {
         GBE_ASSERTM(hasPredicate, "No source for unpredicated branches");
         GBE_ASSERTM(ID == 0, "Only one source for the branch instruction");
@@ -460,8 +460,8 @@ namespace ir {
         GBE_ASSERTM(ID == 0, "Only one source for the branch instruction");
         predicate = reg;
       }
-      INLINE bool isPredicated(void) const { return hasPredicate; }
-      INLINE bool getInversePredicated(void) const { return inversePredicate; }
+      INLINE bool isPredicated() const { return hasPredicate; }
+      INLINE bool getInversePredicated() const { return inversePredicate; }
       INLINE bool wellFormed(const Function &fn, std::string &why) const;
       INLINE void out(std::ostream &out, const Function &fn) const;
       Register predicate;    //!< Predication means conditional branch
@@ -497,26 +497,26 @@ namespace ir {
         INLINE Register getSrc(const Function &fn, unsigned id) const {
           if (id == 0) return offset;
           if (hasExtraBtiReg() && id == 1) return BtiReg;
-          assert(0 && "LoadInstruction::getSrc() out-of-range");
+          GBE_ASSERTM(false, "LoadInstruction::getSrc() out-of-range");
           return ir::Register(0);
         }
         INLINE void     setSrc(Function &fn, unsigned id, Register reg) {
-          assert(id < getSrcNum());
+          GBE_ASSERT(id < getSrcNum());
           if (id == 0) { offset = reg;   return; }
           if (id == 1) { setBtiReg(reg); return; }
         }
         INLINE unsigned getDstNum() const { return valueNum; }
         INLINE Register getDst(const Function &fn, unsigned id) const {
-          assert(id < valueNum);
+          GBE_ASSERT(id < valueNum);
           return fn.getRegister(values, id);
         }
         INLINE void     setDst(Function &fn, unsigned id, Register reg) {
-          assert(id < getDstNum());
+          GBE_ASSERT(id < getDstNum());
           fn.setRegister(values, id, reg);
         }
-        INLINE uint32_t getValueNum(void) const { return valueNum; }
+        INLINE uint32_t getValueNum() const { return valueNum; }
         INLINE Register getValue(const Function &fn, unsigned id) const {
-          assert(id < valueNum);
+          GBE_ASSERT(id < valueNum);
           return fn.getRegister(values, id);
         }
         INLINE bool wellFormed(const Function &fn, std::string &why) const;
@@ -556,7 +556,7 @@ namespace ir {
           if (id == 0)  return offset;
           if (id <= valueNum) return fn.getRegister(values, id-1);
           if (hasExtraBtiReg() && (int)id == (int)valueNum+1) return getBtiReg();
-          assert(0 && "StoreInstruction::getSrc() out-of-range");
+          GBE_ASSERTM(false, "StoreInstruction::getSrc() out-of-range");
           return Register(0);
         }
         INLINE void     setSrc(Function &fn, unsigned id, Register reg) {
@@ -567,7 +567,7 @@ namespace ir {
             setBtiReg(reg);
             return;
           }
-          assert(0 && "StoreInstruction::setSrc() index out-of-range");
+          GBE_ASSERTM(false, "StoreInstruction::setSrc() index out-of-range");
         }
         INLINE bool wellFormed(const Function &fn, std::string &why) const;
         INLINE void out(std::ostream &out, const Function &fn) const;
@@ -617,11 +617,11 @@ namespace ir {
       Tuple src;
       Tuple dst;
 
-      INLINE uint8_t getImageIndex(void) const { return this->imageIdx; }
-      INLINE Type getSrcType(void) const { return this->srcIsFloat ? TYPE_FLOAT : TYPE_S32; }
-      INLINE Type getDstType(void) const { return this->dstIsFloat ? TYPE_FLOAT : TYPE_U32; }
-      INLINE uint8_t getSamplerIndex(void) const { return this->samplerIdx; }
-      INLINE uint8_t getSamplerOffset(void) const { return this->samplerOffset; }
+      INLINE uint8_t getImageIndex() const { return this->imageIdx; }
+      INLINE Type getSrcType() const { return this->srcIsFloat ? TYPE_FLOAT : TYPE_S32; }
+      INLINE Type getDstType() const { return this->dstIsFloat ? TYPE_FLOAT : TYPE_U32; }
+      INLINE uint8_t getSamplerIndex() const { return this->samplerIdx; }
+      INLINE uint8_t getSamplerOffset() const { return this->samplerOffset; }
       uint8_t srcIsFloat:1;
       uint8_t dstIsFloat:1;
       uint8_t samplerIdx:4;
@@ -669,11 +669,11 @@ namespace ir {
       Tuple src;
       Tuple dst;
 
-      INLINE uint8_t getImageIndex(void) const { return this->imageIdx; }
-      INLINE uint8_t getMsgType(void) const { return this->msg_type; }
+      INLINE uint8_t getImageIndex() const { return this->imageIdx; }
+      INLINE uint8_t getMsgType() const { return this->msg_type; }
 
-      INLINE Type getSrcType(void) const { return TYPE_U32; }
-      INLINE Type getDstType(void) const { return TYPE_U32; }
+      INLINE Type getSrcType() const { return TYPE_U32; }
+      INLINE Type getDstType() const { return TYPE_U32; }
       uint8_t imageIdx;
       uint8_t msg_type;
       uint8_t vme_search_path_lut;
@@ -722,9 +722,9 @@ namespace ir {
       // bti, u, [v], [w], 4 data elements
       uint8_t srcNum;
 
-      INLINE uint8_t getImageIndex(void) const { return this->imageIdx; }
-      INLINE Type getSrcType(void) const { return (Type)this->srcType; }
-      INLINE Type getCoordType(void) const { return (Type)this->coordType; }
+      INLINE uint8_t getImageIndex() const { return this->imageIdx; }
+      INLINE Type getSrcType() const { return (Type)this->srcType; }
+      INLINE Type getCoordType() const { return (Type)this->coordType; }
       Register dst[0];               //!< No dest register
     };
 
@@ -746,7 +746,7 @@ namespace ir {
         this->imageIdx = imageIdx;
       }
 
-      INLINE uint32_t getInfoType(void) const { return infoType; }
+      INLINE uint32_t getInfoType() const { return infoType; }
       INLINE bool wellFormed(const Function &fn, std::string &why) const;
       INLINE void out(std::ostream &out, const Function &fn) const {
         this->outOpcode(out);
@@ -756,7 +756,7 @@ namespace ir {
             << " info reg %" << this->getSrc(fn, 0);
       }
 
-      INLINE uint8_t getImageIndex(void) const { return imageIdx; }
+      INLINE uint8_t getImageIndex() const { return imageIdx; }
 
       uint8_t infoType;                 //!< Type of the requested information.
       uint8_t imageIdx;                //!< surface index.
@@ -783,8 +783,8 @@ namespace ir {
         out << "TimeStamp pointer " << static_cast<uint32_t>(pointNum)
           << " (Type " << static_cast<uint32_t>(timestampType) << ")";
       }
-      uint32_t getPointNum(void) const { return this->pointNum; }
-      uint32_t getTimestamptType(void) const { return this->timestampType; }
+      uint32_t getPointNum() const { return this->pointNum; }
+      uint32_t getTimestamptType() const { return this->timestampType; }
       uint8_t timestampType;       //!< Type of the time stamp, 16bits or 32bits, eg.
       uint8_t pointNum;            //!< The insert point number.
       Register dst[0], src[0];
@@ -809,8 +809,8 @@ namespace ir {
           << " (Type " << static_cast<uint32_t>(this->profilingType) << ")";
       }
 
-      uint32_t getProfilingType(void) const { return this->profilingType; }
-      uint32_t getBTI(void) const { return this->bti; }
+      uint32_t getProfilingType() const { return this->profilingType; }
+      uint32_t getBTI() const { return this->bti; }
       uint8_t profilingType;     //!< Type format of profiling, 16bits or 32bits, eg.
       uint8_t bti;
       Register src[0];
@@ -833,7 +833,7 @@ namespace ir {
       INLINE Immediate getImmediate(const Function &fn) const {
         return fn.getImmediate(immediateIndex);
       }
-      INLINE Type getType(void) const { return this->type; }
+      INLINE Type getType() const { return this->type; }
       bool wellFormed(const Function &fn, std::string &why) const;
       INLINE void out(std::ostream &out, const Function &fn) const;
       Register dst[1];               //!< RegisterData to store into
@@ -852,7 +852,7 @@ namespace ir {
         this->opcode = OP_SYNC;
         this->parameters = parameters;
       }
-      INLINE uint32_t getParameters(void) const { return this->parameters; }
+      INLINE uint32_t getParameters() const { return this->parameters; }
       INLINE bool wellFormed(const Function &fn, std::string &why) const;
       INLINE void out(std::ostream &out, const Function &fn) const;
       uint32_t parameters;
@@ -871,8 +871,8 @@ namespace ir {
         this->opcode = OP_READ_ARF;
         this->arf = arf;
       }
-      INLINE ir::ARFRegister getARFRegister(void) const { return this->arf; }
-      INLINE Type getType(void) const { return this->type; }
+      INLINE ir::ARFRegister getARFRegister() const { return this->arf; }
+      INLINE Type getType() const { return this->type; }
       INLINE bool wellFormed(const Function &fn, std::string &why) const;
       INLINE void out(std::ostream &out, const Function &fn) const;
       Type type;
@@ -909,7 +909,7 @@ namespace ir {
         this->src[0] = src;
         this->opcode = OP_REGION;
       }
-      INLINE uint32_t getOffset(void) const { return this->offset; }
+      INLINE uint32_t getOffset() const { return this->offset; }
       INLINE bool wellFormed(const Function &fn, std::string &why) const;
       INLINE void out(std::ostream &out, const Function &fn) const;
       uint32_t offset;
@@ -931,8 +931,8 @@ namespace ir {
         this->src[1] = src1;
         this->opcode = OP_INDIRECT_MOV;
       }
-      INLINE Type getType(void) const { return this->type; }
-      INLINE uint32_t getOffset(void) const { return this->offset; }
+      INLINE Type getType() const { return this->type; }
+      INLINE uint32_t getOffset() const { return this->offset; }
       INLINE bool wellFormed(const Function &fn, std::string &why) const;
       INLINE void out(std::ostream &out, const Function &fn) const;
       Type type;
@@ -951,7 +951,7 @@ namespace ir {
         this->opcode = OP_LABEL;
         this->labelIndex = labelIndex;
       }
-      INLINE LabelIndex getLabelIndex(void) const { return labelIndex; }
+      INLINE LabelIndex getLabelIndex() const { return labelIndex; }
       INLINE bool wellFormed(const Function &fn, std::string &why) const;
       INLINE void out(std::ostream &out, const Function &fn) const;
       LabelIndex labelIndex;  //!< Index of the label
@@ -989,11 +989,11 @@ namespace ir {
           this->srcNum = srcNum;
           this->slmAddr = slmAddr;
         }
-        INLINE Type getType(void) const { return this->type; }
+        INLINE Type getType() const { return this->type; }
         INLINE bool wellFormed(const Function &fn, std::string &whyNot) const;
         INLINE void out(std::ostream &out, const Function &fn) const;
-        INLINE WorkGroupOps getWorkGroupOpcode(void) const { return this->workGroupOp; }
-        uint32_t getSlmAddr(void) const { return this->slmAddr; }
+        INLINE WorkGroupOps getWorkGroupOpcode() const { return this->workGroupOp; }
+        uint32_t getSlmAddr() const { return this->slmAddr; }
 
         WorkGroupOps workGroupOp:5;
         uint32_t srcNum:3;          //!< Source Number
@@ -1018,10 +1018,10 @@ namespace ir {
           this->src = srcTuple;
           this->srcNum = srcNum;
         }
-        INLINE Type getType(void) const { return this->type; }
+        INLINE Type getType() const { return this->type; }
         INLINE bool wellFormed(const Function &fn, std::string &whyNot) const;
         INLINE void out(std::ostream &out, const Function &fn) const;
-        INLINE WorkGroupOps getWorkGroupOpcode(void) const { return this->workGroupOp; }
+        INLINE WorkGroupOps getWorkGroupOpcode() const { return this->workGroupOp; }
 
         WorkGroupOps workGroupOp:5;
         uint32_t srcNum:3;          //!< Source Number
@@ -1049,8 +1049,8 @@ namespace ir {
         INLINE bool wellFormed(const Function &fn, std::string &whyNot) const;
         INLINE void out(std::ostream &out, const Function &fn) const;
 
-        uint32_t getNum(void) const { return this->num; }
-        uint32_t getBti(void) const { return this->bti; }
+        uint32_t getNum() const { return this->num; }
+        uint32_t getBti() const { return this->bti; }
         Type getType(const Function& fn, uint32_t ID) const {
           GBE_ASSERTM(ID < this->srcNum, "Out-of-bound types");
           return (Type)fn.getType(type, ID);
@@ -1092,9 +1092,9 @@ namespace ir {
             << " byte coord x %" << this->getSrc(fn, 0)
             << " row coord y %" << this->getSrc(fn, 1);
       }
-      INLINE uint8_t getImageIndex(void) const { return this->imageIdx; }
-      INLINE uint8_t getVectorSize(void) const { return this->dstNum; }
-      INLINE Type getType(void) const { return this->type; }
+      INLINE uint8_t getImageIndex() const { return this->imageIdx; }
+      INLINE uint8_t getVectorSize() const { return this->dstNum; }
+      INLINE Type getType() const { return this->type; }
 
       Tuple src;
       Tuple dst;
@@ -1132,9 +1132,9 @@ namespace ir {
           out << "%" << this->getSrc(fn, i + 2) << (i != (vec_size-1u) ? " " : "");
         out << "}";
       }
-      INLINE uint8_t getImageIndex(void) const { return this->imageIdx; }
-      INLINE uint8_t getVectorSize(void) const { return this->vec_size; }
-      INLINE Type getType(void) const { return this->type; }
+      INLINE uint8_t getImageIndex() const { return this->imageIdx; }
+      INLINE uint8_t getVectorSize() const { return this->vec_size; }
+      INLINE Type getType() const { return this->type; }
 
       Tuple src;
       Register dst[0];
@@ -1744,7 +1744,7 @@ namespace ir {
         OUT_ATOMIC_OP(CMPXCHG)
         default:
           out << "." << "INVALID";
-          assert(0);
+          GBE_ASSERT(false);
       };
       out << " %" << this->getDst(fn, 0);
       out << " {" << "%" << this->getSrc(fn, 0) << "}";
@@ -2212,13 +2212,13 @@ END_INTROSPECTION(MediaBlockWriteInstruction)
   }
 
 #define CALL getSrcNum()
-START_FUNCTION(Instruction, uint32_t, getSrcNum(void))
+START_FUNCTION(Instruction, uint32_t, getSrcNum())
 #include "ir/instruction.hxx"
 END_FUNCTION(Instruction, uint32_t)
 #undef CALL
 
 #define CALL getDstNum()
-START_FUNCTION(Instruction, uint32_t, getDstNum(void))
+START_FUNCTION(Instruction, uint32_t, getDstNum())
 #include "ir/instruction.hxx"
 END_FUNCTION(Instruction, uint32_t)
 #undef CALL
@@ -2292,12 +2292,12 @@ END_FUNCTION(Instruction, Register)
     };
   }
 
-  const Function &Instruction::getFunction(void) const {
+  const Function &Instruction::getFunction() const {
     const BasicBlock *bb = this->getParent();
     GBE_ASSERT(bb != NULL);
     return bb->getParent();
   }
-  Function &Instruction::getFunction(void) {
+  Function &Instruction::getFunction() {
     BasicBlock *bb = this->getParent();
     GBE_ASSERT(bb != NULL);
     return bb->getParent();
@@ -2312,7 +2312,7 @@ END_FUNCTION(Instruction, Register)
     append(insn, prev);
   }
 
-  void Instruction::remove(void) {
+  void Instruction::remove() {
     Function &fn = this->getFunction();
     unlink(this);
     fn.deleteInstruction(this);
@@ -2327,7 +2327,7 @@ END_FUNCTION(Instruction, Register)
       *new_ins = insn;
   }
 
-  bool Instruction::hasSideEffect(void) const {
+  bool Instruction::hasSideEffect() const {
     return opcode == OP_STORE ||
            opcode == OP_TYPED_WRITE ||
            opcode == OP_SYNC ||
@@ -2344,74 +2344,74 @@ END_FUNCTION(Instruction, Register)
     return reinterpret_cast<const internal::CLASS*>(this)->CALL; \
   }
 
-DECL_MEM_FN(NullaryInstruction, Type, getType(void), getType())
-DECL_MEM_FN(UnaryInstruction, Type, getType(void), getType())
-DECL_MEM_FN(BinaryInstruction, Type, getType(void), getType())
-DECL_MEM_FN(BinaryInstruction, bool, commutes(void), commutes())
-DECL_MEM_FN(SelectInstruction, Type, getType(void), getType())
-DECL_MEM_FN(TernaryInstruction, Type, getType(void), getType())
-DECL_MEM_FN(CompareInstruction, Type, getType(void), getType())
-DECL_MEM_FN(BitCastInstruction, Type, getSrcType(void), getSrcType())
-DECL_MEM_FN(BitCastInstruction, Type, getDstType(void), getDstType())
-DECL_MEM_FN(ConvertInstruction, Type, getSrcType(void), getSrcType())
-DECL_MEM_FN(ConvertInstruction, Type, getDstType(void), getDstType())
-DECL_MEM_FN(MemInstruction, AddressSpace, getAddressSpace(void), getAddressSpace())
-DECL_MEM_FN(MemInstruction, AddressMode, getAddressMode(void), getAddressMode())
-DECL_MEM_FN(MemInstruction, Register, getAddressRegister(void), getAddressRegister())
-DECL_MEM_FN(MemInstruction, Register, getBtiReg(void), getBtiReg())
-DECL_MEM_FN(MemInstruction, unsigned, getSurfaceIndex(void), getSurfaceIndex())
-DECL_MEM_FN(MemInstruction, Type,     getValueType(void), getValueType())
-DECL_MEM_FN(MemInstruction, bool,     isAligned(void), isAligned())
-DECL_MEM_FN(MemInstruction, unsigned, getAddressIndex(void), getAddressIndex())
-DECL_MEM_FN(AtomicInstruction, AtomicOps, getAtomicOpcode(void), getAtomicOpcode())
-DECL_MEM_FN(StoreInstruction, uint32_t, getValueNum(void), getValueNum())
-DECL_MEM_FN(StoreInstruction, bool, isBlock(void), isBlock())
-DECL_MEM_FN(LoadInstruction, uint32_t, getValueNum(void), getValueNum())
-DECL_MEM_FN(LoadInstruction, bool, isBlock(void), isBlock())
-DECL_MEM_FN(LoadImmInstruction, Type, getType(void), getType())
-DECL_MEM_FN(LabelInstruction, LabelIndex, getLabelIndex(void), getLabelIndex())
-DECL_MEM_FN(BranchInstruction, bool, isPredicated(void), isPredicated())
-DECL_MEM_FN(BranchInstruction, bool, getInversePredicated(void), getInversePredicated())
-DECL_MEM_FN(BranchInstruction, LabelIndex, getLabelIndex(void), getLabelIndex())
-DECL_MEM_FN(SyncInstruction, uint32_t, getParameters(void), getParameters())
-DECL_MEM_FN(ReadARFInstruction, Type, getType(void), getType())
-DECL_MEM_FN(ReadARFInstruction, ARFRegister, getARFRegister(void), getARFRegister())
-DECL_MEM_FN(SimdShuffleInstruction, Type, getType(void), getType())
-DECL_MEM_FN(RegionInstruction, uint32_t, getOffset(void), getOffset())
-DECL_MEM_FN(IndirectMovInstruction, uint32_t, getOffset(void), getOffset())
-DECL_MEM_FN(IndirectMovInstruction, Type, getType(void), getType())
-DECL_MEM_FN(SampleInstruction, Type, getSrcType(void), getSrcType())
-DECL_MEM_FN(SampleInstruction, Type, getDstType(void), getDstType())
-DECL_MEM_FN(SampleInstruction, uint8_t, getSamplerIndex(void), getSamplerIndex())
-DECL_MEM_FN(SampleInstruction, uint8_t, getSamplerOffset(void), getSamplerOffset())
-DECL_MEM_FN(SampleInstruction, uint8_t, getImageIndex(void), getImageIndex())
-DECL_MEM_FN(VmeInstruction, Type, getSrcType(void), getSrcType())
-DECL_MEM_FN(VmeInstruction, Type, getDstType(void), getDstType())
-DECL_MEM_FN(VmeInstruction, uint8_t, getImageIndex(void), getImageIndex())
-DECL_MEM_FN(VmeInstruction, uint8_t, getMsgType(void), getMsgType())
-DECL_MEM_FN(TypedWriteInstruction, Type, getSrcType(void), getSrcType())
-DECL_MEM_FN(TypedWriteInstruction, Type, getCoordType(void), getCoordType())
-DECL_MEM_FN(TypedWriteInstruction, uint8_t, getImageIndex(void), getImageIndex())
-DECL_MEM_FN(GetImageInfoInstruction, uint32_t, getInfoType(void), getInfoType())
-DECL_MEM_FN(GetImageInfoInstruction, uint8_t, getImageIndex(void), getImageIndex())
-DECL_MEM_FN(CalcTimestampInstruction, uint32_t, getPointNum(void), getPointNum())
-DECL_MEM_FN(CalcTimestampInstruction, uint32_t, getTimestamptType(void), getTimestamptType())
-DECL_MEM_FN(StoreProfilingInstruction, uint32_t, getProfilingType(void), getProfilingType())
-DECL_MEM_FN(StoreProfilingInstruction, uint32_t, getBTI(void), getBTI())
-DECL_MEM_FN(WorkGroupInstruction, Type, getType(void), getType())
-DECL_MEM_FN(WorkGroupInstruction, WorkGroupOps, getWorkGroupOpcode(void), getWorkGroupOpcode())
-DECL_MEM_FN(WorkGroupInstruction, uint32_t, getSlmAddr(void), getSlmAddr())
-DECL_MEM_FN(SubGroupInstruction, Type, getType(void), getType())
-DECL_MEM_FN(SubGroupInstruction, WorkGroupOps, getWorkGroupOpcode(void), getWorkGroupOpcode())
-DECL_MEM_FN(PrintfInstruction, uint32_t, getNum(void), getNum())
-DECL_MEM_FN(PrintfInstruction, uint32_t, getBti(void), getBti())
+DECL_MEM_FN(NullaryInstruction, Type, getType(), getType())
+DECL_MEM_FN(UnaryInstruction, Type, getType(), getType())
+DECL_MEM_FN(BinaryInstruction, Type, getType(), getType())
+DECL_MEM_FN(BinaryInstruction, bool, commutes(), commutes())
+DECL_MEM_FN(SelectInstruction, Type, getType(), getType())
+DECL_MEM_FN(TernaryInstruction, Type, getType(), getType())
+DECL_MEM_FN(CompareInstruction, Type, getType(), getType())
+DECL_MEM_FN(BitCastInstruction, Type, getSrcType(), getSrcType())
+DECL_MEM_FN(BitCastInstruction, Type, getDstType(), getDstType())
+DECL_MEM_FN(ConvertInstruction, Type, getSrcType(), getSrcType())
+DECL_MEM_FN(ConvertInstruction, Type, getDstType(), getDstType())
+DECL_MEM_FN(MemInstruction, AddressSpace, getAddressSpace(), getAddressSpace())
+DECL_MEM_FN(MemInstruction, AddressMode, getAddressMode(), getAddressMode())
+DECL_MEM_FN(MemInstruction, Register, getAddressRegister(), getAddressRegister())
+DECL_MEM_FN(MemInstruction, Register, getBtiReg(), getBtiReg())
+DECL_MEM_FN(MemInstruction, unsigned, getSurfaceIndex(), getSurfaceIndex())
+DECL_MEM_FN(MemInstruction, Type,     getValueType(), getValueType())
+DECL_MEM_FN(MemInstruction, bool,     isAligned(), isAligned())
+DECL_MEM_FN(MemInstruction, unsigned, getAddressIndex(), getAddressIndex())
+DECL_MEM_FN(AtomicInstruction, AtomicOps, getAtomicOpcode(), getAtomicOpcode())
+DECL_MEM_FN(StoreInstruction, uint32_t, getValueNum(), getValueNum())
+DECL_MEM_FN(StoreInstruction, bool, isBlock(), isBlock())
+DECL_MEM_FN(LoadInstruction, uint32_t, getValueNum(), getValueNum())
+DECL_MEM_FN(LoadInstruction, bool, isBlock(), isBlock())
+DECL_MEM_FN(LoadImmInstruction, Type, getType(), getType())
+DECL_MEM_FN(LabelInstruction, LabelIndex, getLabelIndex(), getLabelIndex())
+DECL_MEM_FN(BranchInstruction, bool, isPredicated(), isPredicated())
+DECL_MEM_FN(BranchInstruction, bool, getInversePredicated(), getInversePredicated())
+DECL_MEM_FN(BranchInstruction, LabelIndex, getLabelIndex(), getLabelIndex())
+DECL_MEM_FN(SyncInstruction, uint32_t, getParameters(), getParameters())
+DECL_MEM_FN(ReadARFInstruction, Type, getType(), getType())
+DECL_MEM_FN(ReadARFInstruction, ARFRegister, getARFRegister(), getARFRegister())
+DECL_MEM_FN(SimdShuffleInstruction, Type, getType(), getType())
+DECL_MEM_FN(RegionInstruction, uint32_t, getOffset(), getOffset())
+DECL_MEM_FN(IndirectMovInstruction, uint32_t, getOffset(), getOffset())
+DECL_MEM_FN(IndirectMovInstruction, Type, getType(), getType())
+DECL_MEM_FN(SampleInstruction, Type, getSrcType(), getSrcType())
+DECL_MEM_FN(SampleInstruction, Type, getDstType(), getDstType())
+DECL_MEM_FN(SampleInstruction, uint8_t, getSamplerIndex(), getSamplerIndex())
+DECL_MEM_FN(SampleInstruction, uint8_t, getSamplerOffset(), getSamplerOffset())
+DECL_MEM_FN(SampleInstruction, uint8_t, getImageIndex(), getImageIndex())
+DECL_MEM_FN(VmeInstruction, Type, getSrcType(), getSrcType())
+DECL_MEM_FN(VmeInstruction, Type, getDstType(), getDstType())
+DECL_MEM_FN(VmeInstruction, uint8_t, getImageIndex(), getImageIndex())
+DECL_MEM_FN(VmeInstruction, uint8_t, getMsgType(), getMsgType())
+DECL_MEM_FN(TypedWriteInstruction, Type, getSrcType(), getSrcType())
+DECL_MEM_FN(TypedWriteInstruction, Type, getCoordType(), getCoordType())
+DECL_MEM_FN(TypedWriteInstruction, uint8_t, getImageIndex(), getImageIndex())
+DECL_MEM_FN(GetImageInfoInstruction, uint32_t, getInfoType(), getInfoType())
+DECL_MEM_FN(GetImageInfoInstruction, uint8_t, getImageIndex(), getImageIndex())
+DECL_MEM_FN(CalcTimestampInstruction, uint32_t, getPointNum(), getPointNum())
+DECL_MEM_FN(CalcTimestampInstruction, uint32_t, getTimestamptType(), getTimestamptType())
+DECL_MEM_FN(StoreProfilingInstruction, uint32_t, getProfilingType(), getProfilingType())
+DECL_MEM_FN(StoreProfilingInstruction, uint32_t, getBTI(), getBTI())
+DECL_MEM_FN(WorkGroupInstruction, Type, getType(), getType())
+DECL_MEM_FN(WorkGroupInstruction, WorkGroupOps, getWorkGroupOpcode(), getWorkGroupOpcode())
+DECL_MEM_FN(WorkGroupInstruction, uint32_t, getSlmAddr(), getSlmAddr())
+DECL_MEM_FN(SubGroupInstruction, Type, getType(), getType())
+DECL_MEM_FN(SubGroupInstruction, WorkGroupOps, getWorkGroupOpcode(), getWorkGroupOpcode())
+DECL_MEM_FN(PrintfInstruction, uint32_t, getNum(), getNum())
+DECL_MEM_FN(PrintfInstruction, uint32_t, getBti(), getBti())
 DECL_MEM_FN(PrintfInstruction, Type, getType(const Function& fn, uint32_t ID), getType(fn, ID))
-DECL_MEM_FN(MediaBlockReadInstruction, uint8_t, getImageIndex(void), getImageIndex())
-DECL_MEM_FN(MediaBlockReadInstruction, uint8_t, getVectorSize(void), getVectorSize())
-DECL_MEM_FN(MediaBlockReadInstruction, Type, getType(void), getType())
-DECL_MEM_FN(MediaBlockWriteInstruction, uint8_t, getImageIndex(void), getImageIndex())
-DECL_MEM_FN(MediaBlockWriteInstruction, uint8_t, getVectorSize(void), getVectorSize())
-DECL_MEM_FN(MediaBlockWriteInstruction, Type, getType(void), getType())
+DECL_MEM_FN(MediaBlockReadInstruction, uint8_t, getImageIndex(), getImageIndex())
+DECL_MEM_FN(MediaBlockReadInstruction, uint8_t, getVectorSize(), getVectorSize())
+DECL_MEM_FN(MediaBlockReadInstruction, Type, getType(), getType())
+DECL_MEM_FN(MediaBlockWriteInstruction, uint8_t, getImageIndex(), getImageIndex())
+DECL_MEM_FN(MediaBlockWriteInstruction, uint8_t, getVectorSize(), getVectorSize())
+DECL_MEM_FN(MediaBlockWriteInstruction, Type, getType(), getType())
 
 #undef DECL_MEM_FN
 
@@ -2424,7 +2424,7 @@ DECL_MEM_FN(MemInstruction, void,     setBtiReg(Register reg), setBtiReg(reg))
 
 #undef DECL_MEM_FN
 
-  Immediate LoadImmInstruction::getImmediate(void) const {
+  Immediate LoadImmInstruction::getImmediate() const {
     const Function &fn = this->getFunction();
     return reinterpret_cast<const internal::LoadImmInstruction*>(this)->getImmediate(fn);
   }
@@ -2610,7 +2610,7 @@ DECL_MEM_FN(MemInstruction, void,     setBtiReg(Register reg), setBtiReg(reg))
   }
 
   // RET
-  Instruction RET(void) {
+  Instruction RET() {
     return internal::BranchInstruction(OP_RET).convert();
   }
 
@@ -2704,7 +2704,7 @@ DECL_MEM_FN(MemInstruction, void,     setBtiReg(Register reg), setBtiReg(reg))
   }
 
   // WAIT
-  Instruction WAIT(void) {
+  Instruction WAIT() {
     return internal::WaitInstruction().convert();
   }
 

@@ -39,7 +39,7 @@ namespace gbe
   {
   public:
     SimpleAllocator(int32_t startOffset, int32_t size);
-    ~SimpleAllocator(void);
+    ~SimpleAllocator();
 
     /*! Allocate some memory from the pool.
      */
@@ -59,7 +59,7 @@ namespace gbe
     /*! Double chained list of free spaces */
     struct Block {
       Block(int32_t offset, int32_t size) :
-        prev(NULL), next(NULL), offset(offset), size(size) {}
+        prev(nullptr), next(nullptr), offset(offset), size(size) {}
       Block *prev, *next; //!< Previous and next free blocks
       int32_t offset;        //!< Where the free block starts
       int32_t size;          //!< Size of the free block
@@ -69,7 +69,7 @@ namespace gbe
      *  If the colascing was done, the left block is deleted
      */
     void coalesce(Block *left, Block *right);
-    void dumpFreeList();
+    // void dumpFreeList();
     /*! the maximum offset */
     int32_t maxOffset;
     /*! Head and tail of the free list */
@@ -100,13 +100,13 @@ namespace gbe
 
   /*!
    * an allocator for scratch memory allocation. Scratch memory are used for register spilling.
-   * You can query how much scratch memory needed through getMaxScatchMemUsed().
+   * You can query how much scratch memory needed through getMaxScratchMemUsed().
    */
 
   class ScratchAllocator: public SimpleAllocator {
   public:
-    ScratchAllocator(int32_t size): SimpleAllocator(0, size) {}
-    int32_t getMaxScatchMemUsed() { return maxOffset; }
+    explicit ScratchAllocator(int32_t size): SimpleAllocator(0, size) {}
+    int32_t getMaxScratchMemUsed() { return maxOffset; }
 
     GBE_CLASS(ScratchAllocator);
   };
@@ -117,7 +117,7 @@ namespace gbe
     tail = head = this->newBlock(startOffset, size);
   }
 
-  SimpleAllocator::~SimpleAllocator(void) {
+  SimpleAllocator::~SimpleAllocator() {
     while (this->head) {
       Block *next = this->head->next;
       this->deleteBlock(this->head);
@@ -125,15 +125,15 @@ namespace gbe
     }
   }
 
-  void SimpleAllocator::dumpFreeList() {
-    Block *s = head;
-    printf("register free list:\n");
-    while (s) {
-      printf("blk: %d(r%d.%d) (%d)\n", s->offset, s->offset/GEN_REG_SIZE, s->offset % GEN_REG_SIZE, s->size);
-      s = s->next;
-    }
-    printf("free list end\n");
-  }
+//  void SimpleAllocator::dumpFreeList() {
+//    Block *s = head;
+//    printf("register free list:\n");
+//    while (s) {
+//      printf("blk: %d(r%d.%d) (%d)\n", s->offset, s->offset/GEN_REG_SIZE, s->offset % GEN_REG_SIZE, s->size);
+//      s = s->next;
+//    }
+//    printf("free list end\n");
+//  }
 
   bool SimpleAllocator::isSuperRegisterFree(int32_t offset) {
     assert((offset % GEN_REG_SIZE) == 0);
@@ -230,7 +230,7 @@ namespace gbe
         else if (right)
           head = right;
         else
-          head = NULL;
+          head = nullptr;
       }
 
       // Update the tail of the free blocks
@@ -240,7 +240,7 @@ namespace gbe
         else if (left)
           tail = left;
         else
-          tail = NULL;
+          tail = nullptr;
       }
       // Free the block and check the consistency
       this->deleteBlock(list);
@@ -265,8 +265,8 @@ namespace gbe
     const int32_t size = it->second;
 
     // Find the two blocks where to insert the new block
-    Block *list = tail, *next = NULL;
-    while (list != NULL) {
+    Block *list = tail, *next = nullptr;
+    while (list != nullptr) {
       if (list->offset < offset)
         break;
       next = list;
@@ -289,7 +289,7 @@ namespace gbe
     } else
       this->tail = newBlock;  // next is NULL means newBlock should be the tail.
 
-    if (list != NULL || next != NULL)
+    if (list != nullptr || next != nullptr)
     {
       // Coalesce the blocks if possible
       this->coalesce(list, newBlock);
@@ -301,7 +301,7 @@ namespace gbe
   }
 
   void SimpleAllocator::coalesce(Block *left, Block *right) {
-    if (left == NULL || right == NULL) return;
+    if (left == nullptr || right == nullptr) return;
     GBE_ASSERT(left->offset < right->offset);
     GBE_ASSERT(left->next == right);
     GBE_ASSERT(right->prev == left);
@@ -342,17 +342,17 @@ namespace gbe
   ///////////////////////////////////////////////////////////////////////////
 
   Context::Context(const ir::Unit &unit, const std::string &name) :
-    unit(unit), fn(*unit.getFunction(name)), name(name), liveness(NULL), dag(NULL), useDWLabel(false)
+    unit(unit), fn(*unit.getFunction(name)), name(name), liveness(nullptr), dag(nullptr), useDWLabel(false)
   {
     GBE_ASSERT(unit.getPointerSize() == ir::POINTER_32_BITS || unit.getPointerSize() == ir::POINTER_64_BITS);
     this->liveness = GBE_NEW(ir::Liveness, const_cast<ir::Function&>(fn), true);
     this->dag = GBE_NEW(ir::FunctionDAG, *this->liveness);
     // r0 (GEN_REG_SIZE) is always set by the HW and used at the end by EOT
-    this->registerAllocator = NULL; //GBE_NEW(RegisterAllocator, GEN_REG_SIZE, 4*KB - GEN_REG_SIZE);
-    this->scratchAllocator = NULL; //GBE_NEW(ScratchAllocator, 12*KB);
+    this->registerAllocator = nullptr; //GBE_NEW(RegisterAllocator, GEN_REG_SIZE, 4*KB - GEN_REG_SIZE);
+    this->scratchAllocator = nullptr; //GBE_NEW(ScratchAllocator, 12*KB);
   }
 
-  Context::~Context(void) {
+  Context::~Context() {
     GBE_SAFE_DELETE(this->registerAllocator);
     GBE_SAFE_DELETE(this->scratchAllocator);
     GBE_SAFE_DELETE(this->dag);
@@ -363,31 +363,31 @@ namespace gbe
     this->simdWidth = simdWidth;
     GBE_SAFE_DELETE(this->registerAllocator);
     GBE_SAFE_DELETE(this->scratchAllocator);
-    GBE_ASSERT(dag != NULL && liveness != NULL);
+    GBE_ASSERT(dag != nullptr && liveness != nullptr);
     this->registerAllocator = GBE_NEW(RegisterAllocator, GEN_REG_SIZE, 4*KB - GEN_REG_SIZE);
     this->scratchAllocator = GBE_NEW(ScratchAllocator, this->getScratchSize());
     this->curbeRegs.clear();
     this->JIPs.clear();
   }
 
-  Kernel *Context::compileKernel(void) {
+  Kernel *Context::compileKernel() {
     this->kernel = this->allocateKernel();
     this->kernel->simdWidth = this->simdWidth;
     this->buildArgList();
     if (fn.labelNum() > 0xffff)
       this->useDWLabel = true;
-    if (usedLabels.size() == 0)
+    if (usedLabels.empty())
       this->buildUsedLabels();
-    if (JIPs.size() == 0)
+    if (JIPs.empty())
       this->buildJIPs();
     this->buildStack();
     this->handleSLM();
-    if (this->emitCode() == false) {
+    if (!this->emitCode()) {
       GBE_DELETE(this->kernel);
-      this->kernel = NULL;
+      this->kernel = nullptr;
     }
-    if(this->kernel != NULL) {
-      this->kernel->scratchSize = this->alignScratchSize(scratchAllocator->getMaxScatchMemUsed());
+    if(this->kernel != nullptr) {
+      this->kernel->scratchSize = this->alignScratchSize(scratchAllocator->getMaxScratchMemUsed());
       this->kernel->ctx = this;
       this->kernel->setUseDeviceEnqueue(fn.getUseDeviceEnqueue());
     }
@@ -419,9 +419,9 @@ namespace gbe
     scratchAllocator->deallocate(offset);
   }
 
-  void Context::buildStack(void) {
+  void Context::buildStack() {
     const auto &stackUse = dag->getUse(ir::ocl::stackptr);
-    if (stackUse.size() == 0) {  // no stack is used if stackptr is unused
+    if (stackUse.empty()) {  // no stack is used if stackptr is unused
       this->kernel->stackSize = 0;
       return;
     }
@@ -439,7 +439,7 @@ namespace gbe
                               uint32_t alignment)
   {
     alignment = alignment == 0 ? size : alignment;
-    const uint32_t offset = registerAllocator->allocate(size, alignment, 1);
+    const uint32_t offset = registerAllocator->allocate(size, alignment, true);
     GBE_ASSERT(offset >= GEN_REG_SIZE);
     kernel->patches.push_back(PatchInfo(value, subValue, offset - GEN_REG_SIZE));
     kernel->curbeSize = std::max(kernel->curbeSize, offset + size - GEN_REG_SIZE);
@@ -449,16 +449,16 @@ namespace gbe
   void Context::insertCurbeReg(ir::Register reg, uint32_t offset) {
     curbeRegs.insert(std::make_pair(reg, offset));
   }
-  ir::Register Context::getSurfaceBaseReg(unsigned char bti) {
-    return fn.getSurfaceBaseReg(bti);
-  }
+  // ir::Register Context::getSurfaceBaseReg(unsigned char bti) {
+  //   return fn.getSurfaceBaseReg(bti);
+  // }
 
-  void Context::buildArgList(void) {
+  void Context::buildArgList() {
     kernel->argNum = fn.argNum();
     if (kernel->argNum)
       kernel->args = GBE_NEW_ARRAY_NO_ARG(KernelArgument, kernel->argNum);
     else
-      kernel->args = NULL;
+      kernel->args = nullptr;
     for (uint32_t argID = 0; argID < kernel->argNum; ++argID) {
       const auto &arg = fn.getArg(argID);
 
@@ -505,7 +505,7 @@ namespace gbe
     }
   }
 
-  void Context::buildUsedLabels(void) {
+  void Context::buildUsedLabels() {
     usedLabels.clear();
     fn.foreachInstruction([this](const ir::Instruction &insn) {
       using namespace ir;
@@ -519,7 +519,7 @@ namespace gbe
    * is manipulated by if, else and endif. so these blocks don't need jips. so here
    * treats all the blocks belong to the same structure as a whole.
    */
-  void Context::buildJIPs(void) {
+  void Context::buildJIPs() {
     using namespace ir;
     // Linearly store the branch target for each block and its own label
     const LabelIndex noTarget(fn.labelNum());
@@ -540,15 +540,15 @@ namespace gbe
     });
     braTargets.resize(blockCount);
 
-    LabelIndex structureExitLabel;
-    LabelIndex structureEntryLabel;
+    LabelIndex structureExitLabel{};
+    LabelIndex structureEntryLabel{};
     bool flag;
     set<uint32_t> pos;
     map<uint32_t, LabelIndex> exitMap;
     map<uint32_t, LabelIndex> entryMap;
     for (auto &bb : braTargets) bb = std::make_pair(noTarget, noTarget);
     fn.foreachBlock([&](const BasicBlock &bb) {
-      LabelIndex ownLabel;
+      LabelIndex ownLabel{};
       Instruction *last;
       flag = false;
       // bb belongs to a structure and it's not the structure's exit, just simply insert
@@ -558,7 +558,7 @@ namespace gbe
         last = bb.getLastInstruction();
         if(last->getOpcode() == OP_BRA)
         {
-          BranchInstruction *bra = cast<BranchInstruction>(last);
+          auto *bra = cast<BranchInstruction>(last);
           JIPs.insert(std::make_pair(bra, bra->getLabelIndex()));
         }
         return;
@@ -631,7 +631,7 @@ namespace gbe
 
       const LabelIndex ownLabel = braTargets[blockID].first;
       const LabelIndex target = braTargets[blockID].second;
-      LabelIndex tmp;
+      LabelIndex tmp{};
       if(pos.find(blockID)!=pos.end())
         tmp = exitMap[blockID];
       else
@@ -652,14 +652,14 @@ namespace gbe
 
       // If there is an outstanding forward branch, compute a JIP for the label
       auto lower = fwdTargets.lower_bound(LabelIndex(0));
-      GBE_ASSERT(label->isMemberOf<LabelInstruction>() == true);
+      GBE_ASSERT(label->isMemberOf<LabelInstruction>());
       if (lower != fwdTargets.end())
         JIPs.insert(std::make_pair(label, *lower));
 
       // Handle special cases and backward branches first
       if (ownLabel == noTarget) continue; // unused block
       if (target == noTarget) continue; // no branch at all
-      GBE_ASSERT(bra->isMemberOf<BranchInstruction>() == true);
+      GBE_ASSERT(bra->isMemberOf<BranchInstruction>());
       if (target <= ownLabel) { // bwd branch: we always jump
         JIPs.insert(std::make_pair(bra, LabelIndex(target)));
         continue;
@@ -673,7 +673,7 @@ namespace gbe
 
   }
 
-  void Context::handleSLM(void) {
+  void Context::handleSLM() {
     const bool useSLM = fn.getUseSLM();
     kernel->useSLM = useSLM;
     kernel->slmSize = fn.getSLMSize();

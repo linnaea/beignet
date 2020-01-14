@@ -42,7 +42,7 @@ namespace ir {
     it--;
     if (pbb->hasExtraBra)
       it--;
-    BranchInstruction* pinsn = static_cast<BranchInstruction *>(&*it);
+    auto* pinsn = static_cast<BranchInstruction *>(&*it);
 
     if(!pinsn->isPredicated()){
       std::cout << "WARNING:" << "endless loop detected!" << std::endl;
@@ -115,7 +115,7 @@ namespace ir {
   void CFGStructurizer::handleIfBlock(Block *block, LabelIndex& matchingEndifLabel, LabelIndex& matchingElseLabel)
   {
     BasicBlock *pbb = block->getExit();
-    BranchInstruction* pinsn = static_cast<BranchInstruction *>(pbb->getLastInstruction());
+    auto* pinsn = static_cast<BranchInstruction *>(pbb->getLastInstruction());
     Register reg = pinsn->getPredicateIndex();
     BasicBlock::iterator it = pbb->end();
     it--;

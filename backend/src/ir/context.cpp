@@ -136,10 +136,10 @@ namespace ir {
   }
 
   void Context::append(const Instruction &insn) {
-    GBE_ASSERTM(fn != NULL, "No function currently defined");
+    GBE_ASSERTM(fn != nullptr, "No function currently defined");
 
     // Start a new block if this is a label
-    if (insn.isMemberOf<LabelInstruction>() == true) {
+    if (insn.isMemberOf<LabelInstruction>()) {
       this->endBlock();
       this->startBlock();
       const LabelIndex index = cast<LabelInstruction>(insn).getLabelIndex();
@@ -152,11 +152,11 @@ namespace ir {
       (*usedLabels)[index] |= LABEL_IS_DEFINED;
     }
     // We create a new label for a new block if the user did not do it
-    else if (bb == NULL) {
+    else if (bb == nullptr) {
       // this->startBlock();
       const LabelIndex index = this->label();
-      const Instruction insn = ir::LABEL(index);
-      this->append(insn);
+      const Instruction bbStart = ir::LABEL(index);
+      this->append(bbStart);
     }
 
     // Append the instruction in the stream
@@ -170,10 +170,10 @@ namespace ir {
 #endif /* GBE_DEBUG */
 
     // Close the current block if this is a branch
-    if (insn.isMemberOf<BranchInstruction>() == true) {
+    if (insn.isMemberOf<BranchInstruction>()) {
       // We must book keep the fact that the label is used
       if (insn.getOpcode() == OP_BRA) {
-        const BranchInstruction &branch = cast<BranchInstruction>(insn);
+        const auto &branch = cast<BranchInstruction>(insn);
         const LabelIndex index = branch.getLabelIndex();
         GBE_ASSERT(index < usedLabels->size());
         (*usedLabels)[index] |= LABEL_IS_POINTED;

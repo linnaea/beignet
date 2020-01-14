@@ -216,16 +216,16 @@ namespace gbe {
                   break;
                 }
 
-                Constant *i32Mid = Builder.getInt32(0x40000000);
-                Constant *i32Min = Builder.getInt32(0x80000000);
+                Constant *i32Mid = Builder.getInt32(0x40000000u);
+                Constant *i32Min = Builder.getInt32(0x80000000u);
 
                 if(type->isVectorTy()) {
                   i32Mid = ConstantVector::getSplat(type->getVectorNumElements(), i32Mid);
                   i32Min = ConstantVector::getSplat(type->getVectorNumElements(), i32Min);
                 }
 
-                auto hwBroken = Builder.CreateICmpEQ(CI->getOperand(1), i32Min);
                 auto hwResult = Builder.CreateBinaryIntrinsic(Intrinsic::ssub_sat, CI->getOperand(0), CI->getOperand(1));
+                auto hwBroken = Builder.CreateICmpEQ(CI->getOperand(1), i32Min);
                 auto waCompute1 = Builder.CreateBinaryIntrinsic(Intrinsic::sadd_sat, i32Mid, CI->getOperand(0));
                 auto waCompute = Builder.CreateBinaryIntrinsic(Intrinsic::sadd_sat, i32Mid, waCompute1);
                 auto result = Builder.CreateSelect(hwBroken, waCompute, hwResult);

@@ -258,6 +258,5 @@ namespace gbe
       jip = (jip - 2) * 8;
       this->setSrc1(&insn, GenRegister::immd(jip));
     }
-    return;
   }
 } /* End of the name space. */

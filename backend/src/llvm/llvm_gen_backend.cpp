@@ -230,7 +230,7 @@ namespace gbe
     ir::Type type;
     Type *llvmType = value->getType();
     if (llvmType->isVectorTy()) {
-      VectorType *vectorType = cast<VectorType>(llvmType);
+      auto *vectorType = cast<VectorType>(llvmType);
       Type *elementType = vectorType->getElementType();
       elemNum = vectorType->getNumElements();
       if (useUnsigned)
@@ -255,8 +255,8 @@ namespace gbe
       case 2: return ir::MEM_CONSTANT;
       case 3: return ir::MEM_LOCAL;
       case 4: return ir::MEM_GENERIC;
+      default: GBE_ASSERT(false);
     }
-    GBE_ASSERT(false);
     return ir::MEM_GLOBAL;
   }
 
@@ -271,7 +271,7 @@ namespace gbe
   }
 
   static Constant *extractConstantElem(Constant *CPV, uint32_t index) {
-    ConstantVector *CV = dyn_cast<ConstantVector>(CPV);
+    auto *CV = dyn_cast<ConstantVector>(CPV);
     GBE_ASSERT(CV != nullptr);
 #if GBE_DEBUG
     const uint32_t elemNum = CV->getNumOperands();
@@ -323,7 +323,7 @@ namespace gbe
   public:
     /*! Indices will be zero for scalar values */
     typedef std::pair<Value*, uint32_t> ValueIndex;
-    RegisterTranslator(ir::Context &ctx) : ctx(ctx) {}
+    explicit RegisterTranslator(ir::Context &ctx) : ctx(ctx) {}
 
     /*! Empty the maps */
     void clear() {
@@ -361,7 +361,7 @@ namespace gbe
       {
         Type *eltTy = dyn_cast<PointerType>(type)->getElementType();
         if (eltTy->isStructTy()) {
-          StructType *strTy = dyn_cast<StructType>(eltTy);
+          auto *strTy = dyn_cast<StructType>(eltTy);
           if (!strTy->isLiteral() && strTy->getName().data() &&
               strstr(strTy->getName().data(), "sampler"))
             type = Type::getInt32Ty(value->getContext());
@@ -448,7 +448,7 @@ namespace gbe
     bool isUndefConst(Value *value, uint32_t index) {
       getRealValue(value, index);
 
-      Constant *CPV = dyn_cast<Constant>(value);
+      auto *CPV = dyn_cast<Constant>(value);
       if(CPV && dyn_cast<ConstantVector>(CPV))
         CPV = extractConstantElem(CPV, index);
       return (CPV && (isa<UndefValue>(CPV)));
@@ -483,7 +483,7 @@ namespace gbe
                   { }
       void         emitUnalignedDQLoadStore(Value *llvmValues);
       ir::Tuple    getValueTuple(llvm::Value *llvmValues, llvm::Type *elemType, unsigned start, unsigned elemNum);
-      void         emitBatchLoadOrStore(const ir::Type type, const uint32_t elemNum, Value *llvmValues, Type * elemType);
+      void         emitBatchLoadOrStore(ir::Type type, uint32_t elemNum, Value *llvmValues, Type * elemType);
       ir::Register getOffsetAddress(ir::Register basePtr, unsigned offset);
       void         shootMessage(ir::Type type, ir::Register offset, ir::Tuple value, unsigned elemNum);
       template <bool IsLoad, typename T>
@@ -518,7 +518,6 @@ namespace gbe
      */
     set<const Value*> conditionSet;
     map<const Value*, int> globalPointer;
-    typedef map<const Value*, int>::iterator GlobalPtrIter;
 
     /*!
      *  <phi,phiCopy> node information for later optimization
@@ -526,7 +525,6 @@ namespace gbe
     map<const ir::Register, const ir::Register> phiMap;
 
     map<Value *, SmallVector<Value *, 4>> pointerOrigMap;
-    typedef map<Value *, SmallVector<Value *, 4>>::iterator PtrOrigMapIter;
     // map pointer source to bti
     map<Value *, unsigned> BtiMap;
     // map printf pointer source to bti
@@ -537,7 +535,6 @@ namespace gbe
     // map ptr to it's base
     map<Value *, Value *> pointerBaseMap;
     std::set<Value *> addrStoreInst;
-    typedef map<Value *, Value *>::iterator PtrBaseMapIter;
     /*! We visit each function twice. Once to allocate the registers and once to
      *  emit the Gen IR instructions
      */
@@ -569,8 +566,8 @@ namespace gbe
         regTranslator(ctx),
         printfBti(-1),
         printfNum(0),
-        LI(0),
-        TheModule(0),
+        LI(nullptr),
+        TheModule(nullptr),
         btiBase(BTI_RESERVED_NUM),
         has_errors(false),
         legacyMode(true)
@@ -584,12 +581,12 @@ namespace gbe
     }
 
 #if LLVM_VERSION_MAJOR * 10 + LLVM_VERSION_MINOR >= 40
-    virtual llvm::StringRef getPassName() const { return "Gen Back-End"; }
+    llvm::StringRef getPassName() const override { return "Gen Back-End"; }
 #else
-    virtual const char *getPassName() const { return "Gen Back-End"; }
+    const char *getPassName() const override { return "Gen Back-End"; }
 #endif
 
-    void getAnalysisUsage(AnalysisUsage &AU) const {
+    void getAnalysisUsage(AnalysisUsage &AU) const override {
 #if LLVM_VERSION_MAJOR * 10 + LLVM_VERSION_MINOR >= 37
       AU.addRequired<LoopInfoWrapperPass>();
 #else
@@ -598,7 +595,7 @@ namespace gbe
       AU.setPreservesAll();
     }
 
-    virtual bool doInitialization(Module &M);
+    bool doInitialization(Module &M) override;
     /*! helper function for parsing global constant data */
     void getConstantData(const Constant * c, void* mem, uint32_t& offset, vector<ir::RelocEntry> &) const;
     void collectGlobalConstant() const;
@@ -610,7 +607,7 @@ namespace gbe
       return btiBase++;
     }
 
-    bool runOnFunction(Function &F) {
+    bool runOnFunction(Function &F) override {
      // Do not codegen any 'available_externally' functions at all, they have
      // definitions outside the translation unit.
      if (F.hasAvailableExternallyLinkage())
@@ -645,7 +642,7 @@ namespace gbe
     }
     /*! Given a possible pointer value, find out the interested escape like
         load/store or atomic instruction */
-    void findPointerEscape(Value *ptr, std::set<Value *> &mixedPtr, bool recordMixed, std::vector<Value *> &revisit);
+    void findPointerEscape(Value *ptr, std::set<Value *> &mixedPtr, bool bFirstPass, std::vector<Value *> &revisit);
     /*! For all possible pointers, GlobalVariable, function pointer argument,
         alloca instruction, find their pointer escape points */
     void analyzePointerOrigin(Function &F);
@@ -661,7 +658,7 @@ namespace gbe
     void handleStoreLoadAddress(Function &F);
 
     MDNode *getKernelFunctionMetadata(Function *F);
-    virtual bool doFinalization(Module &M) { return false; }
+    bool doFinalization(Module &M) override { return false; }
     /*! handle global variable register allocation (local, constant space) */
     void allocateGlobalVariableRegister(Function &F);
     /*! gather all the loops in the function and add them to ir::Function */
@@ -679,7 +676,7 @@ namespace gbe
     /*! Alocate one or several registers (if vector) for the value */
     INLINE void newRegister(Value *value, Value *key = nullptr, bool uniform = false);
     /*! get the register for a llvm::Constant */
-    ir::Register getConstantRegister(Constant *c, uint32_t index = 0);
+    ir::Register getConstantRegister(Constant *c, uint32_t elemID = 0);
     /*! Return a valid register from an operand (can use LOADI to make one) */
     INLINE ir::Register getRegister(Value *value, uint32_t index = 0);
     /*! Create a new immediate from a constant */
@@ -783,7 +780,7 @@ namespace gbe
         return nullptr;
       return unit.printfs[inst];
     }
-    void emitAtomicInstHelper(const ir::AtomicOps opcode,const ir::Type type, const ir::Register dst, llvm::Value* llvmPtr, const ir::Tuple payloadTuple);
+    void emitAtomicInstHelper(ir::AtomicOps opcode, ir::Type type, ir::Register dst, llvm::Value* llvmPtr, ir::Tuple payloadTuple);
     private:
       void setDebugInfo_CTX(llvm::Instruction * insn); // store the debug infomation in context for subsequently passing to Gen insn
       ir::ImmediateIndex processConstantImmIndexImpl(Constant *CPV, int32_t index = 0u);
@@ -798,13 +795,13 @@ namespace gbe
 
   static void updatePointerSource(Value *parent, Value *theUser, Value *source, SmallVector<Value *, 4> &pointers) {
     if (isa<SelectInst>(theUser)) {
-      SelectInst *si = dyn_cast<SelectInst>(theUser);
+      auto *si = dyn_cast<SelectInst>(theUser);
       if (si && si->getTrueValue() == parent)
         pointers[0] = source;
       else
         pointers[1] = source;
     } else if (isa<PHINode>(theUser)) {
-      PHINode *phi = dyn_cast<PHINode>(theUser);
+      auto *phi = dyn_cast<PHINode>(theUser);
       unsigned opNum = phi ? phi->getNumIncomingValues() : 0;
       for (unsigned j = 0; j < opNum; j++) {
         if (phi->getIncomingValue(j) == parent) {
@@ -878,13 +875,13 @@ namespace gbe
         if (isa<SelectInst>(theUser) || isa<PHINode>(theUser))
         {
           // reached from another source, update pointer source
-          PtrOrigMapIter ptrIter = pointerOrigMap.find(theUser);
+          auto ptrIter = pointerOrigMap.find(theUser);
           if (ptrIter == pointerOrigMap.end()) {
             // create new one
             unsigned capacity = 1;
             if (isa<SelectInst>(theUser)) capacity = 2;
             if (isa<PHINode>(theUser)) {
-              PHINode *phi = dyn_cast<PHINode>(theUser);
+              auto *phi = dyn_cast<PHINode>(theUser);
               capacity = phi ? phi->getNumIncomingValues() : 1;
             }
 
@@ -920,7 +917,7 @@ namespace gbe
         }
 
         // pointer address is used as the ValueOperand in store instruction, should be skipped
-        if (StoreInst *store = dyn_cast<StoreInst>(theUser)) {
+        if (auto *store = dyn_cast<StoreInst>(theUser)) {
           if (store->getValueOperand() == work) {
             addrStoreInst.insert(store);
             Value * pointerOperand = store->getPointerOperand();
@@ -929,13 +926,13 @@ namespace gbe
             // on the origin of pointerOperand
             // if visited, that is the origin of the pointerOperand already
             // traversed, we need to the traverse again to record all the LoadInst
-            PtrOrigMapIter pointerOpIter = pointerOrigMap.find(pointerOperand);
+            auto pointerOpIter = pointerOrigMap.find(pointerOperand);
             bool pointerVisited = pointerOpIter != pointerOrigMap.end();
             if (pointerVisited) {
               revisit.push_back((*pointerOpIter).second[0]);
             }
 
-            PtrOrigMapIter ptrIter = pointerOrigMap.find(work);
+            auto ptrIter = pointerOrigMap.find(work);
             if (ptrIter == pointerOrigMap.end()) {
               // create new one
               SmallVector<Value *, 4> pointers;
@@ -971,7 +968,7 @@ namespace gbe
             }
           } else if (isa<CallInst>(theUser)) {
             // atomic/read(write)image
-            CallInst *ci = dyn_cast<CallInst>(theUser);
+            auto *ci = dyn_cast<CallInst>(theUser);
             pointer = ci ? ci->getArgOperand(0) : nullptr;
           } else {
             //theUser->dump();
@@ -982,7 +979,7 @@ namespace gbe
           if (ptr == pointer) continue;
 
           // load/store/atomic instruction, we have reached the end, stop further traversing
-          PtrOrigMapIter ptrIter = pointerOrigMap.find(pointer);
+          auto ptrIter = pointerOrigMap.find(pointer);
           if (ptrIter == pointerOrigMap.end()) {
             // create new one
             SmallVector<Value *, 4> pointers;
@@ -1015,7 +1012,7 @@ namespace gbe
     if (!isa<SelectInst>(Val) && !isa<PHINode>(Val)) {
       return true;
     } else {
-      PtrOrigMapIter iter = pointerOrigMap.find(Val);
+      auto iter = pointerOrigMap.find(Val);
       SmallVector<Value *, 4> &pointers = (*iter).second;
       unsigned srcNum = pointers.size();
       Value *source = nullptr;
@@ -1033,7 +1030,7 @@ namespace gbe
     }
   }
   Value *GenWriter::getPointerBase(Value *ptr) {
-    PtrBaseMapIter baseIter = pointerBaseMap.find(ptr);
+    auto baseIter = pointerBaseMap.find(ptr);
     if (baseIter != pointerBaseMap.end()) {
       return baseIter->second;
     }
@@ -1043,12 +1040,11 @@ namespace gbe
       return ConstantPointerNull::get(ty);
     }
 
-    typedef std::map<Value *, unsigned>::iterator BtiIter;
     // for pointers that already assigned a bti, it is the base pointer,
-    BtiIter found = BtiMap.find(ptr);
+    auto found = BtiMap.find(ptr);
     if (found != BtiMap.end()) {
       if (isa<PointerType>(ptr->getType())) {
-        PointerType *ty = cast<PointerType>(ptr->getType());
+        auto *ty = cast<PointerType>(ptr->getType());
         // only global pointer will have starting address
         if (ty->getAddressSpace() == 1) {
           return ptr;
@@ -1061,7 +1057,7 @@ namespace gbe
       }
     }
 
-    PtrOrigMapIter iter = pointerOrigMap.find(ptr);
+    auto iter = pointerOrigMap.find(ptr);
 
     // we may not find the ptr, as it may be uninitialized
     if (iter == pointerOrigMap.end()) {
@@ -1076,7 +1072,7 @@ namespace gbe
       return base;
     } else {
       if (isa<SelectInst>(ptr)) {
-          SelectInst *si = dyn_cast<SelectInst>(ptr);
+        auto *si = dyn_cast<SelectInst>(ptr);
           IRBuilder<> Builder(si->getParent());
 
           Value *trueVal = getPointerBase((*iter).second[0]);
@@ -1086,7 +1082,7 @@ namespace gbe
           pointerBaseMap.insert(std::make_pair(ptr, base));
         return base;
       } else if (isa<PHINode>(ptr)) {
-          PHINode *phi = dyn_cast<PHINode>(ptr);
+        auto *phi = dyn_cast<PHINode>(ptr);
           IRBuilder<> Builder(phi->getParent());
           Builder.SetInsertPoint(phi);
 
@@ -1130,21 +1126,18 @@ namespace gbe
   }
 
   Value *GenWriter::getSinglePointerOrigin(Value *ptr) {
-    typedef std::map<Value *, unsigned>::iterator BtiIter;
     // for pointers that already assigned a bti, it is the pointer origin,
-    BtiIter found = BtiMap.find(ptr);
+    auto found = BtiMap.find(ptr);
     if (found != BtiMap.end())
       return ptr;
-    PtrOrigMapIter iter = pointerOrigMap.find(ptr);
+    auto iter = pointerOrigMap.find(ptr);
     GBE_ASSERT(iter != pointerOrigMap.end());
     return iter->second[0];
   }
 
   Value *GenWriter::getBtiRegister(Value *Val) {
-    typedef std::map<Value *, unsigned>::iterator BtiIter;
-    typedef std::map<Value *, Value *>::iterator BtiValueIter;
-    BtiIter found = BtiMap.find(Val);
-    BtiValueIter valueIter = BtiValueMap.find(Val);
+    auto found = BtiMap.find(Val);
+    auto valueIter = BtiValueMap.find(Val);
     if (valueIter != BtiValueMap.end())
       return valueIter->second;
 
@@ -1159,7 +1152,7 @@ namespace gbe
       BtiValueMap.insert(std::make_pair(Val, bti));
       return bti;
     } else {
-      PtrOrigMapIter iter = pointerOrigMap.find(Val);
+      auto iter = pointerOrigMap.find(Val);
       // the pointer may access an uninitialized pointer,
       // in this case, we will not find it in pointerOrigMap
       if (iter == pointerOrigMap.end())
@@ -1171,7 +1164,7 @@ namespace gbe
         return bti;
       } else {
         if (isa<SelectInst>(Val)) {
-          SelectInst *si = dyn_cast<SelectInst>(Val);
+          auto *si = dyn_cast<SelectInst>(Val);
 
           IRBuilder<> Builder(si->getParent());
           Value *trueVal = getBtiRegister((*iter).second[0]);
@@ -1182,7 +1175,7 @@ namespace gbe
           BtiValueMap.insert(std::make_pair(Val, bti));
           return bti;
         } else if (isa<PHINode>(Val)) {
-          PHINode *phi = dyn_cast<PHINode>(Val);
+          auto *phi = dyn_cast<PHINode>(Val);
           IRBuilder<> Builder(phi->getParent());
           Builder.SetInsertPoint(phi);
 
@@ -1279,8 +1272,7 @@ namespace gbe
 
   void GenWriter::assignBti(Function &F) {
     auto &globalList = const_cast<Module::GlobalListType &> (TheModule->getGlobalList());
-    for(auto i = globalList.begin(); i != globalList.end(); i ++) {
-      GlobalVariable &v = *i;
+    for(auto & v : globalList) {
       if(!v.isConstantUsed()) continue;
 
       BtiMap.insert(std::make_pair(&v, getNewBti(&v, false)));
@@ -1434,9 +1426,8 @@ namespace gbe
 
     std::vector<Value *> revisit;
     // GlobalVariable
-    Module::GlobalListType &globalList = const_cast<Module::GlobalListType &> (TheModule->getGlobalList());
-    for(auto i = globalList.begin(); i != globalList.end(); i ++) {
-      GlobalVariable &v = *i;
+    auto &globalList = const_cast<Module::GlobalListType &> (TheModule->getGlobalList());
+    for(auto & v : globalList) {
       if(!v.isConstantUsed()) continue;
       findPointerEscape(&v, mixedPtr, true, revisit);
     }
@@ -1459,7 +1450,7 @@ namespace gbe
     }
 
     // the second pass starts from mixed pointer
-    for (std::set<Value *>::iterator iter = mixedPtr.begin(); iter != mixedPtr.end(); ++iter) {
+    for (auto iter = mixedPtr.begin(); iter != mixedPtr.end(); ++iter) {
       findPointerEscape(*iter, mixedPtr, false, revisit);
     }
 
@@ -1475,7 +1466,7 @@ namespace gbe
   void GenWriter::handleStoreLoadAddress(Function &F) {
     std::set<Value *> processed;
     for (auto iter : addrStoreInst) {
-      StoreInst *store = cast<StoreInst>(iter);
+      auto *store = cast<StoreInst>(iter);
       Value *pointerOp = store->getPointerOperand();
       Value *base = getSinglePointerOrigin(pointerOp);
       if (processed.find(base) != processed.end()) {
@@ -3629,14 +3620,14 @@ namespace gbe
         // We use a select (0,1) not a convert when the destination is a boolean
         if (srcType == ir::TYPE_BOOL) {
           const ir::RegisterFamily family = getFamily(dstType);
-          ir::ImmediateIndex zero;
+          ir::ImmediateIndex zero{};
           if(dstType == ir::TYPE_FLOAT)
             zero = ctx.newFloatImmediate(0);
           else if(dstType == ir::TYPE_DOUBLE)
             zero = ctx.newDoubleImmediate(0);
           else
             zero = ctx.newIntegerImmediate(0, dstType);
-          ir::ImmediateIndex one;
+          ir::ImmediateIndex one{};
           if (I.getOpcode() == Instruction::SExt
               && (dstType == ir::TYPE_S8 || dstType == ir::TYPE_S16 || dstType == ir::TYPE_S32 || dstType == ir::TYPE_S64))
             one = ctx.newIntegerImmediate(-1, dstType);
@@ -4193,8 +4184,8 @@ namespace gbe
     ir::Register pointer = this->getRegister(llvmPtr);
     ir::AddressSpace addrSpace = addressSpaceLLVMToGen(llvmPtr->getType()->getPointerAddressSpace());
     // Get the function arguments
-    ir::Register ptr;
-    ir::Register btiReg;
+    ir::Register ptr{};
+    ir::Register btiReg{};
     unsigned SurfaceIndex = 0xff;
     ir::AddressMode AM;
     if (legacyMode) {
@@ -4393,7 +4384,7 @@ namespace gbe
       ctx.WORKGROUP(ir::WORKGROUP_OP_BROADCAST, (uint32_t)f.getwgBroadcastSLM(), getRegister(&I), srcTuple, argNum,
           getType(ctx, (*CS.arg_begin())->getType()));
     } else {
-      ConstantInt *sign = dyn_cast<ConstantInt>(AI);
+      auto *sign = dyn_cast<ConstantInt>(AI);
       GBE_ASSERT(sign);
       bool isSign = sign->getZExtValue();
       AI++;
@@ -4438,7 +4429,7 @@ namespace gbe
       ctx.SUBGROUP(ir::WORKGROUP_OP_BROADCAST, getRegister(&I), srcTuple, argNum,
           getType(ctx, (*CS.arg_begin())->getType()));
     } else {
-      ConstantInt *sign = dyn_cast<ConstantInt>(AI);
+      auto *sign = dyn_cast<ConstantInt>(AI);
       GBE_ASSERT(sign);
       bool isSign = sign->getZExtValue();
       AI++;
@@ -4469,8 +4460,8 @@ namespace gbe
     GBE_ASSERT(addrSpace == ir::MEM_GLOBAL);
     ir::Register pointer = this->getRegister(llvmPtr);
 
-    ir::Register ptr;
-    ir::Register btiReg;
+    ir::Register ptr{};
+    ir::Register btiReg{};
     unsigned SurfaceIndex = 0xff;
 
     ir::AddressMode AM;
@@ -4552,10 +4543,10 @@ namespace gbe
    * a sampler_t value. */
   uint8_t GenWriter::appendSampler(CallSite::arg_iterator AI) {
 #if LLVM_VERSION_MAJOR * 10 + LLVM_VERSION_MINOR >= 40
-    CallInst *TC = dyn_cast<CallInst>(*AI);
-    Constant *CPV = TC ? dyn_cast<Constant>(TC->getOperand(0)) : nullptr;
+    auto *TC = dyn_cast<CallInst>(*AI);
+    auto *CPV = TC ? dyn_cast<Constant>(TC->getOperand(0)) : nullptr;
 #else
-    Constant *CPV = dyn_cast<Constant>(*AI);
+    auto *CPV = dyn_cast<Constant>(*AI);
 #endif
     uint8_t index;
     if (CPV != nullptr)
@@ -4715,7 +4706,7 @@ namespace gbe
               imm_value = 0xFFFFFF00;
             }
             if(srcType == ir::TYPE_U16 || srcType == ir::TYPE_U8) {
-              ir::ImmediateIndex imm;
+              ir::ImmediateIndex imm{};
               ir::Type tmpType = ir::TYPE_S32;
               ir::Type revType = ir::TYPE_U32;
               imm = ctx.newIntegerImmediate(imm_value, revType);
@@ -4863,7 +4854,7 @@ namespace gbe
 
             const ir::Tuple srcTuple = ctx.arrayTuple(&srcTupleData[0], src_length);
 
-            Constant *msg_type_cpv = dyn_cast<Constant>(*AI);
+            auto *msg_type_cpv = dyn_cast<Constant>(*AI);
             assert(msg_type_cpv);
             const ir::Immediate &msg_type_x = processConstantImm(msg_type_cpv);
             int msg_type = msg_type_x.getIntegerValue();
@@ -4915,7 +4906,8 @@ namespace gbe
           {
             const ir::Register dst = this->getRegister(&I);
             // offset must be immediate
-            GBE_ASSERT(AI != AE); Constant *CPV = dyn_cast<Constant>(*AI);
+            GBE_ASSERT(AI != AE);
+            auto *CPV = dyn_cast<Constant>(*AI);
             assert(CPV);
             const ir::Immediate &x = processConstantImm(CPV);
 
@@ -4933,18 +4925,18 @@ namespace gbe
           case GEN_OCL_GBARRIER: ctx.SYNC(ir::syncGlobalBarrier); break;
           case GEN_OCL_BARRIER:
           {
-            Constant *CPV = dyn_cast<Constant>(*AI);
+            auto *CPV = dyn_cast<Constant>(*AI);
             unsigned syncFlag = 0;
             if (CPV) {
               const ir::Immediate &x = processConstantImm(CPV);
               unsigned barrierArg = x.getIntegerValue();
-              if (barrierArg & 0x1) {
+              if (barrierArg & 0x1u) {
                 syncFlag |= ir::syncLocalBarrier;
               }
-              if (barrierArg & 0x2) {
+              if (barrierArg & 0x2u) {
                 syncFlag |= ir::syncGlobalBarrier;
               }
-              if (barrierArg & 0x4) {
+              if (barrierArg & 0x4u) {
                 syncFlag |= ir::syncImageBarrier;
               }
             } else {
@@ -5019,7 +5011,7 @@ namespace gbe
             ++AI; GBE_ASSERT(AI != AE);
             Value *samplerOffsetVal = *AI;
 #ifdef GEN7_SAMPLER_CLAMP_BORDER_WORKAROUND
-            Constant *CPV = dyn_cast<Constant>(samplerOffsetVal);
+            auto *CPV = dyn_cast<Constant>(samplerOffsetVal);
             assert(CPV);
             const ir::Immediate &x = processConstantImm(CPV);
             GBE_ASSERTM(x.getType() == ir::TYPE_U32 || x.getType() == ir::TYPE_S32, "Invalid sampler type");
@@ -5610,7 +5602,7 @@ namespace gbe
   void GenWriter::emitAllocaInst(AllocaInst &I) {
     Value *src = I.getOperand(0);
     Type *elemType = I.getType()->getElementType();
-    ir::ImmediateIndex immIndex;
+    ir::ImmediateIndex immIndex{};
     uint32_t elementSize = getTypeByteSize(unit, elemType);
 
     // Be aware, we manipulate pointers

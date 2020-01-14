@@ -276,7 +276,7 @@ struct AlignOf {
 };
 
 //gcc 4.8+ support C++11 alignof keyword
-#if (__GNUC__ >= 4 && __GNUC_MINOR__ >= 8)
+#if ((__GNUC__ == 4 && __GNUC_MINOR__ >= 8) || __GNUC__ > 4)
 #define ALIGNOF(T) (alignof(T))
 #else
 #define ALIGNOF(T) (AlignOf<T>::value)
@@ -325,11 +325,11 @@ typedef int32_t index_t;
 class NonCopyable
 {
 protected:
-  INLINE NonCopyable(void) {}
-  INLINE ~NonCopyable(void) {}
+  INLINE NonCopyable() = default;
+  INLINE ~NonCopyable() = default;
 private: 
-  INLINE NonCopyable(const NonCopyable&) {}
-  INLINE NonCopyable& operator= (const NonCopyable&) {return *this;}
+  INLINE NonCopyable(const NonCopyable&) = default;
+  INLINE NonCopyable& operator= (const NonCopyable&) = default;
 };
 
 #define TO_MAGIC(A, B, C, D)  (A<<24 | B<<16 | C<<8 | D)
@@ -337,7 +337,7 @@ private:
 class Serializable
 {
 public:
-  INLINE Serializable(void) = default;
+  INLINE Serializable() = default;
   INLINE Serializable(const Serializable&) = default;
   INLINE Serializable& operator= (const Serializable&) = default;
 
@@ -345,12 +345,12 @@ public:
   virtual uint32_t deserializeFromBin(std::istream& ins) = 0;
 
   /* These two will follow LLVM's ABI. */
-  virtual uint32_t serializeToLLVM(void) { return 0;/* not implemented now. */}
-  virtual uint32_t deserializeFromLLVM(void) { return 0;/* not implemented now. */}
+  // virtual uint32_t serializeToLLVM() { return 0;/* not implemented now. */}
+  // virtual uint32_t deserializeFromLLVM() { return 0;/* not implemented now. */}
 
   virtual void printStatus(int indent = 0, std::ostream& outs = std::cout) { }
 
-  virtual ~Serializable(void) { }
+  virtual ~Serializable() = default;
 
 protected:
   static std::string indent_to_str(int indent) {

@@ -29,14 +29,10 @@
 #include <llvm/IR/DiagnosticInfo.h>
 #include <llvm/IR/DiagnosticPrinter.h>
 #include "sys/cvar.hpp"
-#include "sys/platform.hpp"
 #include "ir/unit.hpp"
-#include "ir/function.hpp"
 #include "ir/structurizer.hpp"
 
 #include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
 #include <memory>
 
 namespace gbe

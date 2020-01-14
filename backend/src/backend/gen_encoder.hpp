@@ -67,13 +67,13 @@ namespace gbe
     /*! simdWidth is the default width for the instructions */
     GenEncoder(uint32_t simdWidth, uint32_t gen, uint32_t deviceID);
 
-    virtual ~GenEncoder(void) { }
+    virtual ~GenEncoder() = default;
     /*! Size of the stack (should be large enough) */
     enum { MAX_STATE_NUM = 16 };
     /*! Push the current instruction state */
-    void push(void);
+    void push();
     /*! Pop the latest pushed state */
-    void pop(void);
+    void pop();
     /*! The instruction stream we are building */
     vector<GenInstruction> store;
     /*! Current instruction state to use */
@@ -167,7 +167,7 @@ namespace gbe
     /*! EOT is used to finish GPGPU threads */
     void EOT(uint32_t msg_nr);
     /*! No-op */
-    void NOP(void);
+    void NOP();
     /*! Wait instruction (used for the barrier) */
     void WAIT(uint32_t n = 0);
     /*! Atomic instructions */
@@ -284,7 +284,7 @@ namespace gbe
     GenCompactInstruction *nextCompact(GenOpCode opcode);
     virtual uint32_t getCompactVersion() { return 7; }
     GenNativeInstruction *next(GenOpCode opcode);
-    uint32_t n_instruction(void) const { return store.size(); }
+    uint32_t n_instruction() const { return store.size(); }
     virtual bool canHandleLong(GenOpCode opcode, GenRegister dst, GenRegister src0,
                             GenRegister src1 = GenRegister::null());
     virtual void handleDouble(GenEncoder *p, GenOpCode opcode, GenRegister dst, GenRegister src0, GenRegister src1 = GenRegister::null());

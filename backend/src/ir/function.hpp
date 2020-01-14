@@ -37,6 +37,7 @@
 #include "sys/alloc.hpp"
 
 #include <ostream>
+#include <utility>
 
 namespace gbe {
 namespace ir {
@@ -53,26 +54,26 @@ namespace ir {
   {
   public:
     /*! Empty basic block */
-    BasicBlock(Function &fn);
+    explicit BasicBlock(Function &fn);
     /*! Releases all the instructions */
-    ~BasicBlock(void);
+    ~BasicBlock();
     /*! Append a new instruction at the end of the stream */
     void append(Instruction &insn);
     void insertAt(iterator pos, Instruction &insn);
     /*! Get the parent function */
-    Function &getParent(void) { return fn; }
-    const Function &getParent(void) const { return fn; }
+    Function &getParent() { return fn; }
+    const Function &getParent() const { return fn; }
     /*! Get the next and previous allocated block */
-    BasicBlock *getNextBlock(void) const { return this->nextBlock; }
-    BasicBlock *getPrevBlock(void) const { return this->prevBlock; }
+    BasicBlock *getNextBlock() const { return this->nextBlock; }
+    BasicBlock *getPrevBlock() const { return this->prevBlock; }
     /*! Get / set the first and last instructions */
-    Instruction *getFirstInstruction(void) const;
-    Instruction *getLastInstruction(void) const;
+    Instruction *getFirstInstruction() const;
+    Instruction *getLastInstruction() const;
     /*! Get successors and predecessors */
-    const BlockSet &getSuccessorSet(void) const { return successors; }
-    const BlockSet &getPredecessorSet(void) const { return predecessors; }
+    const BlockSet &getSuccessorSet() const { return successors; }
+    const BlockSet &getPredecessorSet() const { return predecessors; }
     /*! Get the label index of this block */
-    LabelIndex getLabelIndex(void) const;
+    LabelIndex getLabelIndex() const;
     /*! Apply the given functor on all instructions */
     template <typename T>
     INLINE void foreach(const T &functor) {
@@ -228,7 +229,7 @@ namespace ir {
         return typeBaseName.find("image3d_t") !=std::string::npos;
       }
       bool isSamplerType() const {
-        return typeBaseName.compare("sampler_t") == 0;
+        return typeBaseName == "sampler_t";
       }
 #endif
 
@@ -238,13 +239,13 @@ namespace ir {
       }
 
       bool isPipeType() const {
-        return typeQual.compare("pipe") == 0;
+        return typeQual == "pipe";
       }
     };
 
     /*! Create a function input argument */
-    INLINE FunctionArgument(Type type, Register reg, uint32_t size, const std::string &name, uint32_t align, InfoFromLLVM& info, uint8_t bti) :
-      type(type), reg(reg), size(size), align(align), name(name), info(info), bti(bti) { }
+    INLINE FunctionArgument(Type type, Register reg, uint32_t size, std::string name, uint32_t align, InfoFromLLVM& info, uint8_t bti) :
+      type(type), reg(reg), size(size), align(align), name(std::move(name)), info(info), bti(bti) { }
 
     Type type;     //!< Gives the type of argument we have
     Register reg;  //!< Holds the argument
@@ -261,7 +262,7 @@ namespace ir {
     INLINE PushLocation(const Function &fn, uint32_t argID, uint32_t offset) :
       fn(fn), argID(argID), offset(offset) {}
     /*! Get the pushed virtual register */
-    Register getRegister(void) const;
+    Register getRegister() const;
     const Function &fn;       //!< Function it belongs to
     uint32_t argID;           //!< Function argument
     uint32_t offset;          //!< Offset in the function argument
@@ -280,9 +281,9 @@ namespace ir {
   public:
     Loop(LabelIndex pre,
          int paren,
-         const vector<LabelIndex> &in,
-         const vector<std::pair<LabelIndex, LabelIndex>> &exit) :
-         preheader(pre), parent(paren), bbs(in), exits(exit) {}
+         vector<LabelIndex> in,
+         vector<std::pair<LabelIndex, LabelIndex>> exit) :
+         preheader(pre), parent(paren), bbs(std::move(in)), exits(std::move(exit)) {}
 
     LabelIndex preheader;
     int parent;
@@ -304,11 +305,11 @@ namespace ir {
     /*! Map of all pushed location (i.e. part of function argument) */
     typedef map<PushLocation, Register> LocationMap;
     /*! Create an empty function */
-    Function(const std::string &name, const Unit &unit, Profile profile = PROFILE_OCL);
+    Function(std::string name, const Unit &unit, Profile profile = PROFILE_OCL);
     /*! Release everything *including* the basic block pointers */
-    ~Function(void);
+    ~Function();
     /*! Get the function profile */
-    INLINE Profile getProfile(void) const { return profile; }
+    INLINE Profile getProfile() const { return profile; }
     /*! Get a new valid register */
     INLINE Register newRegister(RegisterFamily family,
                                 bool uniform = false,
@@ -317,11 +318,11 @@ namespace ir {
       return this->file.append(family, uniform, curbeType, subType);
     }
     /*! Get the function name */
-    const std::string &getName(void) const { return name; }
+    const std::string &getName() const { return name; }
     /*! When set, we do not have choice any more in the back end for it */
     INLINE void setSimdWidth(uint32_t width) { simdWidth = width; }
     /*! Get the SIMD width (0 if not forced) */
-    uint32_t getSimdWidth(void) const { return simdWidth; }
+    uint32_t getSimdWidth() const { return simdWidth; }
     /*! Extract the register from the register file */
     INLINE RegisterData getRegisterData(Register reg) const { return file.get(reg); }
     /*! set a register to uniform or nonuniform type. */
@@ -361,7 +362,7 @@ namespace ir {
       file.setType(ID, which, type);
     }
     /*! Get the register file */
-    INLINE const RegisterFile &getRegisterFile(void) const { return file; }
+    INLINE const RegisterFile &getRegisterFile() const { return file; }
     /*! Get the given value ie immediate from the function */
     INLINE const Immediate &getImmediate(ImmediateIndex ID) const {
       return immediates[ID];
@@ -376,11 +377,11 @@ namespace ir {
     DECL_POOL(Instruction, insnPool);
     /*! Get input argument */
     INLINE const FunctionArgument &getArg(uint32_t ID) const {
-      GBE_ASSERT(args[ID] != NULL);
+      GBE_ASSERT(args[ID] != nullptr);
       return *args[ID];
     }
     INLINE FunctionArgument &getArg(uint32_t ID) {
-      GBE_ASSERT(args[ID] != NULL);
+      GBE_ASSERT(args[ID] != nullptr);
       return *args[ID];
     }
 
@@ -396,19 +397,19 @@ namespace ir {
     }
 
     /*! Get the number of pushed registers */
-    INLINE uint32_t pushedNum(void) const { return pushMap.size(); }
+    INLINE uint32_t pushedNum() const { return pushMap.size(); }
     /*! Get the pushed data location for the given register */
     INLINE const PushLocation *getPushLocation(Register reg) const {
       auto it = pushMap.find(reg);
       if (it == pushMap.end())
-        return NULL;
+        return nullptr;
       else
         return &it->second;
     }
     /*! Get the map of pushed registers */
-    const PushMap &getPushMap(void) const { return this->pushMap; }
+    const PushMap &getPushMap() const { return this->pushMap; }
     /*! Get the map of pushed registers */
-    const LocationMap &getLocationMap(void) const { return this->locationMap; }
+    const LocationMap &getLocationMap() const { return this->locationMap; }
     /*! Get input argument from the register (linear research). Return NULL if
      *  this is not an input argument
      */
@@ -418,7 +419,7 @@ namespace ir {
         if (arg->reg == reg)
           return arg;
       }
-      return NULL;
+      return nullptr;
     }
 
     INLINE FunctionArgument *getArg(const Register &reg) {
@@ -427,59 +428,59 @@ namespace ir {
         if (arg->reg == reg)
           return arg;
       }
-      return NULL;
+      return nullptr;
     }
 
     /*! Get output register */
     INLINE Register getOutput(uint32_t ID) const { return outputs[ID]; }
     /*! Get the argument location for the pushed register */
     INLINE const PushLocation &getPushLocation(Register reg) {
-      GBE_ASSERT(pushMap.contains(reg) == true);
+      GBE_ASSERT(pushMap.contains(reg));
       return pushMap.find(reg)->second;
     }
     /*! Says if this is the top basic block (entry point) */
     bool isEntryBlock(const BasicBlock &bb) const;
     /*! Get function the entry point block */
-    BasicBlock &getTopBlock(void) const;
+    BasicBlock &getTopBlock() const;
     /*! Get the last block */
-    const BasicBlock &getBottomBlock(void) const;
+    const BasicBlock &getBottomBlock() const;
     /*! Get the last block */
-    BasicBlock &getBottomBlock(void);
+    BasicBlock &getBottomBlock();
     /*! Get block from its label */
     BasicBlock &getBlock(LabelIndex label) const;
     /*! Get the label instruction from its label index */
     const LabelInstruction *getLabelInstruction(LabelIndex index) const;
     /*! Return the number of instructions of the largest basic block */
-    uint32_t getLargestBlockSize(void) const;
+    uint32_t getLargestBlockSize() const;
     /*! Get the first index of the special registers and number of them */
-    uint32_t getFirstSpecialReg(void) const;
-    uint32_t getSpecialRegNum(void) const;
+    uint32_t getFirstSpecialReg() const;
+    uint32_t getSpecialRegNum() const;
     /*! Indicate if the given register is a special one (like localID in OCL) */
     bool isSpecialReg(const Register &reg) const;
     /*! Create a new label (still not bound to a basic block) */
-    LabelIndex newLabel(void);
+    LabelIndex newLabel();
     /*! Create the control flow graph */
-    void computeCFG(void);
+    void computeCFG();
     /*! Sort labels in increasing orders (top block has the smallest label) */
-    void sortLabels(void);
+    void sortLabels();
     /*! check empty Label. */
-    void checkEmptyLabels(void);
+    void checkEmptyLabels();
     /*! Get the pointer family */
-    RegisterFamily getPointerFamily(void) const;
+    RegisterFamily getPointerFamily() const;
     /*! Number of registers in the register file */
-    INLINE uint32_t regNum(void) const { return file.regNum(); }
+    INLINE uint32_t regNum() const { return file.regNum(); }
     /*! Number of register tuples in the register file */
-    INLINE uint32_t tupleNum(void) const { return file.tupleNum(); }
+    INLINE uint32_t tupleNum() const { return file.tupleNum(); }
     /*! Number of labels in the function */
-    INLINE uint32_t labelNum(void) const { return labels.size(); }
+    INLINE uint32_t labelNum() const { return labels.size(); }
     /*! Number of immediate values in the function */
-    INLINE uint32_t immediateNum(void) const { return immediates.size(); }
+    INLINE uint32_t immediateNum() const { return immediates.size(); }
     /*! Get the number of argument register */
-    INLINE uint32_t argNum(void) const { return args.size(); }
+    INLINE uint32_t argNum() const { return args.size(); }
     /*! Get the number of output register */
-    INLINE uint32_t outputNum(void) const { return outputs.size(); }
+    INLINE uint32_t outputNum() const { return outputs.size(); }
     /*! Number of blocks in the function */
-    INLINE uint32_t blockNum(void) const { return blocks.size(); }
+    INLINE uint32_t blockNum() const { return blocks.size(); }
     /*! Output an immediate value in a stream */
     void outImmediate(std::ostream &out, ImmediateIndex index) const;
     /*! Apply the given functor on all basic blocks */
@@ -499,37 +500,37 @@ namespace ir {
       }
     }
     /*! Get wgBroadcastSLM in this function */
-    int32_t getwgBroadcastSLM(void) const { return wgBroadcastSLM; }
+    int32_t getwgBroadcastSLM() const { return wgBroadcastSLM; }
     /*! Set wgBroadcastSLM for this function */
     void setwgBroadcastSLM(int32_t v) { wgBroadcastSLM = v; }
     /*! Get tidMapSLM in this function */
-    int32_t gettidMapSLM(void) const { return tidMapSLM; }
+    int32_t gettidMapSLM() const { return tidMapSLM; }
     /*! Set tidMapSLM for this function */
     void settidMapSLM(int32_t v) { tidMapSLM = v; }
     /*! Does it use SLM */
-    INLINE bool getUseSLM(void) const { return this->useSLM; }
+    INLINE bool getUseSLM() const { return this->useSLM; }
     /*! Change the SLM config for the function */
     INLINE bool setUseSLM(bool useSLM) { return this->useSLM = useSLM; }
     /*! get SLM size needed for local variable inside kernel function */
-    INLINE uint32_t getSLMSize(void) const { return this->slmSize; }
+    INLINE uint32_t getSLMSize() const { return this->slmSize; }
     /*! set slm size needed for local variable inside kernel function */
     INLINE void setSLMSize(uint32_t size) { this->slmSize = size; }
     /*! Get sampler set in this function */
-    SamplerSet* getSamplerSet(void) const {return samplerSet; }
+    SamplerSet* getSamplerSet() const {return samplerSet; }
     /*! Get image set in this function */
-    ImageSet* getImageSet(void) const {return imageSet; }
+    ImageSet* getImageSet() const {return imageSet; }
     /*! Get printf set in this function */
-    PrintfSet* getPrintfSet(void) const {return printfSet; }
+    PrintfSet* getPrintfSet() const {return printfSet; }
     /*! Set required work group size. */
     void setCompileWorkGroupSize(size_t x, size_t y, size_t z) { compileWgSize[0] = x; compileWgSize[1] = y; compileWgSize[2] = z; }
     /*! Get required work group size. */
-    const size_t *getCompileWorkGroupSize(void) const {return compileWgSize;}
+    const size_t *getCompileWorkGroupSize() const {return compileWgSize;}
     /*! Set function attributes string. */
     void setFunctionAttributes(const std::string& functionAttributes) {  this->functionAttributes= functionAttributes; }
     /*! Get function attributes string. */
-    const std::string& getFunctionAttributes(void) const {return this->functionAttributes;}
+    const std::string& getFunctionAttributes() const {return this->functionAttributes;}
     /*! Get stack size. */
-    INLINE uint32_t getStackSize(void) const { return this->stackSize; }
+    INLINE uint32_t getStackSize() const { return this->stackSize; }
     /*! Push stack size. */
     INLINE void pushStackSize(uint32_t step) { this->stackSize += step; }
     /*! add the loop info for later liveness analysis */
@@ -541,8 +542,8 @@ namespace ir {
     int getLoopDepth(LabelIndex Block) const;
     vector<BasicBlock *> &getBlocks() { return blocks; }
     /*! Get surface starting address register from bti */
-    Register getSurfaceBaseReg(uint8_t bti) const;
-    void appendSurface(uint8_t bti, Register reg);
+    // Register getSurfaceBaseReg(uint8_t bti) const;
+    // void appendSurface(uint8_t bti, Register reg);
     /*! Get instruction distance between two BBs include both b0 and b1,
         and b0 must be less than b1. */
     INLINE uint32_t getDistance(LabelIndex b0, LabelIndex b1) const {
@@ -556,9 +557,9 @@ namespace ir {
     }
     /*! Output the control flow graph to .dot file */
     void outputCFG();
-    uint32_t getOclVersion(void) const;
+    uint32_t getOclVersion() const;
     /*! Does it use device enqueue */
-    INLINE bool getUseDeviceEnqueue(void) const { return this->useDeviceEnqueue; }
+    INLINE bool getUseDeviceEnqueue() const { return this->useDeviceEnqueue; }
     /*! Change the device enqueue infor of the function */
     INLINE bool setUseDeviceEnqueue(bool useDeviceEnqueue) {
       return this->useDeviceEnqueue = useDeviceEnqueue;
@@ -573,7 +574,7 @@ namespace ir {
     vector<Immediate> immediates;   //!< All immediate values in the function
     vector<BasicBlock*> blocks;     //!< All chained basic blocks
     vector<Loop *> loops;           //!< Loops info of the function
-    map<uint8_t, Register> btiRegMap;//!< map bti to surface base address
+    // map<uint8_t, Register> btiRegMap;//!< map bti to surface base address
     RegisterFile file;              //!< RegisterDatas used by the instructions
     Profile profile;                //!< Current function profile
     PushMap pushMap;                //!< Pushed function arguments (reg->loc)
