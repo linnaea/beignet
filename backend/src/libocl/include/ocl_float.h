@@ -96,6 +96,10 @@ INLINE_OVERLOADABLE int __ocl_finitef (float x){
 #define FP_ILOGB0    (-0x7FFFFFFF-1)
 #define FP_ILOGBNAN  FP_ILOGB0
 
+#define SF_POSITIVE_INF 0x7F800000
+#define SF_NAN 0x7FFFFFFF
+
+#ifdef cl_khr_fp64
 #define DF_EXP_MASK 0x7FF0000000000000UL
 #define DF_MAX_NORMAL 0x7FF0000000000000UL
 #define DF_MAN_MASK 0xFFFFFFFFFFFFFUL
@@ -108,9 +112,6 @@ INLINE_OVERLOADABLE int __ocl_finitef (float x){
 #define DF_SIGN_OFFSET 63
 #define DF_EXP_BIAS 1023
 #define DF_NEGTIVE_INF 0xFFF0000000000000
-
-#define SF_POSITIVE_INF 0x7F800000
-#define SF_NAN 0x7FFFFFFF
 
 #define DBL_DIG          15
 #define DBL_MANT_DIG     53
@@ -136,5 +137,6 @@ INLINE_OVERLOADABLE int __ocl_finitef (float x){
 #define M_2_SQRTPI       1.12837916709551257390
 #define M_SQRT2          1.41421356237309504880
 #define M_SQRT1_2        0.70710678118654752440
+#endif
 
 #endif /* __OCL_FLOAT_H__ */

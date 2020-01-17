@@ -35,6 +35,10 @@
 #ifdef cl_khr_fp64
 #undef cl_khr_fp64
 #endif
+#ifdef cl_amd_fp64
+#pragma OPENCL EXTENSION cl_amd_fp64 : disable
+#undef cl_amd_fp64
+#endif
 #ifdef cl_khr_global_int32_base_atomics
 #undef cl_khr_global_int32_base_atomics
 #endif
@@ -90,6 +94,20 @@
 #undef cl_intel_subgroups_short
 #endif
 
+#pragma OPENCL EXTENSION cl_khr_fp64 : disable
+#pragma OPENCL EXTENSION cl_khr_fp16 : disable
+#if __INTEL_GEN__ >= 80
+#  define cl_khr_fp64
+#  define cl_khr_fp16
+#  pragma OPENCL EXTENSION cl_khr_fp64 : enable
+#  pragma OPENCL EXTENSION cl_khr_fp16 : enable
+#endif
+
+#ifndef __INTEL_GEN_FP64__
+#  pragma OPENCL EXTENSION cl_khr_fp64 : disable
+#  undef cl_khr_fp64
+#endif
+
 #include "ocl_defines.h"
 #include "ocl_types.h"
 #include "ocl_as.h"
@@ -135,20 +153,6 @@
 
 #if __clang_major__*10 + __clang_minor__ > 40
 #define cl_intel_required_subgroup_size
-#endif
-
-#pragma OPENCL EXTENSION cl_khr_fp64 : disable
-#pragma OPENCL EXTENSION cl_khr_fp16 : disable
-#if __INTEL_GEN__ >= 80
-#  define cl_khr_fp64
-#  define cl_khr_fp16
-#  pragma OPENCL EXTENSION cl_khr_fp64 : enable
-#  pragma OPENCL EXTENSION cl_khr_fp16 : enable
-#endif
-
-#ifndef __INTEL_GEN_FP64__
-#  pragma OPENCL EXTENSION cl_khr_fp64 : disable
-#  undef cl_khr_fp64
 #endif
 
 #endif

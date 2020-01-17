@@ -74,6 +74,7 @@ namespace ir {
   };
 
   enum AtomicOps {
+    ATOMIC_OP_CMPXCHG8B = 0,
     ATOMIC_OP_AND       = 1,
     ATOMIC_OP_OR        = 2,
     ATOMIC_OP_XOR       = 3,
@@ -87,6 +88,10 @@ namespace ir {
     ATOMIC_OP_UMAX      = 12,
     ATOMIC_OP_UMIN      = 13,
     ATOMIC_OP_CMPXCHG   = 14,
+    ATOMIC_OP_PREDEC    = 15,
+    ATOMIC_OP_EMULATED,
+    ATOMIC_OP_FADD,
+    ATOMIC_OP_FSUB,
     ATOMIC_OP_INVALID
   };
 
