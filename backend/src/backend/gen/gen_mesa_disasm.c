@@ -18,7 +18,7 @@
  */
 
 /*
- * Copyright © 2008 Keith Packard
+ * Copyright Â© 2008 Keith Packard
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided that
@@ -127,11 +127,11 @@ static const struct {
 
 static const char *conditional_modifier[16] = {
   [GEN_CONDITIONAL_NONE] = "",
-  [GEN_CONDITIONAL_Z] = ".e",
+  [GEN_CONDITIONAL_Z] = ".eq",
   [GEN_CONDITIONAL_NZ] = ".ne",
-  [GEN_CONDITIONAL_G] = ".g",
+  [GEN_CONDITIONAL_G] = ".gt",
   [GEN_CONDITIONAL_GE] = ".ge",
-  [GEN_CONDITIONAL_L] = ".l",
+  [GEN_CONDITIONAL_L] = ".lt",
   [GEN_CONDITIONAL_LE] = ".le",
   [GEN_CONDITIONAL_R] = ".r",
   [GEN_CONDITIONAL_O] = ".o",
@@ -183,7 +183,7 @@ static const char *chan_sel[4] = {
 
 static const char *debug_ctrl[2] = {
   [0] = "",
-  [1] = ".breakpoint"
+  [1] = ".bp"
 };
 
 static const char *saturate[2] = {
@@ -193,12 +193,12 @@ static const char *saturate[2] = {
 
 static const char *accwr[2] = {
   [0] = "",
-  [1] = "AccWrEnable"
+  [1] = "AccWr"
 };
 
 static const char *wectrl[2] = {
-  [0] = "WE_normal",
-  [1] = "WE_all"
+  [0] = "",
+  [1] = "NoMask"
 };
 
 static const char *exec_size[8] = {
@@ -243,12 +243,12 @@ static const char *thread_ctrl_gen7[4] = {
   [0] = "",
   [2] = "switch"
 };
+
 static const char *thread_ctrl_gen8[4] = {
   [0] = "",
   [1] = "atomic",
   [2] = "switch"
 };
-
 
 static const char *dep_ctrl[4] = {
   [0] = "",
@@ -258,21 +258,21 @@ static const char *dep_ctrl[4] = {
 };
 
 static const char *access_mode[2] = {
-  [0] = "align1",
+  [0] = "",
   [1] = "align16",
 };
 
 static const char *reg_encoding[11] = {
   [0] = ":UD",
-  [1] = ":D",
+  [1] = ":D ",
   [2] = ":UW",
-  [3] = ":W",
+  [3] = ":W ",
   [4] = ":UB",
-  [5] = ":B",
+  [5] = ":B ",
   [6] = ":DF",
-  [7] = ":F",
+  [7] = ":F ",
   [8] = ":UQ",
-  [9] = ":Q",
+  [9] = ":Q ",
   [10] = ":HF"
 };
 
@@ -393,9 +393,9 @@ static const char *math_function_gen7[16] = {
   [GEN_MATH_FUNCTION_COS] = "cos",
   [GEN_MATH_FUNCTION_FDIV] = "fdiv",
   [GEN_MATH_FUNCTION_POW] = "pow",
-  [GEN_MATH_FUNCTION_INT_DIV_QUOTIENT_AND_REMAINDER] = "intdivmod",
-  [GEN_MATH_FUNCTION_INT_DIV_QUOTIENT] = "intdiv",
-  [GEN_MATH_FUNCTION_INT_DIV_REMAINDER] = "intmod",
+  [GEN_MATH_FUNCTION_INT_DIV_QUOTIENT_AND_REMAINDER] = "divmod",
+  [GEN_MATH_FUNCTION_INT_DIV_QUOTIENT] = "idiv",
+  [GEN_MATH_FUNCTION_INT_DIV_REMAINDER] = "imod",
 };
 static const char *math_function_gen8[16] = {
   [GEN_MATH_FUNCTION_INV] = "inv",
@@ -407,9 +407,9 @@ static const char *math_function_gen8[16] = {
   [GEN_MATH_FUNCTION_COS] = "cos",
   [GEN_MATH_FUNCTION_FDIV] = "fdiv",
   [GEN_MATH_FUNCTION_POW] = "pow",
-  [GEN_MATH_FUNCTION_INT_DIV_QUOTIENT_AND_REMAINDER] = "intdivmod",
-  [GEN_MATH_FUNCTION_INT_DIV_QUOTIENT] = "intdiv",
-  [GEN_MATH_FUNCTION_INT_DIV_REMAINDER] = "intmod",
+  [GEN_MATH_FUNCTION_INT_DIV_QUOTIENT_AND_REMAINDER] = "divmod",
+  [GEN_MATH_FUNCTION_INT_DIV_QUOTIENT] = "idiv",
+  [GEN_MATH_FUNCTION_INT_DIV_REMAINDER] = "imod",
   [GEN8_MATH_FUNCTION_INVM] = "invm",
   [GEN8_MATH_FUNCTION_RSQRTM] = "rsqrtm",
 };
@@ -1167,32 +1167,32 @@ static int imm(FILE *file, uint32_t type, const void* inst)
 {
   switch (type) {
     case GEN_TYPE_UD:
-      format(file, "0x%xUD", GEN_BITS_FIELD(inst, bits3.ud));
+      format(file, "0x%x:UD", GEN_BITS_FIELD(inst, bits3.ud));
       break;
     case GEN_TYPE_D:
-      format(file, "%dD", GEN_BITS_FIELD(inst, bits3.d));
+      format(file, "%d:D ", GEN_BITS_FIELD(inst, bits3.d));
       break;
     case GEN_TYPE_UW:
-      format(file, "0x%xUW", (uint16_t) GEN_BITS_FIELD(inst, bits3.ud));
+      format(file, "0x%x:UW", (uint16_t) GEN_BITS_FIELD(inst, bits3.ud));
       break;
     case GEN_TYPE_W:
-      format(file, "%dW", (int16_t) GEN_BITS_FIELD(inst, bits3.d));
+      format(file, "%d:W ", (int16_t) GEN_BITS_FIELD(inst, bits3.d));
       break;
     case GEN_TYPE_UB:
-      format(file, "0x%xUB", (int8_t) GEN_BITS_FIELD(inst, bits3.ud));
+      format(file, "0x%x:UB", (int8_t) GEN_BITS_FIELD(inst, bits3.ud));
       break;
     case GEN_TYPE_VF:
-      format(file, "Vector Float");
+      format(file, "0x%x:VF", GEN_BITS_FIELD(inst, bits3.ud));
       break;
     case GEN_TYPE_V:
-      format(file, "0x%xV", GEN_BITS_FIELD(inst, bits3.ud));
+      format(file, "0x%x:V ", GEN_BITS_FIELD(inst, bits3.ud));
       break;
     case GEN_TYPE_F:
-      format(file, "%-gF", GEN_BITS_FIELD_WITH_TYPE(inst, bits3.f, float));
+      format(file, "%g:F ", GEN_BITS_FIELD_WITH_TYPE(inst, bits3.f, float));
       break;
     case GEN_TYPE_UL:
       assert(!(gen_version < 80));
-      format(file, "0x%.8x %.8xUQ", (((const union Gen8NativeInstruction *)inst)->bits3).ud,
+      format(file, "0x%.8x %.8x:UQ", (((const union Gen8NativeInstruction *)inst)->bits3).ud,
                                 (((const union Gen8NativeInstruction *)inst)->bits2).ud);
       break;
     case GEN_TYPE_L:
@@ -1200,7 +1200,7 @@ static int imm(FILE *file, uint32_t type, const void* inst)
       assert(!(gen_version < 80));
       uint64_t val = (((const union Gen8NativeInstruction *)inst)->bits3).ud;
       val = (val << 32) + ((((const union Gen8NativeInstruction *)inst)->bits2).ud);
-      format(file, "0x%lldQ", val);
+      format(file, "0x%lld:Q", val);
     }
     case GEN_TYPE_HF_IMM:
     {
@@ -1208,7 +1208,7 @@ static int imm(FILE *file, uint32_t type, const void* inst)
       uint32_t uf = __conv_half_to_float(h);
       float f;
       memcpy(&f, &uf, sizeof(float));
-      format(file, "%-gHF", f);
+      format(file, "%g:HF", f);
       break;
     }
     case GEN_TYPE_DF_IMM:
@@ -1219,7 +1219,7 @@ static int imm(FILE *file, uint32_t type, const void* inst)
       uint32_t lo = (((const union Gen8NativeInstruction *)inst)->bits2).ud;
       memcpy((void *)(&val), &lo, sizeof(uint32_t));
       memcpy(((void *)(&val) + sizeof(uint32_t)), &hi, sizeof(uint32_t));
-      format(file, "%f", val);
+      format(file, "%g:DF", val);
     }
   }
   return 0;
@@ -1369,7 +1369,7 @@ static int qtr_ctrl(FILE *file, const void* inst)
   return 0;
 }
 
-int gen_disasm (FILE *file, const void *inst, uint32_t deviceID, uint32_t compacted)
+int gen_disasm (FILE *file, const void *inst, uint32_t deviceID, uint32_t compacted, uint32_t insnID, void *ctx, void (*findLabel)(void*, uint32_t, uint32_t*))
 {
   int err = 0;
   int space = 0;
@@ -1464,12 +1464,42 @@ int gen_disasm (FILE *file, const void *inst, uint32_t deviceID, uint32_t compac
                OPCODE(inst) == GEN_OPCODE_WHILE ||
                OPCODE(inst) == GEN_OPCODE_BRD ||
                OPCODE(inst) == GEN_OPCODE_JMPI) {
-      format(file, " %d", (int16_t)BRANCH_JIP(inst));
+      int32_t offset = 0;
+      uint32_t label = UINT32_MAX, target = 0;
+      if(OPCODE(inst) == GEN_OPCODE_JMPI && gen_version == 75) {
+        offset = ((union GenNativeInstruction *)inst)->bits3.d / 8;
+      } else {
+        offset = BRANCH_JIP(inst);
+      }
+      format(file, " %+d", offset);
+      target = insnID + offset + (OPCODE(inst) == GEN_OPCODE_JMPI ? 2 - (compacted ? 1 : 0) : 0);
+      if(findLabel != NULL) findLabel(ctx, target, &label);
+      if(label == UINT32_MAX) {
+        format(file, "(%u)", target);
+      } else {
+        format(file, "(L%u)", label);
+      }
     } else if (OPCODE(inst) == GEN_OPCODE_BREAK ||
                OPCODE(inst) == GEN_OPCODE_CONTINUE ||
                OPCODE(inst) == GEN_OPCODE_HALT ||
                OPCODE(inst) == GEN_OPCODE_BRC) {
-      format(file, " %d %d", BRANCH_JIP(inst), BRANCH_UIP(inst));
+      int32_t jip = BRANCH_JIP(inst), uip = BRANCH_UIP(inst);
+      uint32_t jipTarget = insnID + jip, uipTarget = insnID + uip;
+      uint32_t jipLabel = UINT32_MAX, uipLabel = UINT32_MAX;
+      if(findLabel != NULL) findLabel(ctx, jipTarget, &jipLabel);
+      if(findLabel != NULL) findLabel(ctx, uipTarget, &uipLabel);
+      format(file, " %+d", jip);
+      if(jipLabel == UINT32_MAX) {
+        format(file, "(%u)", jipTarget);
+      } else {
+        format(file, "(L%u)", jipLabel);
+      }
+      format(file, " %+d", uip);
+      if(uipLabel == UINT32_MAX) {
+        format(file, "(%u)", uipTarget);
+      } else {
+        format(file, "(L%u)", uipLabel);
+      }
     }/* else if (inst->header.opcode == GEN_OPCODE_JMPI) {
       format(file, " %d", inst->bits3.d);
     }*/
@@ -1620,10 +1650,10 @@ int gen_disasm (FILE *file, const void *inst, uint32_t deviceID, uint32_t compac
     string(file, "{");
     space = 1;
     err |= control(file, "access mode", access_mode, ACCESS_MODE(inst), &space);
+    err |= qtr_ctrl(file, inst);
     err |= control(file, "write enable control", wectrl, MASK_CONTROL(inst), &space);
     err |= control(file, "dependency control", dep_ctrl, DEPENDENCY_CONTROL(inst), &space);
 
-    err |= qtr_ctrl(file, inst);
     if (gen_version < 80) {
       err |= control(file, "thread control", thread_ctrl_gen7, THREAD_CONTROL(inst), &space);
     } else {

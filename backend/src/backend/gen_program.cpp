@@ -108,10 +108,10 @@ namespace gbe {
       pCom = (GenCompactInstruction*)(insns+i);
       if(pCom->bits1.cmpt_control == 1) {
         decompactInstruction(pCom, &insn, insn_version);
-        gen_disasm(f, &insn, deviceID, 1);
+        gen_disasm(f, &insn, deviceID, 1, i, nullptr, nullptr);
         i++;
       } else {
-        gen_disasm(f, insns+i, deviceID, 0);
+        gen_disasm(f, insns+i, deviceID, 0, i, nullptr, nullptr);
         i = i + 2;
       }
       outs << buf;
@@ -243,9 +243,15 @@ namespace gbe {
       simdFn->getImageSet()->clearInfo();
       // If we get a out of range if/endif error.
       // We need to set the context to if endif fix mode and restart the previous compile.
-      if ( ctx->getErrCode() == OUT_OF_RANGE_IF_ENDIF && !ctx->getIFENDIFFix() ) {
-        ctx->setIFENDIFFix(true);
+      if (ctx->getErrCode() == OUT_OF_RANGE_IF_ENDIF) {
         codeGen--;
+        if(!ctx->getIFENDIFFix()) {
+          ctx->setIFENDIFFix(4096);
+        } else if(ctx->getIFENDIFFix() > 16) {
+          ctx->setIFENDIFFix(ctx->getIFENDIFFix() / 2);
+        } else {
+          codeGen++;
+        }
       }
     }
 

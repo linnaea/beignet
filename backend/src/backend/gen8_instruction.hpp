@@ -292,7 +292,7 @@ union Gen8NativeInstruction
       } da3srcacc;
 
       struct {
-        uint32_t uip:32;
+        int32_t uip;
       } gen8_branch;
 
       uint32_t ud;
@@ -663,7 +663,7 @@ union Gen8NativeInstruction
       } gen8_block_rw_a64;
 
       struct {
-        uint32_t jip:32;
+        int32_t jip;
       } gen8_branch;
 
       /*! Data port Media block read / write */

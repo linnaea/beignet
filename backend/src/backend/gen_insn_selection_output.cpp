@@ -13,29 +13,58 @@ namespace gbe
     if (reg.file == GEN_IMMEDIATE_VALUE || reg.file == GEN_GENERAL_REGISTER_FILE) {
       if (reg.file == GEN_IMMEDIATE_VALUE) {
         switch (reg.type) {
-          case GEN_TYPE_UD:
-          case GEN_TYPE_UW:
-          case GEN_TYPE_UB:
-          case GEN_TYPE_HF_IMM:
-            regName << hex << "0x" << reg.value.ud  << dec;
-            break;
-          case GEN_TYPE_D:
-          case GEN_TYPE_W:
-          case GEN_TYPE_B:
-            regName << reg.value.d;
-            break;
-          case GEN_TYPE_V:
-            regName << hex << "0x" << reg.value.ud << dec;
-            break;
-          case GEN_TYPE_UL:
-            regName << hex << "0x" << reg.value.u64 << dec;
-            break;
-          case GEN_TYPE_L:
-            regName << reg.value.i64;
-            break;
-          case GEN_TYPE_F:
-            regName << reg.value.f;
-            break;
+        case GEN_TYPE_UD:
+        case GEN_TYPE_UW:
+        case GEN_TYPE_UB:
+        case GEN_TYPE_VF: // GEN_TYPE_B
+          regName << hex << "0x" << reg.value.ud  << dec;
+          break;
+        case GEN_TYPE_D:
+        case GEN_TYPE_W:
+          regName << reg.value.d;
+          break;
+        case GEN_TYPE_V:
+          regName << hex << "0x" << reg.value.ud << dec;
+          break;
+        case GEN_TYPE_UL:
+          regName << hex << "0x" << reg.value.u64 << dec;
+          break;
+        case GEN_TYPE_L:
+          regName << reg.value.i64;
+          break;
+        case GEN_TYPE_F:
+          regName << reg.value.f;
+          break;
+        case GEN_TYPE_DF_IMM:
+          regName << reg.value.df;
+          break;
+        case GEN_TYPE_HF_IMM: {
+          union {
+            uint16_t bits;
+            struct {
+              uint64_t mantissa:10;
+              uint16_t exponent:5;
+              uint8_t sign:1;
+            };
+          } f16 = {(uint16_t)reg.value.ud};
+          union {
+            float f;
+            struct {
+              uint64_t mantissa:23;
+              uint16_t exponent:8;
+              uint8_t sign:1;
+            };
+          } f32 = {};
+          f32.sign = f16.sign;
+          f32.mantissa = f16.mantissa << 13;
+          if (f16.exponent == 0x1f) {
+            f32.exponent = 255;
+          } else {
+            f32.exponent = 127 - 15 + f16.exponent;
+          }
+          regName << f32.f;
+          break;
+        }
         }
       } else {
         if (reg.negation)
@@ -54,39 +83,42 @@ namespace gbe
 
       regName << ":";
       switch (reg.type) {
-        case GEN_TYPE_UD:
-          regName << "UD";
-          break;
-        case GEN_TYPE_UW:
-          regName << "UW";
-          break;
-        case GEN_TYPE_UB:
-          regName << "UB";
-          break;
-        case GEN_TYPE_HF_IMM:
-          regName << "HF";
-          break;
-        case GEN_TYPE_D:
-          regName << "D ";
-          break;
-        case GEN_TYPE_W:
-          regName << "W ";
-          break;
-        case GEN_TYPE_B:
-          regName << "B ";
-          break;
-        case GEN_TYPE_V:
-          regName << "V ";
-          break;
-        case GEN_TYPE_UL:
-          regName << "UL";
-          break;
-        case GEN_TYPE_L:
-          regName << "L ";
-          break;
-        case GEN_TYPE_F:
-          regName << "F ";
-          break;
+      case GEN_TYPE_UD:
+        regName << "UD";
+        break;
+      case GEN_TYPE_UW:
+        regName << "UW";
+        break;
+      case GEN_TYPE_UB:
+        regName << "UB";
+        break;
+      case GEN_TYPE_D:
+        regName << "D ";
+        break;
+      case GEN_TYPE_W:
+        regName << "W ";
+        break;
+      case GEN_TYPE_B:
+        regName << "B ";
+        break;
+      case GEN_TYPE_DF: // GEN_TYPE_V
+        regName << (reg.file == GEN_IMMEDIATE_VALUE ? "V " : "DF");
+        break;
+      case GEN_TYPE_UL:
+        regName << "UQ";
+        break;
+      case GEN_TYPE_L:
+        regName << "Q ";
+        break;
+      case GEN_TYPE_F:
+        regName << "F ";
+        break;
+      case GEN_TYPE_HF: // GEN_TYPE_DF_IMM
+        regName << (reg.file == GEN_IMMEDIATE_VALUE ? "DF" : "HF");
+        break;
+      case GEN_TYPE_HF_IMM:
+        regName << "HF";
+        break;
       }
     } else if (reg.file == GEN_ARCHITECTURE_REGISTER_FILE) {
       if(reg.nr == GEN_ARF_NULL) {

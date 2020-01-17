@@ -224,9 +224,10 @@ namespace gbe
     uint32_t reservedSpillRegs;
     bool limitRegisterPressure;
     bool relaxMath;
-    bool getIFENDIFFix() const { return ifEndifFix; }
-    void setIFENDIFFix(bool fix) { ifEndifFix = fix; }
-    bool getProfilingMode() const { return inProfilingMode; }
+    void makeStubBlocks();
+    uint16_t getIFENDIFFix() const { return ifEndifFix; }
+    void setIFENDIFFix(uint16_t fix) { ifEndifFix = fix; }
+    // bool getProfilingMode() const { return inProfilingMode; }
     void setProfilingMode(bool b) { inProfilingMode = b; }
     CompileErrorCode getErrCode() { return errCode; }
 
@@ -245,7 +246,7 @@ namespace gbe
 
   private:
     CompileErrorCode errCode;
-    bool ifEndifFix;
+    uint16_t ifEndifFix;
     bool inProfilingMode;
     uint32_t regSpillTick;
     const char* asmFileName;

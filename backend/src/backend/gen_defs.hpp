@@ -177,6 +177,9 @@ enum GenOpCode
   GEN_OPCODE_MAD = 91,
   GEN_OPCODE_LRP = 92,
   GEN_OPCODE_MADM = 93,
+  GEN_OPCODE_ILLEGAL = 0,
+  GEN_OPCODE_CALL = 0x2C,
+  GEN_OPCODE_RET = 0x2D,
   GEN_OPCODE_NOP = 126,
 };
 
@@ -819,10 +822,6 @@ union GenNativeInstruction
         uint32_t pad3:2;
         uint32_t end_of_thread:1;
       } gen7_msg_gw;
-
-      struct {
-        uint32_t jip:32;
-      } gen8_branch;
 
       /*! Data port Media block read / write */
       struct {

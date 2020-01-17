@@ -143,6 +143,7 @@ set (GBE_SRC
     backend/gen8_encoder.cpp
     backend/gen9_encoder.hpp
     backend/gen9_encoder.cpp
+    backend/gen_blockstub.cpp
     )
 
 set (GBE_LINK_LIBRARIES

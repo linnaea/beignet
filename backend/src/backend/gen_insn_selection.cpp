@@ -2690,22 +2690,6 @@ extern int32_t OCL_DEBUGINFO; // first defined by calling BVAR in program.cpp
             this->curr.subFlag = 1;
           this->pop();
         }
-        // If we are in if/endif fix mode, and this block is
-        // large enough, we need to insert endif/if pair to eliminate
-        // the too long if/endif block.
-        if (this->ctx.getIFENDIFFix() &&
-            !this->block->insnList.empty() &&
-            this->block->insnList.size() % 1000 == 0 &&
-            this->block->endifLabel.value() != 0) {
-          this->curr.flag = 0;
-          this->curr.subFlag = 1;
-          ir::LabelIndex jip = this->block->endifLabel;
-          this->ENDIF(GenRegister::immd(0), jip);
-          this->push();
-            this->curr.predicate = GEN_PREDICATE_NORMAL;
-            this->IF(GenRegister::immd(0), jip, jip);
-          this->pop();
-        }
         // Output the code in the current basic block
         this->endBackwardGeneration();
       }

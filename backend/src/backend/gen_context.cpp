@@ -50,7 +50,7 @@ namespace gbe
     this->sel = nullptr;
     this->ra = nullptr;
     this->asmFileName = nullptr;
-    this->ifEndifFix = false;
+    this->ifEndifFix = 0;
     this->regSpillTick = 0;
     this->inProfilingMode = false;
   }
@@ -3657,6 +3657,8 @@ namespace gbe
     this->clearFlagRegister();
     this->emitSLMOffset();
     this->emitInstructionStream();
+    if (this->getIFENDIFFix())
+      this->makeStubBlocks();
     if (!this->patchBranches())
       return false;
     genKernel->insnNum = p->store.size();
@@ -3691,19 +3693,22 @@ namespace gbe
     else if (IS_GEN8(deviceID) || IS_GEN9(deviceID))
       insn_version = 8;
     fprintf(file, "%s's disassemble begin:\n", genKernel->getName());
-    ir::LabelIndex curLabel = (ir::LabelIndex)0;
     GenCompactInstruction * pCom = nullptr;
     GenInstruction insn[2];
-    fprintf(file, "  L0:\n");
+    map<uint32_t, ir::LabelIndex> reverseLabelMap;
+    auto findLabel = [](void *ctx, uint32_t offset, uint32_t *label) {
+      auto *labelMap = (map<uint32_t, ir::LabelIndex>*)ctx;
+      if(labelMap->count(offset)) {
+        *label = (*labelMap)[offset].value();
+      }
+    };
+    for(auto &pair : labelPos) {
+      if(!reverseLabelMap.count(pair.second))
+        reverseLabelMap[pair.second] = pair.first;
+    }
     for (uint32_t insnID = 0; insnID < genKernel->insnNum; ) {
-      if (labelPos.find((ir::LabelIndex)(curLabel + 1))->second == insnID &&
-          curLabel < this->getFunction().labelNum()) {
-        fprintf(file, "  L%i:\n", curLabel + 1);
-        curLabel = (ir::LabelIndex)(curLabel + 1);
-        while(labelPos.find((ir::LabelIndex)(curLabel + 1))->second == insnID) {
-          fprintf(file, "  L%i:\n", curLabel + 1);
-          curLabel = (ir::LabelIndex)(curLabel + 1);
-        }
+      if (reverseLabelMap.count(insnID)) {
+        fprintf(file, "  L%u:\n", reverseLabelMap[insnID].value());
       }
 
       if (OCL_DEBUGINFO)
@@ -3713,11 +3718,11 @@ namespace gbe
       pCom = (GenCompactInstruction*)&p->store[insnID];
       if(pCom->bits1.cmpt_control == 1) {
         decompactInstruction(pCom, &insn, insn_version);
-        gen_disasm(file, &insn, deviceID, 1);
+        gen_disasm(file, &insn, deviceID, 1, insnID, &reverseLabelMap, findLabel);
         insnID++;
       } else {
-        gen_disasm(file, &p->store[insnID], deviceID, 0);
-        insnID = insnID + 2;
+        gen_disasm(file, &p->store[insnID], deviceID, 0, insnID, &reverseLabelMap, findLabel);
+        insnID += 2;
       }
     }
     fprintf(file, "%s's disassemble end.\n", genKernel->getName());

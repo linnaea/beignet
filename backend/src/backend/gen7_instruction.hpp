@@ -529,8 +529,8 @@ union Gen7NativeInstruction
       } gen7_msg_gw;
 
       struct {
-        uint32_t jip:16;
-        uint32_t uip:16;
+        int16_t jip;
+        int16_t uip;
       } gen7_branch;
 
       /*! Data port Media block read / write */
