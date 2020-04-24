@@ -1,4 +1,7 @@
 # compiler choose,now support ICC,GCC CLANG compiler
+set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
 if (COMPILER STREQUAL "GCC")
   find_program(CMAKE_C_COMPILER NAMES gcc)
   find_program(CMAKE_CXX_COMPILER NAMES g++)
@@ -79,7 +82,7 @@ elseif (COMPILER STREQUAL "CLANG")
 elseif (COMPILER STREQUAL "ICC")
   set (CMAKE_C_CXX_FLAGS "${CMAKE_C_CXX_FLAGS}  -wd2928 -Wall -fPIC -fstrict-aliasing -fp-model fast -msse4.1 -Wl,-E")
 endif ()
-set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CMAKE_C_CXX_FLAGS} -std=c++0x -Wno-invalid-offsetof")
+set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CMAKE_C_CXX_FLAGS} -Wno-invalid-offsetof")
 set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${CMAKE_C_CXX_FLAGS}")
 set (CMAKE_CXX_FLAGS_DEBUG          "-O0 -g -DGBE_DEBUG=1")
 set (CMAKE_CXX_FLAGS_RELWITHDEBINFO "-O2 -g -DGBE_DEBUG=1")
