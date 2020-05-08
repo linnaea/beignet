@@ -29,12 +29,12 @@
 using namespace llvm;
 
 namespace gbe {
-    class GenIntrinsicLowering : public BasicBlockPass
+    class GenIntrinsicLowering : public GenBasicBlockPass
     {
     public:
       static char ID;
       GenIntrinsicLowering() :
-        BasicBlockPass(ID) {}
+        GenBasicBlockPass(ID) {}
 
       void getAnalysisUsage(AnalysisUsage &AU) const override {
 
@@ -130,6 +130,7 @@ namespace gbe {
                 if(ci && (ci->getZExtValue() % 4 == 0)) //alignment is constant and 4 byte align
                   strcat(name, "_align");
                 replaceCallWith(name, CI, Ops, Ops+3, Type::getVoidTy(Context));
+                changedBlock = true;
                 break;
               }
               case Intrinsic::memset: {
@@ -152,6 +153,7 @@ namespace gbe {
                 if(ci && (ci->getZExtValue() % 4 == 0)) //alignment is constant and 4 byte align
                   strcat(name, "_align");
                 replaceCallWith(name, CI, Ops, Ops+3, Type::getVoidTy(Context));
+                changedBlock = true;
                 break;
               }
 #if LLVM_VERSION_MAJOR >= 7
@@ -190,6 +192,7 @@ namespace gbe {
 
                 CI->replaceAllUsesWith(combined);
                 CI->eraseFromParent();
+                changedBlock = true;
                 break;
               }
 #endif
@@ -233,6 +236,7 @@ namespace gbe {
 
                 CI->replaceAllUsesWith(result);
                 CI->eraseFromParent();
+                changedBlock = true;
                 break;
               }
 #endif
@@ -247,7 +251,7 @@ namespace gbe {
 
     char GenIntrinsicLowering::ID = 0;
 
-    BasicBlockPass *createGenIntrinsicLoweringPass() {
+    GenBasicBlockPass *createGenIntrinsicLoweringPass() {
       return new GenIntrinsicLowering();
     }
 } // end namespace

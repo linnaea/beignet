@@ -77,8 +77,7 @@
 #include "llvm-c/Linker.h"
 #include "llvm/IRReader/IRReader.h"
 #if LLVM_VERSION_MAJOR * 10 + LLVM_VERSION_MINOR >= 40
-#include <llvm/Bitcode/BitcodeWriter.h>
-//#include <llvm/Bitcode/BitcodeReader.h>
+#include "llvm/Bitcode/BitcodeWriter.h"
 #else
 #include "llvm/Bitcode/ReaderWriter.h"
 #endif
@@ -130,7 +129,11 @@
 #endif
 #include "llvm/ADT/Triple.h"
 
-#include <clang/CodeGen/CodeGenAction.h>
+#if LLVM_VERSION_MAJOR >= 10
+#include "llvm/InitializePasses.h"
+#endif
+
+#include "clang/CodeGen/CodeGenAction.h"
 
 #if LLVM_VERSION_MAJOR * 10 + LLVM_VERSION_MINOR >= 38
 #include "llvm/Analysis/BasicAliasAnalysis.h"

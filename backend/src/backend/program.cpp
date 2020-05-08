@@ -695,8 +695,12 @@ namespace gbe {
                 );
 
     clang::CompilerInvocation::CreateFromArgs(*CI,
+#if LLVM_VERSION_MAJOR >= 10
+                                              clang::ArrayRef<const char*>(args),
+#else
                                               &args[0],
                                               &args[0] + args.size(),
+#endif
                                               Diags);
     // Create the compiler instance
     clang::CompilerInstance Clang;
@@ -1265,8 +1269,12 @@ EXTEND_QUOTE:
       // Create the compiler invocation
       std::unique_ptr<clang::CompilerInvocation> CI(new clang::CompilerInvocation);
       return clang::CompilerInvocation::CreateFromArgs(*CI,
+#if LLVM_VERSION_MAJOR >= 10
+                                                       clang::ArrayRef<const char*>(args),
+#else
                                                        &args[0],
                                                        &args[0] + args.size(),
+#endif
                                                        Diags);
     }
 #endif

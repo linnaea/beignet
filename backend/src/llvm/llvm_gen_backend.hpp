@@ -102,6 +102,24 @@ namespace gbe
     }
   };
 
+#if LLVM_VERSION_MAJOR >= 10
+  class GenBasicBlockPass : public llvm::FunctionPass {
+  public:
+    explicit GenBasicBlockPass(char &pid) : llvm::FunctionPass(pid) {}
+    virtual bool runOnBasicBlock(llvm::BasicBlock &BB) = 0;
+    bool runOnFunction(llvm::Function &F) override {
+        bool changed = false;
+        for(auto &BB : F) {
+            changed |= runOnBasicBlock(BB);
+        }
+
+        return changed;
+    }
+  };
+#else
+  using GenBasicBlockPass = llvm::BasicBlockPass;
+#endif
+
   /*! Sort the OCL Gen intrinsic functions (built on pre-main) */
   static const OCLIntrinsicMap intrinsicMap;
 
@@ -133,10 +151,10 @@ namespace gbe
   llvm::FunctionPass *createGenPass(ir::Unit &unit);
 
   /*! Remove the GEP instructions */
-  llvm::BasicBlockPass *createRemoveGEPPass(const ir::Unit &unit);
+  GenBasicBlockPass *createRemoveGEPPass(const ir::Unit &unit);
 
   /*! Merge load/store if possible */
-  llvm::BasicBlockPass *createLoadStoreOptimizationPass();
+  GenBasicBlockPass *createLoadStoreOptimizationPass();
 
   /*! Scalarize all vector op instructions */
   llvm::FunctionPass* createScalarizePass();
@@ -144,7 +162,7 @@ namespace gbe
   llvm::ModulePass* createBarrierNodupPass(bool);
 
   /*! Convert the Intrinsic call to gen function */
-  llvm::BasicBlockPass *createGenIntrinsicLoweringPass();
+  GenBasicBlockPass *createGenIntrinsicLoweringPass();
 
   /*! Passer the printf function call. */
   llvm::FunctionPass* createPrintfParserPass(ir::Unit &unit);

@@ -44,8 +44,13 @@ struct F64I64BitcastEmulationPass : public FunctionPass {
       } else {
         continue;
       }
+#if LLVM_VERSION_MAJOR >= 10
+      load->setAlignment(Align(8));
+      store->setAlignment(Align(8));
+#else
       load->setAlignment(8);
       store->setAlignment(8);
+#endif
 
       BasicBlock::iterator pos(I);
       BB.getInstList().insert(pos, store);
@@ -68,7 +73,11 @@ struct F64I64BitcastEmulationPass : public FunctionPass {
 
     LLVMContext &ctx = F.getContext();
     AllocaInst *convF64 = new AllocaInst(Type::getDoubleTy(ctx), 0, "conv.f64");
+#if LLVM_VERSION_MAJOR >= 10
+    convF64->setAlignment(Align(8));
+#else
     convF64->setAlignment(8);
+#endif
 
     CastInst *convI64 = CastInst::CreatePointerCast(convF64, Type::getInt64Ty(ctx)->getPointerTo(), "conv.i64");
     BasicBlock &entryBlock = F.getEntryBlock();

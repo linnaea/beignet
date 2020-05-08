@@ -23,16 +23,17 @@
  */
 
 #include "llvm_includes.hpp"
+#include "llvm_gen_backend.hpp"
 
 using namespace llvm;
 namespace gbe {
-  class GenLoadStoreOptimization : public BasicBlockPass {
+  class GenLoadStoreOptimization : public GenBasicBlockPass {
 
   public:
     static char ID;
     ScalarEvolution *SE;
     const DataLayout *TD;
-    GenLoadStoreOptimization() : BasicBlockPass(ID) {}
+    GenLoadStoreOptimization() : GenBasicBlockPass(ID) {}
 
     void getAnalysisUsage(AnalysisUsage &AU) const {
 #if LLVM_VERSION_MAJOR * 10 + LLVM_VERSION_MINOR >= 38
@@ -148,7 +149,11 @@ namespace gbe {
       values.push_back(merged[i]);
     }
     LoadInst *ld = cast<LoadInst>(merged[0]);
+#if LLVM_VERSION_MAJOR >= 10
+    auto align = ld->getAlign();
+#else
     unsigned align = ld->getAlignment();
+#endif
     unsigned addrSpace = ld->getPointerAddressSpace();
     // insert before first load
     Builder.SetInsertPoint(ld);
@@ -231,7 +236,11 @@ namespace gbe {
 
     unsigned addrSpace = st->getPointerAddressSpace();
 
+#if LLVM_VERSION_MAJOR >= 10
+    auto align = st->getAlign();
+#else
     unsigned align = st->getAlignment();
+#endif
     // insert before the last store
     Builder.SetInsertPoint(merged[size-1]);
 
@@ -326,7 +335,7 @@ namespace gbe {
     return changed;
   }
 
-  BasicBlockPass *createLoadStoreOptimizationPass() {
+  GenBasicBlockPass *createLoadStoreOptimizationPass() {
     return new GenLoadStoreOptimization();
   }
 };

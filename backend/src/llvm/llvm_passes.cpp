@@ -219,13 +219,13 @@ namespace gbe
     return offset;
   }
 
-  class GenRemoveGEPPasss : public BasicBlockPass
+  class GenRemoveGEPPasss : public GenBasicBlockPass
   {
 
    public:
     static char ID;
     GenRemoveGEPPasss(const ir::Unit &unit) :
-      BasicBlockPass(ID),
+      GenBasicBlockPass(ID),
       unit(unit) {}
     const ir::Unit &unit;
     void getAnalysisUsage(AnalysisUsage &AU) const {
@@ -367,7 +367,7 @@ namespace gbe
     return true;
   }
 
-  BasicBlockPass *createRemoveGEPPass(const ir::Unit &unit) {
+  GenBasicBlockPass *createRemoveGEPPass(const ir::Unit &unit) {
     return new GenRemoveGEPPasss(unit);
   }
 } /* namespace gbe */
