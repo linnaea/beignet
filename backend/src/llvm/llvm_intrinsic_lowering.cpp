@@ -173,21 +173,21 @@ namespace gbe {
                 // %visBits = {shl,lshr} T %a, %realShift
                 // %funBits = {lshr,shl} T %b, %funShift
                 // %result = or T %visBits, %funBits
-                auto operandBits = CI->getOperand(0)->getType()->getScalarSizeInBits();
+                auto operandBits = CI->getArgOperand(0)->getType()->getScalarSizeInBits();
                 Constant *nBits = Builder.getIntN(operandBits, operandBits);
                 if(CI->getType()->isVectorTy()) {
                   nBits = ConstantVector::getSplat(CI->getType()->getVectorNumElements(), nBits);
                 }
 
-                auto realShift = Builder.CreateURem(CI->getOperand(2), nBits);
+                auto realShift = Builder.CreateURem(CI->getArgOperand(2), nBits);
                 auto funShift = Builder.CreateSub(nBits, realShift);
 
                 if(intrinsicID == Intrinsic::fshr) {
                   std::swap(realShift, funShift);
                 }
 
-                auto upperBits = Builder.CreateShl(CI->getOperand(0), realShift);
-                auto lowerBits = Builder.CreateLShr(CI->getOperand(1), funShift);
+                auto upperBits = Builder.CreateShl(CI->getArgOperand(0), realShift);
+                auto lowerBits = Builder.CreateLShr(CI->getArgOperand(1), funShift);
                 auto combined = Builder.CreateOr(upperBits, lowerBits);
 
                 CI->replaceAllUsesWith(combined);
@@ -227,9 +227,9 @@ namespace gbe {
                   i32Min = ConstantVector::getSplat(type->getVectorNumElements(), i32Min);
                 }
 
-                auto hwResult = Builder.CreateBinaryIntrinsic(Intrinsic::ssub_sat, CI->getOperand(0), CI->getOperand(1));
-                auto hwBroken = Builder.CreateICmpEQ(CI->getOperand(1), i32Min);
-                auto waCompute1 = Builder.CreateBinaryIntrinsic(Intrinsic::sadd_sat, i32Mid, CI->getOperand(0));
+                auto hwResult = Builder.CreateBinaryIntrinsic(Intrinsic::ssub_sat, CI->getArgOperand(0), CI->getArgOperand(1));
+                auto hwBroken = Builder.CreateICmpEQ(CI->getArgOperand(1), i32Min);
+                auto waCompute1 = Builder.CreateBinaryIntrinsic(Intrinsic::sadd_sat, i32Mid, CI->getArgOperand(0));
                 auto waCompute = Builder.CreateBinaryIntrinsic(Intrinsic::sadd_sat, i32Mid, waCompute1);
                 auto result = Builder.CreateSelect(hwBroken, waCompute, hwResult);
                 hwResult->setMetadata(WorkaroundMdKind, MDNode::get(Context, {}));
