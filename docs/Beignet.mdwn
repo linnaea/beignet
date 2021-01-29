@@ -1,6 +1,6 @@
-** Since I have got rid of my 4250U based NUC and 5775C desktop I will no longer be maintaining this fork. **
+**Since I have got rid of my 4250U based NUC and 5775C desktop I will no longer be maintaining this fork.**
 
-** If you still need pre-Gen8 or Gen8LP support, static linking beignet with LLVM <= 7 would be the best option. **
+**If you still need pre-Gen8 or Gen8LP support, static linking beignet with LLVM <= 7 would be the best option.**
 
 Beignet
 =======
